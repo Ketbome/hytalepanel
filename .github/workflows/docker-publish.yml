@@ -16,13 +16,13 @@ on:
 
 env:
     REGISTRY: docker.io
-    IMAGE_NAME: ${{ github.repository }}
+    IMAGE_NAME: ketbom/hytale-server
 
 jobs:
     build-and-push:
         runs-on: ubuntu-latest
         permissions:
-            contents: read
+            contents: write
             packages: write
 
         steps:
@@ -61,7 +61,6 @@ jobs:
                   tags: |
                       type=raw,value=${{ steps.config.outputs.version }}
                       type=raw,value=latest,enable={{is_default_branch}}
-                      type=sha,prefix=
                   labels: |
                       org.opencontainers.image.title=${{ steps.config.outputs.title }}
                       org.opencontainers.image.description=${{ steps.config.outputs.description }}
@@ -77,3 +76,42 @@ jobs:
                   labels: ${{ steps.meta.outputs.labels }}
                   cache-from: type=gha
                   cache-to: type=gha,mode=max
+
+            - name: Create Git Tag
+              if: github.event_name != 'pull_request'
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+                  VERSION="v${{ steps.config.outputs.version }}"
+                  if ! git rev-parse "$VERSION" >/dev/null 2>&1; then
+                    git tag -a "$VERSION" -m "Release $VERSION"
+                    git push origin "$VERSION"
+                  fi
+
+            - name: Create GitHub Release
+              if: github.event_name != 'pull_request'
+              uses: softprops/action-gh-release@v1
+              with:
+                  tag_name: v${{ steps.config.outputs.version }}
+                  name: v${{ steps.config.outputs.version }}
+                  body: |
+                      ## Hytale Server v${{ steps.config.outputs.version }}
+
+                      ### Docker Pull
+                      ```bash
+                      docker pull ketbom/hytale-server:${{ steps.config.outputs.version }}
+                      ```
+
+                      ### Quick Start
+                      ```bash
+                      mkdir hytale-server && cd hytale-server
+                      curl -O https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.yml
+                      mkdir -p server data/universe data/mods data/logs data/config
+                      # Add HytaleServer.jar and Assets.zip to ./server/
+                      docker compose up -d
+                      ```
+                  draft: false
+                  prerelease: false
+                  generate_release_notes: true
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
