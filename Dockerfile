@@ -1,10 +1,12 @@
-FROM eclipse-temurin:25-jdk-alpine
+FROM eclipse-temurin:25-jdk
 
 LABEL maintainer="ketbome"
 LABEL description="Hytale Dedicated Server"
 
-# Dependencies
-RUN apk add --no-cache bash dos2unix curl unzip
+# Dependencies + gosu for privilege drop
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash curl unzip gosu \
+    && rm -rf /var/lib/apt/lists/*
 
 # Download hytale-downloader
 RUN curl -L -o /tmp/hytale-downloader.zip https://downloader.hytale.com/hytale-downloader.zip && \
@@ -14,7 +16,7 @@ RUN curl -L -o /tmp/hytale-downloader.zip https://downloader.hytale.com/hytale-d
     rm -rf /tmp/hytale-downloader.zip /tmp/downloader
 
 # Non-root user
-RUN addgroup -S hytale && adduser -S -G hytale hytale
+RUN groupadd -f hytale && useradd -g hytale -m hytale || true
 
 ENV SERVER_HOME=/opt/hytale
 ENV JAVA_XMS=4G
@@ -41,10 +43,7 @@ RUN mkdir -p universe mods logs config .cache && \
     chown -R hytale:hytale $SERVER_HOME
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN dos2unix /usr/local/bin/entrypoint.sh && \
-    chmod +x /usr/local/bin/entrypoint.sh
-
-USER hytale
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 5520/udp
 

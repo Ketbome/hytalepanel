@@ -1,94 +1,69 @@
 #!/bin/bash
-set -e
 
 cd "$SERVER_HOME"
 
-# Auto-download if enabled and files don't exist
-if [ "$AUTO_DOWNLOAD" = "true" ] && { [ ! -f "HytaleServer.jar" ] || [ ! -f "Assets.zip" ]; }; then
-    echo "=============================================="
-    echo "  DOWNLOADING SERVER FILES"
-    echo "=============================================="
-    echo ""
-    echo "This will download the latest Hytale server."
-    echo "You may need to authenticate..."
-    echo ""
+# Generate machine-id if not exists (needed for encrypted credential storage)
+if [ ! -f /etc/machine-id ]; then
+    cat /proc/sys/kernel/random/uuid | tr -d '-' > /etc/machine-id
+fi
+
+# Also create a persistent machine-id in server folder
+if [ ! -f "$SERVER_HOME/.machine-id" ]; then
+    cat /etc/machine-id > "$SERVER_HOME/.machine-id"
+else
+    cat "$SERVER_HOME/.machine-id" > /etc/machine-id
+fi
+
+# Fix permissions on mounted volumes (runs as root)
+chown -R hytale:hytale "$SERVER_HOME"
+
+DOWNLOAD_FLAG="$SERVER_HOME/.download_attempted"
+
+# Check if files exist
+if [ ! -f "HytaleServer.jar" ] || [ ! -f "Assets.zip" ]; then
     
-    # Download using official downloader
-    if command -v hytale-downloader &> /dev/null; then
-        echo "Downloading with hytale-downloader..."
-        hytale-downloader --download-path /tmp/hytale-game.zip || {
-            echo ""
-            echo "=============================================="
-            echo "  AUTHENTICATION REQUIRED"
-            echo "=============================================="
-            echo ""
-            echo "Run this command to authenticate:"
-            echo "  hytale-downloader --login"
-            echo ""
-            echo "Or download manually from https://hytale.com"
-            echo "and place files in ./server folder:"
-            echo "  - HytaleServer.jar"
-            echo "  - Assets.zip"
-            echo ""
-            echo "Waiting for files..."
-            echo "=============================================="
-            
-            # Wait for manual files
-            while [ ! -f "HytaleServer.jar" ] || [ ! -f "Assets.zip" ]; do
-                sleep 10
-            done
-        }
+    # Only attempt download once
+    if [ ! -f "$DOWNLOAD_FLAG" ] && [ "$AUTO_DOWNLOAD" = "true" ]; then
+        touch "$DOWNLOAD_FLAG"
+        echo "[HYTALE] Server files not found. Attempting download..."
         
-        # Extract if download succeeded
-        if [ -f "/tmp/hytale-game.zip" ]; then
-            echo "Extracting files..."
-            unzip -o /tmp/hytale-game.zip -d /tmp/hytale-extract
+        if command -v hytale-downloader &> /dev/null; then
+            hytale-downloader --download-path /tmp/hytale-game.zip 2>&1 || true
             
-            # Find and move files
-            find /tmp/hytale-extract -name "HytaleServer.jar" -exec cp {} "$SERVER_HOME/" \;
-            find /tmp/hytale-extract -name "Assets.zip" -exec cp {} "$SERVER_HOME/" \;
-            
-            rm -rf /tmp/hytale-game.zip /tmp/hytale-extract
-            echo "Download complete!"
+            if [ -f "/tmp/hytale-game.zip" ]; then
+                echo "[HYTALE] Extracting..."
+                unzip -o /tmp/hytale-game.zip -d /tmp/hytale-extract 2>/dev/null || true
+                find /tmp/hytale-extract -name "HytaleServer.jar" -exec cp {} "$SERVER_HOME/" \; 2>/dev/null || true
+                find /tmp/hytale-extract -name "Assets.zip" -exec cp {} "$SERVER_HOME/" \; 2>/dev/null || true
+                rm -rf /tmp/hytale-game.zip /tmp/hytale-extract
+                rm -f "$DOWNLOAD_FLAG"
+                echo "[HYTALE] Download complete!"
+            else
+                echo "[HYTALE] Download failed (authentication required)."
+            fi
         fi
     fi
 fi
 
-# Final check - wait if still missing
+# If still missing, wait silently
 if [ ! -f "HytaleServer.jar" ] || [ ! -f "Assets.zip" ]; then
-    echo "=============================================="
-    echo "  WAITING FOR SERVER FILES"
-    echo "=============================================="
-    echo ""
-    echo "Place these files in ./server folder:"
-    echo "  - HytaleServer.jar"
-    echo "  - Assets.zip"
-    echo ""
-    echo "Download from: https://hytale.com"
-    echo "Checking every 10 seconds..."
-    echo "=============================================="
+    echo "[HYTALE] Waiting for files..."
     
-    while [ ! -f "HytaleServer.jar" ] || [ ! -f "Assets.zip" ]; do
+    while true; do
         sleep 10
         if [ -f "HytaleServer.jar" ] && [ -f "Assets.zip" ]; then
-            echo "Files found! Starting server..."
+            echo "[HYTALE] Files detected!"
+            rm -f "$DOWNLOAD_FLAG"
             break
         fi
     done
 fi
 
-echo ""
-echo "=============================================="
-echo "  Starting Hytale Server"
-echo "=============================================="
-echo "RAM: ${JAVA_XMS} - ${JAVA_XMX}"
-echo "Bind: ${BIND_ADDR}:${BIND_PORT}/udp"
-echo ""
+echo "[HYTALE] Starting server (RAM: ${JAVA_XMS}-${JAVA_XMX}, Port: ${BIND_PORT}/udp)"
 
-# Base JVM flags
+# JVM flags
 JAVA_FLAGS="-Xms${JAVA_XMS} -Xmx${JAVA_XMX}"
 
-# G1GC optimizations
 if [ "$USE_G1GC" = "true" ]; then
     JAVA_FLAGS="$JAVA_FLAGS \
         -XX:+UseG1GC \
@@ -110,51 +85,26 @@ if [ "$USE_G1GC" = "true" ]; then
         -XX:MaxTenuringThreshold=1"
 fi
 
-# AOT cache for faster startup
-if [ -f "HytaleServer.aot" ]; then
-    JAVA_FLAGS="$JAVA_FLAGS -XX:AOTCache=HytaleServer.aot"
-    echo "Using AOT cache"
-fi
+[ -f "HytaleServer.aot" ] && JAVA_FLAGS="$JAVA_FLAGS -XX:AOTCache=HytaleServer.aot"
+[ -n "$JAVA_EXTRA_FLAGS" ] && JAVA_FLAGS="$JAVA_FLAGS $JAVA_EXTRA_FLAGS"
 
-# Custom JVM flags
-if [ -n "$JAVA_EXTRA_FLAGS" ]; then
-    JAVA_FLAGS="$JAVA_FLAGS $JAVA_EXTRA_FLAGS"
-fi
-
-# Build server arguments
+# Server args
 SERVER_ARGS="--assets Assets.zip --bind ${BIND_ADDR}:${BIND_PORT}"
+[ -n "$VIEW_DISTANCE" ] && SERVER_ARGS="$SERVER_ARGS --view-distance $VIEW_DISTANCE"
+[ -n "$MAX_PLAYERS" ] && SERVER_ARGS="$SERVER_ARGS --max-players $MAX_PLAYERS"
+[ -n "$SERVER_NAME" ] && SERVER_ARGS="$SERVER_ARGS --name $SERVER_NAME"
+[ -n "$SERVER_EXTRA_ARGS" ] && SERVER_ARGS="$SERVER_ARGS $SERVER_EXTRA_ARGS"
 
-# Optional server arguments
-if [ -n "$VIEW_DISTANCE" ]; then
-    SERVER_ARGS="$SERVER_ARGS --view-distance $VIEW_DISTANCE"
-fi
-
-if [ -n "$MAX_PLAYERS" ]; then
-    SERVER_ARGS="$SERVER_ARGS --max-players $MAX_PLAYERS"
-fi
-
-if [ -n "$SERVER_NAME" ]; then
-    SERVER_ARGS="$SERVER_ARGS --name $SERVER_NAME"
-fi
-
-if [ -n "$SERVER_EXTRA_ARGS" ]; then
-    SERVER_ARGS="$SERVER_ARGS $SERVER_EXTRA_ARGS"
-fi
-
-# Create command pipe for web panel
+# Command pipe for web panel
 PIPE="/tmp/hytale-console"
 rm -f "$PIPE"
 mkfifo "$PIPE"
 chmod 666 "$PIPE"
 
-# Background process to read from pipe
-(while true; do
-    if read -r cmd < "$PIPE" 2>/dev/null; then
-        echo "$cmd"
-    fi
-done) &
-PIPE_PID=$!
+cleanup() {
+    rm -f "$PIPE"
+}
+trap cleanup EXIT
 
-trap "kill $PIPE_PID 2>/dev/null; rm -f $PIPE" EXIT
-
-exec java $JAVA_FLAGS -jar HytaleServer.jar $SERVER_ARGS
+# tail -f keeps pipe open, feeds stdin to java
+tail -f "$PIPE" | gosu hytale java $JAVA_FLAGS -jar HytaleServer.jar $SERVER_ARGS

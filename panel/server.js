@@ -3,7 +3,6 @@ const http = require("http");
 const { Server } = require("socket.io");
 const Docker = require("dockerode");
 const path = require("path");
-const fs = require("fs");
 
 const app = express();
 const server = http.createServer(app);
@@ -43,7 +42,7 @@ async function getContainerStatus() {
   }
 }
 
-async function execCommand(cmd) {
+async function execCommand(cmd, timeout = 30000) {
   try {
     const c = await getContainer();
     if (!c) throw new Error("Container not found");
@@ -57,11 +56,21 @@ async function execCommand(cmd) {
     const stream = await exec.start();
     return new Promise((resolve, reject) => {
       let output = "";
+      const timer = setTimeout(() => {
+        resolve(output || "Command timed out");
+      }, timeout);
+
       stream.on("data", (chunk) => {
         output += chunk.slice(8).toString("utf8");
       });
-      stream.on("end", () => resolve(output));
-      stream.on("error", reject);
+      stream.on("end", () => {
+        clearTimeout(timer);
+        resolve(output);
+      });
+      stream.on("error", (err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
     });
   } catch (e) {
     throw e;
@@ -93,15 +102,117 @@ async function checkServerFiles() {
   }
 }
 
-async function downloadServerFiles() {
+async function checkDownloaderAuth() {
   try {
-    // Run the downloader
     const result = await execCommand(
-      "cd /opt/hytale && hytale-downloader --download-path /tmp/hytale-game.zip 2>&1"
+      'cat /opt/hytale/.hytale-downloader-credentials.json 2>/dev/null || echo "NO_AUTH"'
     );
-    return { success: true, output: result };
+    return !result.includes("NO_AUTH") && result.includes("access_token");
   } catch (e) {
-    return { success: false, error: e.message };
+    return false;
+  }
+}
+
+// Download with real-time streaming (shows auth URL when needed)
+async function downloadServerFiles(socket) {
+  try {
+    const c = await getContainer();
+    if (!c) throw new Error("Container not found");
+
+    socket.emit("download-status", {
+      status: "starting",
+      message: "Starting download...",
+    });
+
+    // Remove download flag to allow retry
+    await execCommand("rm -f /opt/hytale/.download_attempted");
+
+    console.log("Starting hytale-downloader with streaming");
+
+    const exec = await c.exec({
+      Cmd: [
+        "sh",
+        "-c",
+        "cd /opt/hytale && hytale-downloader -download-path /tmp/hytale-game.zip 2>&1",
+      ],
+      AttachStdout: true,
+      AttachStderr: true,
+      Tty: true,
+    });
+
+    const stream = await exec.start({ Tty: true });
+
+    stream.on("data", (chunk) => {
+      const text = chunk.toString("utf8");
+      console.log("Download output:", text);
+
+      // Check for auth URL - highlight it
+      if (
+        text.includes("oauth.accounts.hytale.com") ||
+        text.includes("user_code") ||
+        text.includes("Authorization code")
+      ) {
+        socket.emit("download-status", {
+          status: "auth-required",
+          message: text,
+        });
+      } else if (text.includes("403") || text.includes("Forbidden")) {
+        socket.emit("download-status", {
+          status: "error",
+          message: "Authentication failed or expired. Try again.",
+        });
+      } else {
+        socket.emit("download-status", { status: "output", message: text });
+      }
+    });
+
+    stream.on("end", async () => {
+      console.log("Download stream ended");
+
+      // Check if zip was created
+      const checkZip = await execCommand(
+        "ls /tmp/hytale-game.zip 2>/dev/null || echo 'NO_ZIP'"
+      );
+
+      if (!checkZip.includes("NO_ZIP")) {
+        socket.emit("download-status", {
+          status: "extracting",
+          message: "Extracting files...",
+        });
+
+        await execCommand(
+          "unzip -o /tmp/hytale-game.zip -d /tmp/hytale-extract 2>/dev/null || true"
+        );
+        await execCommand(
+          "find /tmp/hytale-extract -name 'HytaleServer.jar' -exec cp {} /opt/hytale/ \\; 2>/dev/null || true"
+        );
+        await execCommand(
+          "find /tmp/hytale-extract -name 'Assets.zip' -exec cp {} /opt/hytale/ \\; 2>/dev/null || true"
+        );
+        await execCommand("rm -rf /tmp/hytale-game.zip /tmp/hytale-extract");
+
+        socket.emit("download-status", {
+          status: "complete",
+          message: "Download complete!",
+        });
+      } else {
+        socket.emit("download-status", {
+          status: "done",
+          message: "Download finished. Check if authentication was completed.",
+        });
+      }
+
+      socket.emit("files", await checkServerFiles());
+      socket.emit("downloader-auth", await checkDownloaderAuth());
+    });
+
+    stream.on("error", (err) => {
+      console.error("Download stream error:", err);
+      socket.emit("download-status", { status: "error", message: err.message });
+    });
+  } catch (e) {
+    console.error("Download error:", e);
+    socket.emit("download-status", { status: "error", message: e.message });
   }
 }
 
@@ -138,12 +249,32 @@ async function startContainer() {
   }
 }
 
+async function wipeServerData() {
+  try {
+    const c = await getContainer();
+    if (!c) throw new Error("Container not found");
+
+    // Stop server first if running
+    const info = await c.inspect();
+    const wasRunning = info.State.Running;
+
+    // Wipe: universe, logs, config, cache, credentials
+    await execCommand(
+      "rm -rf /opt/hytale/universe/* /opt/hytale/logs/* /opt/hytale/config/* /opt/hytale/.cache/* /opt/hytale/.download_attempted /opt/hytale/.hytale-downloader-credentials.json 2>/dev/null || true"
+    );
+
+    return { success: true, wasRunning };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
 io.on("connection", async (socket) => {
   console.log("Client connected");
 
-  // Send initial status
   socket.emit("status", await getContainerStatus());
   socket.emit("files", await checkServerFiles());
+  socket.emit("downloader-auth", await checkDownloaderAuth());
 
   // Stream logs
   try {
@@ -170,27 +301,15 @@ io.on("connection", async (socket) => {
     socket.emit("error", "Failed to connect to container: " + e.message);
   }
 
-  // Handle commands
   socket.on("command", async (cmd) => {
     const result = await sendServerCommand(cmd);
     socket.emit("command-result", { cmd, ...result });
   });
 
-  // Handle download request
   socket.on("download", async () => {
-    socket.emit("download-status", {
-      status: "starting",
-      message: "Starting download...",
-    });
-    const result = await downloadServerFiles();
-    socket.emit("download-status", {
-      status: result.success ? "complete" : "error",
-      ...result,
-    });
-    socket.emit("files", await checkServerFiles());
+    await downloadServerFiles(socket);
   });
 
-  // Handle container control
   socket.on("restart", async () => {
     socket.emit("action-status", { action: "restart", status: "starting" });
     const result = await restartContainer();
@@ -209,12 +328,18 @@ io.on("connection", async (socket) => {
     socket.emit("action-status", { action: "start", ...result });
   });
 
-  // Check files status
   socket.on("check-files", async () => {
     socket.emit("files", await checkServerFiles());
+    socket.emit("downloader-auth", await checkDownloaderAuth());
   });
 
-  // Status updates
+  socket.on("wipe", async () => {
+    socket.emit("action-status", { action: "wipe", status: "starting" });
+    const result = await wipeServerData();
+    socket.emit("action-status", { action: "wipe", ...result });
+    socket.emit("downloader-auth", await checkDownloaderAuth());
+  });
+
   const statusInterval = setInterval(async () => {
     socket.emit("status", await getContainerStatus());
   }, 5000);

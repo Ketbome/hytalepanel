@@ -1,832 +1,797 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hytale Server Panel</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      :root {
-        --mc-green: #5cba47;
-        --mc-green-dark: #3d8c2f;
-        --mc-green-light: #7ed56f;
-        --mc-dirt: #8b6914;
-        --mc-stone: #7d7d7d;
-        --bg-primary: #1e1e1e;
-        --bg-secondary: #2d2d2d;
-        --bg-tertiary: #3a3a3a;
-        --border: #404040;
-        --text: #e8e8e8;
-        --text-dim: #999;
-        --error: #e74c3c;
-        --warning: #f39c12;
-        --success: #5cba47;
-      }
-
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        font-family: "Inter", -apple-system, sans-serif;
-        background: var(--bg-primary);
-        color: var(--text);
-        min-height: 100vh;
-        line-height: 1.5;
-      }
-
-      .container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 20px;
-      }
-
-      header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 16px 20px;
-        background: var(--bg-secondary);
-        border: 2px solid var(--border);
-        margin-bottom: 20px;
-      }
-
-      .logo {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .logo-box {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(
-          180deg,
-          var(--mc-green) 0%,
-          var(--mc-green-dark) 100%
-        );
-        border: 2px solid var(--mc-green-dark);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .logo-box span {
-        font-family: "VT323", monospace;
-        font-size: 24px;
-        color: #fff;
-        text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
-      }
-
-      .logo h1 {
-        font-family: "VT323", monospace;
-        font-size: 28px;
-        color: var(--mc-green);
-        letter-spacing: 1px;
-        text-transform: uppercase;
-      }
-
-      .status-box {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 16px;
-        background: var(--bg-primary);
-        border: 2px solid var(--border);
-      }
-
-      .status-dot {
-        width: 10px;
-        height: 10px;
-        background: var(--error);
-      }
-
-      .status-dot.online {
-        background: var(--success);
-        box-shadow: 0 0 8px var(--success);
-      }
-
-      .status-text {
-        font-family: "VT323", monospace;
-        font-size: 18px;
-        text-transform: uppercase;
-      }
-
-      .grid {
-        display: grid;
-        grid-template-columns: 1fr 340px;
-        gap: 20px;
-      }
-
-      @media (max-width: 1000px) {
-        .grid {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      .card {
-        background: var(--bg-secondary);
-        border: 2px solid var(--border);
-      }
-
-      .card-header {
-        padding: 12px 16px;
-        background: var(--bg-tertiary);
-        border-bottom: 2px solid var(--border);
-        font-family: "VT323", monospace;
-        font-size: 18px;
-        text-transform: uppercase;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .console {
-        height: 480px;
-        background: #0c0c0c;
-        overflow-y: auto;
-        padding: 12px;
-        font-family: "IBM Plex Mono", monospace;
-        font-size: 13px;
-        line-height: 1.6;
-      }
-
-      .console::-webkit-scrollbar {
-        width: 12px;
-      }
-
-      .console::-webkit-scrollbar-track {
-        background: #0c0c0c;
-      }
-
-      .console::-webkit-scrollbar-thumb {
-        background: var(--border);
-        border: 2px solid #0c0c0c;
-      }
-
-      .log-line {
-        padding: 2px 0;
-        color: #aaa;
-        white-space: pre-wrap;
-        word-break: break-all;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-      }
-
-      .log-line:last-child {
-        border-bottom: none;
-      }
-
-      .log-line.error {
-        color: var(--error);
-        background: rgba(231, 76, 60, 0.1);
-        padding: 4px 8px;
-        margin: 2px 0;
-      }
-
-      .log-line.warn {
-        color: var(--warning);
-      }
-
-      .log-line.info {
-        color: var(--success);
-      }
-
-      .log-line.cmd {
-        color: #5dade2;
-        font-weight: 500;
-      }
-
-      .log-line.separator {
-        color: var(--mc-green);
-        background: rgba(92, 186, 71, 0.1);
-        padding: 4px 8px;
-        margin: 4px 0;
-        font-weight: 600;
-      }
-
-      .command-bar {
-        display: flex;
-        border-top: 2px solid var(--border);
-      }
-
-      .command-bar input {
-        flex: 1;
-        background: var(--bg-primary);
-        border: none;
-        padding: 14px 16px;
-        color: var(--text);
-        font-family: "IBM Plex Mono", monospace;
-        font-size: 14px;
-      }
-
-      .command-bar input:focus {
-        outline: none;
-        background: #252525;
-      }
-
-      .command-bar input::placeholder {
-        color: var(--text-dim);
-      }
-
-      .command-bar button {
-        background: var(--mc-green);
-        border: none;
-        padding: 14px 24px;
-        color: #fff;
-        font-family: "VT323", monospace;
-        font-size: 18px;
-        text-transform: uppercase;
-        cursor: pointer;
-        border-left: 2px solid var(--mc-green-dark);
-      }
-
-      .command-bar button:hover {
-        background: var(--mc-green-light);
-      }
-
-      .sidebar {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
-
-      .setup-card {
-        border-color: var(--mc-green-dark);
-      }
-
-      .setup-card .card-header {
-        background: linear-gradient(
-          180deg,
-          var(--mc-green) 0%,
-          var(--mc-green-dark) 100%
-        );
-        color: #fff;
-        border-bottom-color: var(--mc-green-dark);
-      }
-
-      .setup-content {
-        padding: 16px;
-      }
-
-      .file-status {
-        padding: 12px;
-        background: var(--bg-primary);
-        border: 2px solid var(--border);
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .file-status.ready {
-        border-color: var(--success);
-        background: rgba(92, 186, 71, 0.1);
-      }
-
-      .file-status.missing {
-        border-color: var(--error);
-        background: rgba(231, 76, 60, 0.1);
-      }
-
-      .file-status-text {
-        font-family: "VT323", monospace;
-        font-size: 16px;
-      }
-
-      .file-checks {
-        margin-bottom: 12px;
-      }
-
-      .file-check {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        background: var(--bg-primary);
-        border: 1px solid var(--border);
-        margin-bottom: 6px;
-        font-size: 13px;
-        font-family: "IBM Plex Mono", monospace;
-      }
-
-      .file-check:last-child {
-        margin-bottom: 0;
-      }
-
-      .btn {
-        width: 100%;
-        padding: 12px 16px;
-        border: 2px solid var(--border);
-        cursor: pointer;
-        font-family: "VT323", monospace;
-        font-size: 16px;
-        text-transform: uppercase;
-        transition: all 0.1s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-      }
-
-      .btn:hover {
-        transform: translateY(-1px);
-      }
-
-      .btn:active {
-        transform: translateY(1px);
-      }
-
-      .btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
-      }
-
-      .btn-primary {
-        background: var(--mc-green);
-        color: #fff;
-        border-color: var(--mc-green-dark);
-      }
-
-      .btn-primary:hover {
-        background: var(--mc-green-light);
-      }
-
-      .btn-secondary {
-        background: var(--bg-tertiary);
-        color: var(--text);
-      }
-
-      .btn-secondary:hover {
-        background: #454545;
-      }
-
-      .btn-danger {
-        background: var(--error);
-        color: #fff;
-        border-color: #c0392b;
-      }
-
-      .btn-danger:hover {
-        background: #e55d4f;
-      }
-
-      .quick-list {
-        padding: 8px;
-      }
-
-      .quick-btn {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 10px 12px;
-        background: var(--bg-primary);
-        border: 1px solid var(--border);
-        color: var(--text);
-        cursor: pointer;
-        font-family: "Inter", sans-serif;
-        font-size: 13px;
-        text-align: left;
-        margin-bottom: 6px;
-        transition: all 0.1s;
-      }
-
-      .quick-btn:last-child {
-        margin-bottom: 0;
-      }
-
-      .quick-btn:hover {
-        border-color: var(--mc-green);
-        background: rgba(92, 186, 71, 0.1);
-      }
-
-      .quick-btn .cmd {
-        margin-left: auto;
-        color: var(--text-dim);
-        font-family: "IBM Plex Mono", monospace;
-        font-size: 11px;
-      }
-
-      .control-panel {
-        padding: 12px;
-      }
-
-      .control-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        margin-bottom: 8px;
-      }
-
-      .info-panel {
-        padding: 12px;
-      }
-
-      .info-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px solid var(--border);
-        font-size: 13px;
-      }
-
-      .info-row:last-child {
-        border-bottom: none;
-      }
-
-      .info-label {
-        color: var(--text-dim);
-      }
-
-      .info-value {
-        font-family: "IBM Plex Mono", monospace;
-        color: var(--mc-green);
-      }
-
-      .uptime {
-        font-family: "IBM Plex Mono", monospace;
-        font-size: 13px;
-        color: var(--text-dim);
-      }
-
-      .toast {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        background: var(--bg-secondary);
-        border: 2px solid var(--success);
-        font-family: "Inter", sans-serif;
-        font-size: 14px;
-        animation: slideIn 0.2s ease;
-        z-index: 1000;
-      }
-
-      .toast.error {
-        border-color: var(--error);
-      }
-
-      @keyframes slideIn {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
-
-      .spinner {
-        width: 14px;
-        height: 14px;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        border-top-color: #fff;
-        border-radius: 50%;
-        animation: spin 0.6s linear infinite;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <header>
-        <div class="logo">
-          <div class="logo-box"><span>H</span></div>
-          <h1>Hytale Server</h1>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hytale Server Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --hytale-orange: #f5a623;
+      --hytale-yellow: #ffd93d;
+      --hytale-cyan: #4ecdc4;
+      --mc-green: #5d8731;
+      --mc-green-light: #7cb342;
+      --mc-dark: #1a1a1a;
+      --mc-darker: #0f0f0f;
+      --mc-panel: #2d2d2d;
+      --mc-panel-light: #3d3d3d;
+      --mc-border-light: #4a4a4a;
+      --text: #ffffff;
+      --text-dim: #a0a0a0;
+      --success: #55ff55;
+      --warning: #ffaa00;
+      --error: #ff5555;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'VT323', monospace;
+      background: var(--mc-darker);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: 
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px),
+        repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .container { max-width: 1500px; margin: 0 auto; padding: 20px; }
+
+    /* MC Buttons */
+    .mc-btn {
+      font-family: 'VT323', monospace;
+      font-size: 18px;
+      padding: 10px 16px;
+      background: linear-gradient(180deg, #7a7a7a 0%, #5a5a5a 50%, #4a4a4a 50%, #3a3a3a 100%);
+      border: 3px solid;
+      border-color: #555 #2a2a2a #2a2a2a #555;
+      color: var(--text);
+      cursor: pointer;
+      text-shadow: 2px 2px 0 #3f3f3f;
+      width: 100%;
+    }
+
+    .mc-btn:hover:not(:disabled) {
+      background: linear-gradient(180deg, #8a8a8a 0%, #6a6a6a 50%, #5a5a5a 50%, #4a4a4a 100%);
+      color: var(--hytale-yellow);
+    }
+
+    .mc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .mc-btn.primary {
+      background: linear-gradient(180deg, var(--mc-green-light) 0%, var(--mc-green) 50%, #4a7a28 50%, #3a6a1a 100%);
+      border-color: #6a9a3a #2a4a1a #2a4a1a #6a9a3a;
+    }
+
+    .mc-btn.danger {
+      background: linear-gradient(180deg, #c54a4a 0%, #a53a3a 50%, #8a2a2a 50%, #6a1a1a 100%);
+      border-color: #d55 #4a1a1a #4a1a1a #d55;
+    }
+
+    .mc-btn.warning {
+      background: linear-gradient(180deg, #c5844a 0%, #a5643a 50%, #8a4a2a 50%, #6a3a1a 100%);
+      border-color: #d94 #4a2a1a #4a2a1a #d94;
+    }
+
+    .mc-btn.small { font-size: 16px; padding: 8px 12px; }
+
+    /* Header */
+    header {
+      background: linear-gradient(180deg, var(--mc-panel-light) 0%, var(--mc-panel) 100%);
+      border: 4px solid;
+      border-color: #4a4a4a #1a1a1a #1a1a1a #4a4a4a;
+      padding: 12px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo { display: flex; align-items: center; gap: 16px; }
+
+    .logo-block {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--hytale-orange) 0%, var(--hytale-yellow) 100%);
+      border: 3px solid;
+      border-color: #ffd93d #b57a1a #b57a1a #ffd93d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 18px;
+      color: var(--mc-dark);
+    }
+
+    .logo h1 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 14px;
+      color: var(--hytale-yellow);
+      text-shadow: 2px 2px 0 var(--mc-dark);
+    }
+
+    .logo-subtitle {
+      font-size: 16px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    .header-right { display: flex; align-items: center; gap: 12px; }
+
+    .uptime-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      color: var(--hytale-cyan);
+      background: var(--mc-darker);
+      padding: 6px 10px;
+      border: 2px solid var(--mc-border-light);
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--mc-dark);
+      border: 3px solid;
+      border-color: #3a3a3a #1a1a1a #1a1a1a #3a3a3a;
+      padding: 8px 14px;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      background: var(--error);
+      border: 2px solid #aa3333;
+    }
+
+    .status-dot.online {
+      background: var(--success);
+      border-color: #33aa33;
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .status-text { font-size: 18px; text-transform: uppercase; }
+
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 20px;
+    }
+
+    @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
+
+    /* Cards */
+    .card {
+      background: linear-gradient(180deg, var(--mc-panel-light) 0%, var(--mc-panel) 100%);
+      border: 4px solid;
+      border-color: #4a4a4a #1a1a1a #1a1a1a #4a4a4a;
+    }
+
+    .card-header {
+      background: linear-gradient(180deg, #4a4a4a 0%, #3a3a3a 100%);
+      border-bottom: 3px solid var(--mc-dark);
+      padding: 10px 14px;
+      font-size: 18px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--hytale-yellow);
+      text-shadow: 2px 2px 0 var(--mc-dark);
+    }
+
+    /* Console */
+    .console {
+      height: 480px;
+      background: var(--mc-darker);
+      border: 3px solid;
+      border-color: #1a1a1a #3a3a3a #3a3a3a #1a1a1a;
+      margin: 10px;
+      overflow-y: auto;
+      padding: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .console::-webkit-scrollbar { width: 10px; }
+    .console::-webkit-scrollbar-track { background: var(--mc-dark); }
+    .console::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #5a5a5a 0%, #3a3a3a 100%); border: 2px solid var(--mc-dark); }
+
+    .log-line { padding: 1px 0; color: var(--text-dim); }
+    .log-line.error { color: var(--error); }
+    .log-line.warn { color: var(--warning); }
+    .log-line.info { color: var(--success); }
+    .log-line.cmd { color: var(--hytale-cyan); }
+    .log-line.auth {
+      color: var(--hytale-yellow);
+      background: rgba(245, 166, 35, 0.15);
+      padding: 6px;
+      margin: 2px 0;
+      border-left: 3px solid var(--hytale-orange);
+    }
+
+    .command-bar {
+      display: flex;
+      margin: 0 10px 10px;
+      border: 3px solid;
+      border-color: #1a1a1a #3a3a3a #3a3a3a #1a1a1a;
+    }
+
+    .command-bar input {
+      flex: 1;
+      background: var(--mc-darker);
+      border: none;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+    }
+
+    .command-bar input:focus { outline: none; }
+    .command-bar input::placeholder { color: var(--text-dim); }
+
+    .command-bar button {
+      background: linear-gradient(180deg, var(--mc-green-light) 0%, var(--mc-green) 50%, #4a7a28 50%, #3a6a1a 100%);
+      border: none;
+      border-left: 3px solid #2a4a1a;
+      padding: 12px 20px;
+      color: var(--text);
+      font-family: 'VT323', monospace;
+      font-size: 20px;
+      cursor: pointer;
+      text-shadow: 2px 2px 0 #2a4a1a;
+    }
+
+    .command-bar button:hover {
+      background: linear-gradient(180deg, #8ac34a 0%, #6a9a3a 50%, #5a8a2a 50%, #4a7a1a 100%);
+    }
+
+    /* Sidebar */
+    .sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+    /* Tabs */
+    .tabs-header {
+      display: flex;
+      background: var(--mc-dark);
+      border-bottom: 3px solid var(--mc-dark);
+    }
+
+    .tab-btn {
+      flex: 1;
+      font-family: 'VT323', monospace;
+      font-size: 16px;
+      padding: 10px 8px;
+      background: linear-gradient(180deg, #4a4a4a 0%, #3a3a3a 100%);
+      border: none;
+      border-right: 2px solid var(--mc-dark);
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+
+    .tab-btn:last-child { border-right: none; }
+
+    .tab-btn:hover { color: var(--text); }
+
+    .tab-btn.active {
+      background: linear-gradient(180deg, var(--mc-panel-light) 0%, var(--mc-panel) 100%);
+      color: var(--hytale-yellow);
+      text-shadow: 1px 1px 0 var(--mc-dark);
+    }
+
+    .tab-content { display: none; padding: 12px; }
+    .tab-content.active { display: block; }
+
+    /* Setup Tab */
+    .file-status {
+      padding: 10px 12px;
+      background: var(--mc-dark);
+      border: 3px solid;
+      border-color: #1a1a1a #3a3a3a #3a3a3a #1a1a1a;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+    }
+
+    .file-status.ready { border-color: #33aa33 #1a4a1a #1a4a1a #33aa33; background: rgba(85, 255, 85, 0.08); }
+    .file-status.missing { border-color: #aa3333 #4a1a1a #4a1a1a #aa3333; background: rgba(255, 85, 85, 0.08); }
+
+    .file-checks {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .file-check {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px;
+      background: var(--mc-dark);
+      border: 2px solid var(--mc-border-light);
+      font-size: 14px;
+    }
+
+    .file-check .icon.ok { color: var(--success); }
+    .file-check .icon.missing { color: var(--error); }
+
+    .auth-status {
+      font-size: 14px;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+      padding: 8px;
+      background: var(--mc-dark);
+      border: 2px solid var(--mc-border-light);
+    }
+
+    .auth-status.ok { color: var(--success); border-color: #33aa33; }
+    .auth-status.missing { color: var(--warning); border-color: var(--warning); }
+
+    /* Commands Tab */
+    .cmd-section { margin-bottom: 12px; }
+    .cmd-section:last-child { margin-bottom: 0; }
+
+    .cmd-label {
+      font-size: 14px;
+      color: var(--hytale-orange);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .quick-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: var(--mc-dark);
+      border: 2px solid;
+      border-color: #3a3a3a #1a1a1a #1a1a1a #3a3a3a;
+      color: var(--text);
+      cursor: pointer;
+      font-family: 'VT323', monospace;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .quick-btn:hover {
+      background: var(--mc-panel);
+      border-color: var(--hytale-orange) #b57a1a #b57a1a var(--hytale-orange);
+      color: var(--hytale-yellow);
+    }
+
+    .quick-btn .cmd {
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+    }
+
+    /* Control Tab */
+    .control-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .info-compact {
+      background: var(--mc-dark);
+      border: 2px solid var(--mc-border-light);
+      padding: 10px;
+      margin-top: 12px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--mc-border-light);
+      font-size: 14px;
+    }
+
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: var(--text-dim); }
+    .info-value { color: var(--hytale-cyan); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+    /* Auth Box */
+    .auth-box {
+      background: rgba(245, 166, 35, 0.1);
+      border: 3px solid var(--hytale-orange);
+      padding: 12px;
+      margin: 10px 0;
+      display: none;
+    }
+
+    .auth-box.visible { display: block; }
+    .auth-box h3 { font-size: 16px; color: var(--hytale-yellow); margin-bottom: 8px; }
+    .auth-box p { font-size: 14px; color: var(--text-dim); margin-bottom: 6px; }
+    .auth-box a { color: var(--hytale-orange); word-break: break-all; font-size: 12px; }
+
+    .auth-code {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 16px;
+      background: var(--mc-dark);
+      padding: 12px 16px;
+      display: inline-block;
+      color: var(--hytale-yellow);
+      margin-top: 8px;
+      letter-spacing: 4px;
+      border: 3px solid;
+      border-color: #4a4a4a #1a1a1a #1a1a1a #4a4a4a;
+    }
+
+    /* Progress */
+    .progress-section { margin: 10px 0; display: none; }
+    .progress-section.visible { display: block; }
+
+    .progress-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; }
+    .progress-status { color: var(--mc-green-light); }
+    .progress-time { color: var(--text-dim); }
+
+    .progress-bar {
+      height: 16px;
+      background: var(--mc-dark);
+      border: 3px solid;
+      border-color: #1a1a1a #3a3a3a #3a3a3a #1a1a1a;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(180deg, var(--mc-green-light) 0%, var(--mc-green) 50%, #4a7a28 50%, #3a6a1a 100%);
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .progress-steps { margin-top: 8px; font-size: 14px; }
+    .progress-step { display: flex; align-items: center; gap: 8px; padding: 3px 0; color: var(--text-dim); }
+    .progress-step.active { color: var(--hytale-yellow); }
+    .progress-step.done { color: var(--success); }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      background: linear-gradient(180deg, var(--mc-panel-light) 0%, var(--mc-panel) 100%);
+      border: 3px solid;
+      border-color: #55ff55 #1a4a1a #1a4a1a #55ff55;
+      font-size: 16px;
+      animation: slideIn 0.2s;
+      z-index: 1000;
+    }
+
+    .toast.error { border-color: #ff5555 #4a1a1a #4a1a1a #ff5555; }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      animation: spin 0.5s steps(8) infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .hint { font-size: 12px; color: var(--text-dim); margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-block">H</div>
+        <div>
+          <h1>HYTALE</h1>
+          <div class="logo-subtitle">Server Panel</div>
         </div>
-        <div class="status-box">
+      </div>
+      <div class="header-right">
+        <span class="uptime-display" id="uptime">00:00:00</span>
+        <div class="status-badge">
           <div class="status-dot" id="status-dot"></div>
           <span class="status-text" id="status-text">Offline</span>
         </div>
-      </header>
+      </div>
+    </header>
 
-      <div class="grid">
-        <div class="main">
-          <div class="card">
-            <div class="card-header">
-              <span>Console</span>
-              <span class="uptime" id="uptime">00:00:00</span>
-            </div>
-            <div class="console" id="console"></div>
-            <div class="command-bar">
-              <input
-                type="text"
-                id="cmd-input"
-                placeholder="Enter command..."
-                autocomplete="off"
-              />
-              <button id="send-btn">Send</button>
-            </div>
+    <div class="grid">
+      <div class="main">
+        <div class="card">
+          <div class="card-header">Console</div>
+          <div class="console" id="console"></div>
+          <div class="command-bar">
+            <input type="text" id="cmd-input" placeholder="Enter command..." autocomplete="off">
+            <button id="send-btn">SEND</button>
           </div>
         </div>
+      </div>
 
-        <div class="sidebar">
-          <div class="card setup-card">
-            <div class="card-header">Setup</div>
-            <div class="setup-content">
-              <div class="file-status" id="file-status">
-                <span id="setup-icon">?</span>
-                <span class="file-status-text" id="setup-text"
-                  >Checking...</span
-                >
+      <div class="sidebar">
+        <div class="card">
+          <div class="tabs-header">
+            <button class="tab-btn active" data-tab="setup">Setup</button>
+            <button class="tab-btn" data-tab="commands">Commands</button>
+            <button class="tab-btn" data-tab="control">Control</button>
+          </div>
+
+          <!-- Setup Tab -->
+          <div class="tab-content active" id="tab-setup">
+            <div class="file-status" id="file-status">
+              <span id="setup-icon">?</span>
+              <span id="setup-text">Checking...</span>
+            </div>
+            <div class="file-checks">
+              <div class="file-check" id="check-jar"><span class="icon">○</span><span>Server.jar</span></div>
+              <div class="file-check" id="check-assets"><span class="icon">○</span><span>Assets.zip</span></div>
+            </div>
+            <div class="auth-status" id="auth-status">Checking...</div>
+
+            <div class="auth-box" id="auth-box">
+              <h3>Auth Required</h3>
+              <p>Open link:</p>
+              <a href="#" id="auth-link" target="_blank"></a>
+              <p style="margin-top: 8px">Code:</p>
+              <div class="auth-code" id="auth-code">--------</div>
+            </div>
+
+            <div class="progress-section" id="progress-section">
+              <div class="progress-header">
+                <span class="progress-status" id="progress-status">...</span>
+                <span class="progress-time" id="progress-time">0s</span>
               </div>
-              <div class="file-checks">
-                <div class="file-check" id="check-jar">
-                  <span class="icon">?</span>
-                  <span>HytaleServer.jar</span>
-                </div>
-                <div class="file-check" id="check-assets">
-                  <span class="icon">?</span>
-                  <span>Assets.zip</span>
-                </div>
+              <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+              <div class="progress-steps">
+                <div class="progress-step" id="step-auth"><span>○</span><span>Auth</span></div>
+                <div class="progress-step" id="step-download"><span>○</span><span>Download</span></div>
+                <div class="progress-step" id="step-extract"><span>○</span><span>Extract</span></div>
+                <div class="progress-step" id="step-complete"><span>○</span><span>Done</span></div>
               </div>
-              <button class="btn btn-primary" id="download-btn">
-                Download Files
-              </button>
+            </div>
+
+            <button class="mc-btn primary" id="download-btn">Download Files</button>
+            <p class="hint">Downloads ~2GB from Hytale</p>
+          </div>
+
+          <!-- Commands Tab -->
+          <div class="tab-content" id="tab-commands">
+            <div class="cmd-section">
+              <div class="cmd-label">Auth</div>
+              <button class="quick-btn" data-cmd="/auth login device"><span>Login</span><span class="cmd">/auth login device</span></button>
+              <button class="quick-btn" data-cmd="/auth status"><span>Status</span><span class="cmd">/auth status</span></button>
+              <button class="quick-btn" data-cmd="/auth persistence Encrypted"><span>Save Creds</span><span class="cmd">/auth persistence Encrypted</span></button>
+            </div>
+            <div class="cmd-section">
+              <div class="cmd-label">Server</div>
+              <button class="quick-btn" data-cmd="/help"><span>All Commands</span><span class="cmd">/help</span></button>
+              <button class="quick-btn" data-cmd="/stop"><span>Stop</span><span class="cmd">/stop</span></button>
             </div>
           </div>
 
-          <div class="card">
-            <div class="card-header">Quick Actions</div>
-            <div class="quick-list">
-              <button class="quick-btn" data-cmd="/auth login device">
-                <span>Authenticate Server</span>
-                <span class="cmd">/auth login device</span>
-              </button>
-              <button class="quick-btn" data-cmd="/save">
-                <span>Save World</span>
-                <span class="cmd">/save</span>
-              </button>
-              <button class="quick-btn" data-cmd="/whitelist on">
-                <span>Enable Whitelist</span>
-                <span class="cmd">/whitelist on</span>
-              </button>
-              <button class="quick-btn" data-cmd="/whitelist off">
-                <span>Disable Whitelist</span>
-                <span class="cmd">/whitelist off</span>
-              </button>
+          <!-- Control Tab -->
+          <div class="tab-content" id="tab-control">
+            <div class="control-grid">
+              <button class="mc-btn primary small" id="start-btn">START</button>
+              <button class="mc-btn small" id="restart-btn">RESTART</button>
             </div>
-          </div>
+            <button class="mc-btn danger small" id="stop-btn">STOP SERVER</button>
+            <button class="mc-btn warning small" id="wipe-btn" style="margin-top: 8px;">WIPE DATA</button>
 
-          <div class="card">
-            <div class="card-header">Control</div>
-            <div class="control-panel">
-              <div class="control-grid">
-                <button class="btn btn-primary" id="start-btn">Start</button>
-                <button class="btn btn-secondary" id="restart-btn">
-                  Restart
-                </button>
-              </div>
-              <button class="btn btn-danger" id="stop-btn">Stop Server</button>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">Info</div>
-            <div class="info-panel">
-              <div class="info-row">
-                <span class="info-label">Status</span>
-                <span class="info-value" id="info-status">Unknown</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Game Port</span>
-                <span class="info-value">5520/UDP</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Panel</span>
-                <span class="info-value">3000/TCP</span>
-              </div>
+            <div class="info-compact">
+              <div class="info-row"><span class="info-label">Status</span><span class="info-value" id="info-status">Unknown</span></div>
+              <div class="info-row"><span class="info-label">Game</span><span class="info-value">5520/UDP</span></div>
+              <div class="info-row"><span class="info-label">Panel</span><span class="info-value">3000/TCP</span></div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-      const socket = io();
-      const consoleEl = document.getElementById("console");
-      const cmdInput = document.getElementById("cmd-input");
-      const statusDot = document.getElementById("status-dot");
-      const statusText = document.getElementById("status-text");
-      const infoStatus = document.getElementById("info-status");
-      const uptimeEl = document.getElementById("uptime");
-      const fileStatus = document.getElementById("file-status");
-      const setupIcon = document.getElementById("setup-icon");
-      const setupText = document.getElementById("setup-text");
-      const checkJar = document.getElementById("check-jar");
-      const checkAssets = document.getElementById("check-assets");
-      const downloadBtn = document.getElementById("download-btn");
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const $ = id => document.getElementById(id);
+    const consoleEl = $('console'), cmdInput = $('cmd-input');
+    const statusDot = $('status-dot'), statusText = $('status-text'), infoStatus = $('info-status'), uptimeEl = $('uptime');
+    const fileStatus = $('file-status'), setupIcon = $('setup-icon'), setupText = $('setup-text');
+    const checkJar = $('check-jar'), checkAssets = $('check-assets');
+    const downloadBtn = $('download-btn'), authStatus = $('auth-status');
+    const authBox = $('auth-box'), authLink = $('auth-link'), authCode = $('auth-code');
+    const progressSection = $('progress-section'), progressStatus = $('progress-status');
+    const progressTime = $('progress-time'), progressFill = $('progress-fill');
 
-      let lastCommandTime = 0;
+    let lastCmdTime = 0, dlStartTime = null, dlTimer = null;
 
-      function addLog(text, type = "") {
-        // Split by timestamp pattern and filter empty
-        const lines = text.split(/(?=\d{4}-\d{2}-\d{2}T)/);
+    // Tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        $('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
 
-        lines.forEach((line) => {
-          const trimmed = line.trim();
-          if (!trimmed) return;
+    function cleanLog(t) {
+      return t.replace(/\x1b\[[0-9;]*m/g, '').replace(/\[\d*;?\d*m/g, '').replace(/\[0?m/g, '')
+        .replace(/\[38;5;\d+m/g, '').replace(/^\d{2}T\d{2}:\d{2}:\d{2}[.\d]*Z?\s*/gm, '')
+        .replace(/^\d{4}[-\/]\d{2}[-\/]\d{2}[T ]\d{2}:\d{2}:\d{2}[.\d]*Z?\s*/gm, '')
+        .replace(/^\[\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}\s+\w+\]\s*/gm, '');
+    }
 
-          // Remove timestamp prefix for cleaner display
-          const cleanLine = trimmed.replace(
-            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z\s*/,
-            ""
-          );
-          if (!cleanLine) return;
+    function getLogType(t) {
+      const l = t.toLowerCase();
+      if (l.includes('error') || l.includes('failed') || l.includes('exception')) return 'error';
+      if (l.includes('warn')) return 'warn';
+      if (l.includes('oauth') || l.includes('user_code') || l.includes('authorization')) return 'auth';
+      if (l.includes('success') || l.includes('complete') || l.includes('started') || l.includes('initialized')) return 'info';
+      return '';
+    }
 
-          const div = document.createElement("div");
+    function addLog(text, type = '') {
+      cleanLog(text).split('\n').forEach(line => {
+        const t = line.trim();
+        if (!t) return;
+        const div = document.createElement('div');
+        div.className = 'log-line ' + (type || getLogType(t));
+        div.textContent = t;
+        consoleEl.appendChild(div);
+      });
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+      while (consoleEl.children.length > 500) consoleEl.removeChild(consoleEl.firstChild);
+    }
 
-          // Check for separator lines
-          if (cleanLine.includes("====")) {
-            div.className = "log-line separator";
-          } else {
-            div.className = "log-line " + (type || getLogType(cleanLine));
-          }
+    function showToast(msg, type = '') {
+      document.querySelectorAll('.toast').forEach(t => t.remove());
+      const toast = document.createElement('div');
+      toast.className = 'toast ' + type;
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
 
-          div.textContent = cleanLine;
-          consoleEl.appendChild(div);
-        });
+    function formatUptime(s) {
+      if (!s) return '00:00:00';
+      const d = Math.floor((Date.now() - new Date(s)) / 1000);
+      return [Math.floor(d/3600), Math.floor((d%3600)/60), d%60].map(n => String(n).padStart(2,'0')).join(':');
+    }
 
-        consoleEl.scrollTop = consoleEl.scrollHeight;
+    function formatSec(s) { return s < 60 ? s + 's' : Math.floor(s/60) + 'm ' + (s%60) + 's'; }
 
-        while (consoleEl.children.length > 500) {
-          consoleEl.removeChild(consoleEl.firstChild);
-        }
+    function updateFiles(f) {
+      const ji = checkJar.querySelector('.icon'), ai = checkAssets.querySelector('.icon');
+      ji.textContent = f.hasJar ? '✓' : '✗'; ji.className = 'icon ' + (f.hasJar ? 'ok' : 'missing');
+      ai.textContent = f.hasAssets ? '✓' : '✗'; ai.className = 'icon ' + (f.hasAssets ? 'ok' : 'missing');
+      fileStatus.className = 'file-status ' + (f.ready ? 'ready' : 'missing');
+      setupIcon.textContent = f.ready ? '✓' : '!';
+      setupText.textContent = f.ready ? 'Files ready' : 'Missing files';
+      downloadBtn.textContent = f.ready ? 'Re-download' : 'Download Files';
+    }
+
+    function parseAuth(t) {
+      const u = t.match(/https:\/\/oauth\.accounts\.hytale\.com[^\s]+/);
+      const c = t.match(/(?:user_code[=:]\s*|code:\s*)([A-Za-z0-9]+)/i);
+      if (u || c) {
+        authBox.classList.add('visible');
+        if (u) { authLink.href = u[0]; authLink.textContent = u[0]; }
+        if (c) authCode.textContent = c[1];
       }
+    }
 
-      function showToast(message, type = "") {
-        const existing = document.querySelector(".toast");
-        if (existing) existing.remove();
+    function setStep(id, state) {
+      const s = $(id), i = s.querySelector('span');
+      s.className = 'progress-step ' + state;
+      i.textContent = state === 'done' ? '✓' : state === 'active' ? '●' : '○';
+    }
 
-        const toast = document.createElement("div");
-        toast.className = "toast " + type;
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+    function startDlTimer() {
+      dlStartTime = Date.now();
+      dlTimer = setInterval(() => { progressTime.textContent = formatSec(Math.floor((Date.now() - dlStartTime) / 1000)); }, 1000);
+    }
+
+    function stopDlTimer() { if (dlTimer) { clearInterval(dlTimer); dlTimer = null; } }
+
+    socket.on('log', t => addLog(t.trim()));
+
+    socket.on('status', s => {
+      statusDot.className = 'status-dot' + (s.running ? ' online' : '');
+      statusText.textContent = s.running ? 'ONLINE' : 'OFFLINE';
+      infoStatus.textContent = s.status || 'Unknown';
+      uptimeEl.textContent = formatUptime(s.startedAt);
+    });
+
+    socket.on('files', updateFiles);
+
+    socket.on('downloader-auth', a => {
+      authStatus.className = 'auth-status ' + (a ? 'ok' : 'missing');
+      authStatus.textContent = a ? '✓ Credentials saved' : '○ No credentials';
+    });
+
+    socket.on('download-status', d => {
+      progressSection.classList.add('visible');
+      if (d.status === 'starting') {
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = '<span class="spinner"></span> Starting...';
+        startDlTimer(); progressStatus.textContent = 'Starting...'; progressFill.style.width = '5%';
+        setStep('step-auth', 'active');
+      } else if (d.status === 'auth-required') {
+        addLog(d.message, 'auth'); parseAuth(d.message);
+        progressStatus.textContent = 'Waiting auth...'; progressFill.style.width = '10%';
+        downloadBtn.disabled = false; downloadBtn.textContent = 'Waiting...';
+      } else if (d.status === 'output') {
+        addLog(d.message);
+        if (d.message.toLowerCase().includes('download')) {
+          setStep('step-auth', 'done'); setStep('step-download', 'active');
+          progressStatus.textContent = 'Downloading...'; progressFill.style.width = '30%';
+          downloadBtn.innerHTML = '<span class="spinner"></span> Downloading...';
+        }
+        const p = d.message.match(/(\d+)%/);
+        if (p) { progressFill.style.width = (30 + parseInt(p[1]) * 0.5) + '%'; progressStatus.textContent = p[1] + '%'; }
+      } else if (d.status === 'extracting') {
+        addLog(d.message, 'info'); setStep('step-download', 'done'); setStep('step-extract', 'active');
+        progressStatus.textContent = 'Extracting...'; progressFill.style.width = '85%';
+        downloadBtn.innerHTML = '<span class="spinner"></span> Extracting...';
+      } else if (d.status === 'complete') {
+        stopDlTimer();
+        ['step-auth', 'step-download', 'step-extract', 'step-complete'].forEach(s => setStep(s, 'done'));
+        progressStatus.textContent = 'Done!'; progressFill.style.width = '100%';
+        downloadBtn.disabled = false; downloadBtn.textContent = 'Re-download';
+        authBox.classList.remove('visible');
+        showToast('Download complete!'); addLog('✓ Files ready!', 'info');
+      } else if (d.status === 'done' || d.status === 'error') {
+        stopDlTimer(); downloadBtn.disabled = false; downloadBtn.textContent = 'Download Files';
+        if (d.status === 'error') { progressStatus.textContent = 'Error'; showToast(d.message, 'error'); addLog('✗ ' + d.message, 'error'); }
       }
+    });
 
-      function getLogType(text) {
-        if (
-          text.includes("ERROR") ||
-          text.includes("Exception") ||
-          text.includes("failed")
-        )
-          return "error";
-        if (text.includes("WARN")) return "warn";
-        if (
-          text.includes("Starting") ||
-          text.includes("complete") ||
-          text.includes("ready")
-        )
-          return "info";
-        return "";
-      }
+    socket.on('command-result', r => { if (r.error) { addLog('Error: ' + r.error, 'error'); showToast('Failed', 'error'); }});
 
-      function formatUptime(startedAt) {
-        if (!startedAt) return "00:00:00";
-        const diff = Math.floor((Date.now() - new Date(startedAt)) / 1000);
-        const h = Math.floor(diff / 3600)
-          .toString()
-          .padStart(2, "0");
-        const m = Math.floor((diff % 3600) / 60)
-          .toString()
-          .padStart(2, "0");
-        const s = (diff % 60).toString().padStart(2, "0");
-        return `${h}:${m}:${s}`;
-      }
+    socket.on('action-status', s => {
+      const m = { restart: 'Restarted', stop: 'Stopped', start: 'Started', wipe: 'Data wiped!' };
+      if (s.success) showToast(m[s.action] || 'Done');
+      else if (s.error) showToast(s.action + ' failed', 'error');
+    });
 
-      function updateFileStatus(files) {
-        checkJar.querySelector(".icon").textContent = files.hasJar ? "OK" : "X";
-        checkAssets.querySelector(".icon").textContent = files.hasAssets
-          ? "OK"
-          : "X";
+    socket.on('error', m => { addLog(m, 'error'); showToast(m, 'error'); });
 
-        if (files.ready) {
-          fileStatus.className = "file-status ready";
-          setupIcon.textContent = "OK";
-          setupText.textContent = "Files ready";
-          downloadBtn.textContent = "Re-download";
-        } else {
-          fileStatus.className = "file-status missing";
-          setupIcon.textContent = "!";
-          setupText.textContent = "Missing files";
-          downloadBtn.textContent = "Download Files";
-        }
-      }
+    function sendCmd(cmd) {
+      if (Date.now() - lastCmdTime < 300) return;
+      lastCmdTime = Date.now();
+      if (cmd) { addLog('> ' + cmd, 'cmd'); socket.emit('command', cmd); }
+    }
 
-      socket.on("log", (text) => addLog(text.trim()));
+    $('send-btn').addEventListener('click', () => { const c = cmdInput.value.trim(); if (c) { sendCmd(c); cmdInput.value = ''; } });
+    cmdInput.addEventListener('keypress', e => { if (e.key === 'Enter') { const c = cmdInput.value.trim(); if (c) { sendCmd(c); cmdInput.value = ''; } } });
+    document.querySelectorAll('.quick-btn').forEach(b => b.addEventListener('click', () => sendCmd(b.dataset.cmd)));
+    downloadBtn.addEventListener('click', () => { authBox.classList.remove('visible'); progressSection.classList.remove('visible'); socket.emit('download'); });
+    $('start-btn').addEventListener('click', () => socket.emit('start'));
+    $('restart-btn').addEventListener('click', () => { if (confirm('Restart?')) socket.emit('restart'); });
+    $('stop-btn').addEventListener('click', () => { if (confirm('Stop?')) sendCmd('/stop'); });
+    $('wipe-btn').addEventListener('click', () => { if (confirm('DELETE ALL DATA?')) if (confirm('SURE?')) socket.emit('wipe'); });
 
-      socket.on("status", (status) => {
-        statusDot.className = "status-dot" + (status.running ? " online" : "");
-        statusText.textContent = status.running ? "Online" : "Offline";
-        infoStatus.textContent = status.status || "Unknown";
-        uptimeEl.textContent = formatUptime(status.startedAt);
-      });
-
-      socket.on("files", updateFileStatus);
-
-      socket.on("command-result", (result) => {
-        if (result.error) {
-          addLog("Error: " + result.error, "error");
-          showToast("Command failed", "error");
-        }
-      });
-
-      socket.on("download-status", (status) => {
-        if (status.status === "starting") {
-          downloadBtn.disabled = true;
-          downloadBtn.innerHTML =
-            '<span class="spinner"></span> Downloading...';
-        } else {
-          downloadBtn.disabled = false;
-          downloadBtn.textContent = "Download Files";
-          if (status.status === "complete") {
-            showToast("Download complete");
-            socket.emit("check-files");
-          } else {
-            showToast("Download failed", "error");
-          }
-        }
-      });
-
-      socket.on("action-status", (status) => {
-        if (status.success) showToast(status.action + " successful");
-        else if (status.error) showToast(status.action + " failed", "error");
-      });
-
-      socket.on("error", (msg) => {
-        addLog(msg, "error");
-        showToast(msg, "error");
-      });
-
-      function sendCommand(cmd) {
-        // Debounce - prevent double sends
-        const now = Date.now();
-        if (now - lastCommandTime < 300) return;
-        lastCommandTime = now;
-
-        if (cmd) {
-          addLog("> " + cmd, "cmd");
-          socket.emit("command", cmd);
-        }
-      }
-
-      document.getElementById("send-btn").addEventListener("click", () => {
-        const cmd = cmdInput.value.trim();
-        if (cmd) {
-          sendCommand(cmd);
-          cmdInput.value = "";
-        }
-      });
-
-      cmdInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-          const cmd = cmdInput.value.trim();
-          if (cmd) {
-            sendCommand(cmd);
-            cmdInput.value = "";
-          }
-        }
-      });
-
-      document.querySelectorAll(".quick-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          sendCommand(btn.dataset.cmd);
-        });
-      });
-
-      downloadBtn.addEventListener("click", () => {
-        socket.emit("download");
-      });
-
-      document.getElementById("start-btn").addEventListener("click", () => {
-        socket.emit("start");
-      });
-
-      document.getElementById("restart-btn").addEventListener("click", () => {
-        if (confirm("Restart server?")) socket.emit("restart");
-      });
-
-      document.getElementById("stop-btn").addEventListener("click", () => {
-        if (confirm("Stop server?")) sendCommand("/stop");
-      });
-
-      socket.emit("check-files");
-    </script>
-  </body>
+    socket.emit('check-files');
+  </script>
+</body>
 </html>

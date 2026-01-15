@@ -19,10 +19,6 @@ services:
       # SERVER_NAME: "My Hytale Server"
     volumes:
       - ./server:/opt/hytale
-      - ./data/universe:/opt/hytale/universe
-      - ./data/mods:/opt/hytale/mods
-      - ./data/logs:/opt/hytale/logs
-      - ./data/config:/opt/hytale/config
 
   panel:
     image: ketbom/hytale-panel:latest

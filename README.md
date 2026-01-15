@@ -1,6 +1,6 @@
 # Hytale Dedicated Server - Docker
 
-Docker image for Hytale dedicated server with web panel and auto-download.
+Docker image for Hytale dedicated server with web panel.
 
 ## Quick Start
 
@@ -11,33 +11,44 @@ mkdir hytale && cd hytale
 # 2. Download compose file
 curl -O https://raw.githubusercontent.com/ketbom/hytale-server/main/docker-compose.yml
 
-# 3. Create data folders
-mkdir -p server data/universe data/mods data/logs data/config
+# 3. Create server folder
+mkdir server
 
-# 4. Start everything
+# 4. Start
 docker compose up -d
 
 # 5. Open panel
 # http://localhost:3000
 ```
 
-The server will automatically try to download the game files. If authentication is required, check the panel for instructions.
+The server will try to auto-download game files. If it fails (auth required), download manually.
 
-## Manual Download (Alternative)
+## Manual Download
 
-If auto-download doesn't work, download from https://hytale.com and place in `./server/`:
+Download from https://hytale.com and place in `./server/`:
 
 - `HytaleServer.jar`
 - `Assets.zip`
+
+## Structure
+
+```
+server/
+├── HytaleServer.jar   # server binary
+├── Assets.zip         # game assets
+├── universe/          # worlds
+├── mods/              # mods
+├── logs/              # logs
+└── config/            # configuration
+```
 
 ## Web Panel
 
 Access at **http://localhost:3000**
 
-- 📜 Real-time logs
-- ⌨️ Send commands
-- 🔐 One-click auth
-- 📊 Server status
+- Real-time logs
+- Send commands
+- Server status
 
 ## Configuration
 
@@ -75,9 +86,7 @@ docker compose down
 docker compose pull && docker compose up -d
 
 # Backup
-docker compose stop
-tar -czvf backup.tar.gz data/
-docker compose start
+tar -czvf backup.tar.gz server/
 ```
 
 ## Firewall
@@ -86,7 +95,7 @@ docker compose start
 # Linux
 ufw allow 5520/udp
 
-# Windows
+# Windows PowerShell
 New-NetFirewallRule -DisplayName "Hytale" -Direction Inbound -Protocol UDP -LocalPort 5520 -Action Allow
 ```
 
