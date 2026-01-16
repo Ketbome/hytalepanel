@@ -13,13 +13,10 @@ mkdir hytale && cd hytale
 # 2. Download compose file
 curl -O https://raw.githubusercontent.com/ketbome/hytale-server/main/docker-compose.yml
 
-# 3. Create data folders
-mkdir -p server data/universe data/mods data/logs data/config
-
-# 4. Start everything
+# 3. Start everything
 docker compose up -d
 
-# 5. Open panel
+# 4. Open panel
 # http://localhost:3000
 ```
 
