@@ -2,7 +2,6 @@
 server/HytaleServer.jar
 server/Assets.zip
 server/*.aot
-
 server/
 
 # Server data
@@ -10,3 +9,17 @@ data/
 
 # Logs
 *.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Node
+node_modules/
+package-lock.json
+
+# OS
+.DS_Store
+Thumbs.db

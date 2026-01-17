@@ -5,6 +5,7 @@ services:
     restart: unless-stopped
     stdin_open: true
     tty: true
+    privileged: true
     ports:
       - "5520:5520/udp"
     environment:
@@ -19,6 +20,8 @@ services:
       # SERVER_NAME: "My Hytale Server"
     volumes:
       - ./server:/opt/hytale
+      - /etc/machine-id:/etc/machine-id:ro
+      - /sys/class/dmi/id:/sys/class/dmi/id:ro
 
   panel:
     image: ketbom/hytale-panel:latest

@@ -495,6 +495,269 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .hint { font-size: 12px; color: var(--text-dim); margin-top: 8px; }
+
+    /* File Manager Styles */
+    .file-breadcrumb {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      padding: 6px 8px;
+      background: var(--mc-dark);
+      border: 2px solid var(--mc-border-light);
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .breadcrumb-item {
+      color: var(--hytale-cyan);
+      cursor: pointer;
+      padding: 2px 4px;
+    }
+
+    .breadcrumb-item:hover {
+      background: var(--mc-panel);
+      color: var(--hytale-yellow);
+    }
+
+    .breadcrumb-item::after {
+      content: ' /';
+      color: var(--text-dim);
+      margin-left: 2px;
+    }
+
+    .breadcrumb-item:last-child::after { content: ''; }
+
+    .file-toolbar {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .file-toolbar .mc-btn {
+      flex: 1;
+      font-size: 14px;
+      padding: 6px 8px;
+    }
+
+    .upload-zone {
+      display: none;
+      border: 2px dashed var(--hytale-orange);
+      background: rgba(245, 166, 35, 0.1);
+      padding: 16px;
+      margin-bottom: 8px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .upload-zone.visible { display: block; }
+
+    .upload-zone.dragover {
+      background: rgba(245, 166, 35, 0.25);
+      border-color: var(--hytale-yellow);
+    }
+
+    .upload-icon { font-size: 24px; color: var(--hytale-orange); }
+    .upload-text { font-size: 14px; color: var(--text); margin: 4px 0; }
+    .upload-hint { font-size: 10px; color: var(--text-dim); }
+
+    .upload-progress { display: none; margin-top: 10px; }
+    .upload-progress.visible { display: block; }
+
+    .upload-progress-bar {
+      height: 8px;
+      background: var(--mc-dark);
+      border: 1px solid var(--mc-border-light);
+    }
+
+    .upload-progress-fill {
+      height: 100%;
+      background: var(--mc-green);
+      width: 0%;
+      transition: width 0.2s;
+    }
+
+    .upload-progress-text {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    .file-list {
+      background: var(--mc-dark);
+      border: 2px solid var(--mc-border-light);
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .file-list-header {
+      display: grid;
+      grid-template-columns: 1fr 50px 60px;
+      padding: 6px 8px;
+      background: var(--mc-panel);
+      border-bottom: 1px solid var(--mc-border-light);
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .file-list-body { min-height: 60px; }
+
+    .file-item {
+      display: grid;
+      grid-template-columns: 1fr 50px 60px;
+      padding: 5px 8px;
+      border-bottom: 1px solid var(--mc-border-light);
+      font-size: 13px;
+      cursor: pointer;
+      align-items: center;
+    }
+
+    .file-item:hover { background: var(--mc-panel); }
+
+    .file-name {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-icon {
+      font-size: 10px;
+      padding: 1px 3px;
+      background: var(--mc-panel-light);
+      border-radius: 2px;
+    }
+
+    .file-icon.folder { color: var(--hytale-yellow); background: rgba(255, 217, 61, 0.2); }
+    .file-icon.java { color: #f89820; background: rgba(248, 152, 32, 0.2); }
+    .file-icon.archive { color: var(--hytale-cyan); background: rgba(78, 205, 196, 0.2); }
+    .file-icon.json, .file-icon.yaml, .file-icon.config { color: var(--mc-green-light); background: rgba(124, 179, 66, 0.2); }
+
+    .file-size {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .file-actions { display: flex; gap: 2px; }
+
+    .file-action-btn {
+      background: transparent;
+      border: 1px solid var(--mc-border-light);
+      color: var(--text-dim);
+      padding: 2px 5px;
+      font-size: 9px;
+      cursor: pointer;
+      font-family: 'VT323', monospace;
+    }
+
+    .file-action-btn:hover {
+      background: var(--mc-panel);
+      color: var(--text);
+      border-color: var(--hytale-orange);
+    }
+
+    .file-action-btn.danger:hover {
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    .file-empty {
+      padding: 20px;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 14px;
+    }
+
+    /* Editor Modal */
+    .editor-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .editor-modal.visible {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .editor-container {
+      background: var(--mc-panel);
+      border: 4px solid;
+      border-color: #4a4a4a #1a1a1a #1a1a1a #4a4a4a;
+      width: 100%;
+      max-width: 800px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: linear-gradient(180deg, #4a4a4a 0%, #3a3a3a 100%);
+      border-bottom: 2px solid var(--mc-dark);
+    }
+
+    .editor-filename {
+      font-size: 14px;
+      color: var(--hytale-yellow);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .editor-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .editor-checkbox {
+      font-size: 11px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .editor-body {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .editor-body textarea {
+      width: 100%;
+      height: 400px;
+      background: var(--mc-darker);
+      color: var(--text);
+      border: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 10px;
+      resize: none;
+      line-height: 1.5;
+    }
+
+    .editor-body textarea:focus { outline: none; }
+
+    .editor-status {
+      padding: 4px 12px;
+      font-size: 11px;
+      color: var(--text-dim);
+      background: var(--mc-dark);
+      border-top: 1px solid var(--mc-border-light);
+    }
+
+    .editor-status.saving { color: var(--hytale-orange); }
+    .editor-status.saved { color: var(--success); }
+    .editor-status.error { color: var(--error); }
   </style>
 </head>
 <body>
@@ -532,6 +795,7 @@
         <div class="card">
           <div class="tabs-header">
             <button class="tab-btn active" data-tab="setup">Setup</button>
+            <button class="tab-btn" data-tab="files">Files</button>
             <button class="tab-btn" data-tab="commands">Commands</button>
             <button class="tab-btn" data-tab="control">Control</button>
           </div>
@@ -574,6 +838,43 @@
             <p class="hint">Downloads ~2GB from Hytale</p>
           </div>
 
+          <!-- Files Tab -->
+          <div class="tab-content" id="tab-files">
+            <div class="file-breadcrumb" id="file-breadcrumb">
+              <span class="breadcrumb-item" data-path="/">/opt/hytale</span>
+            </div>
+
+            <div class="file-toolbar">
+              <button class="mc-btn small" id="btn-refresh" title="Refresh">↻</button>
+              <button class="mc-btn small" id="btn-new-folder" title="New Folder">+ Dir</button>
+              <button class="mc-btn small" id="btn-upload" title="Upload">Upload</button>
+            </div>
+
+            <div class="upload-zone" id="upload-zone">
+              <div class="upload-content">
+                <div class="upload-icon">⬆</div>
+                <div class="upload-text">Drop files here</div>
+                <div class="upload-hint">Max 100MB | .jar .zip .json .yaml</div>
+                <input type="file" id="file-input" style="display:none" multiple>
+              </div>
+              <div class="upload-progress" id="upload-progress">
+                <div class="upload-progress-bar"><div class="upload-progress-fill" id="upload-progress-fill"></div></div>
+                <div class="upload-progress-text" id="upload-progress-text">Uploading...</div>
+              </div>
+            </div>
+
+            <div class="file-list" id="file-list">
+              <div class="file-list-header">
+                <span class="file-col-name">Name</span>
+                <span class="file-col-size">Size</span>
+                <span class="file-col-actions"></span>
+              </div>
+              <div class="file-list-body" id="file-list-body">
+                <div class="file-empty">Loading...</div>
+              </div>
+            </div>
+          </div>
+
           <!-- Commands Tab -->
           <div class="tab-content" id="tab-commands">
             <div class="cmd-section">
@@ -606,6 +907,26 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Editor Modal -->
+  <div class="editor-modal" id="editor-modal">
+    <div class="editor-container">
+      <div class="editor-header">
+        <span class="editor-filename" id="editor-filename">filename.json</span>
+        <div class="editor-actions">
+          <label class="editor-checkbox">
+            <input type="checkbox" id="editor-backup" checked> Backup
+          </label>
+          <button class="mc-btn small primary" id="btn-save">Save</button>
+          <button class="mc-btn small" id="btn-close-editor">Close</button>
+        </div>
+      </div>
+      <div class="editor-body">
+        <textarea id="editor-content" spellcheck="false"></textarea>
+      </div>
+      <div class="editor-status" id="editor-status">Ready</div>
     </div>
   </div>
 
@@ -790,6 +1111,275 @@
     $('restart-btn').addEventListener('click', () => { if (confirm('Restart?')) socket.emit('restart'); });
     $('stop-btn').addEventListener('click', () => { if (confirm('Stop?')) sendCmd('/stop'); });
     $('wipe-btn').addEventListener('click', () => { if (confirm('DELETE ALL DATA?')) if (confirm('SURE?')) socket.emit('wipe'); });
+
+    // ============================================
+    // FILE MANAGER
+    // ============================================
+
+    const fileListBody = $('file-list-body');
+    const fileBreadcrumb = $('file-breadcrumb');
+    const uploadZone = $('upload-zone');
+    const fileInput = $('file-input');
+    const editorModal = $('editor-modal');
+    const editorFilename = $('editor-filename');
+    const editorContent = $('editor-content');
+    const editorStatus = $('editor-status');
+    const editorBackup = $('editor-backup');
+
+    let currentPath = '/';
+    let currentEditingFile = null;
+
+    const FILE_ICONS = {
+      folder: 'DIR', java: 'JAR', archive: 'ZIP', json: 'JSON',
+      yaml: 'YML', config: 'CFG', text: 'TXT', log: 'LOG', image: 'IMG', file: 'FILE'
+    };
+
+    function formatSize(bytes) {
+      if (bytes === null || bytes === undefined) return '-';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'K';
+      return (bytes / (1024 * 1024)).toFixed(1) + 'M';
+    }
+
+    function updateBreadcrumb(pathStr) {
+      const parts = pathStr.split('/').filter(p => p);
+      let html = '<span class="breadcrumb-item" data-path="/">/opt/hytale</span>';
+      let accumulated = '';
+      for (const part of parts) {
+        accumulated += '/' + part;
+        html += `<span class="breadcrumb-item" data-path="${accumulated}">${part}</span>`;
+      }
+      fileBreadcrumb.innerHTML = html;
+      fileBreadcrumb.querySelectorAll('.breadcrumb-item').forEach(item => {
+        item.addEventListener('click', () => navigateTo(item.dataset.path));
+      });
+    }
+
+    function navigateTo(pathStr) {
+      currentPath = pathStr;
+      fileListBody.innerHTML = '<div class="file-empty">Loading...</div>';
+      socket.emit('files:list', pathStr);
+    }
+
+    function renderFileList(files) {
+      if (!files || files.length === 0) {
+        fileListBody.innerHTML = '<div class="file-empty">Empty directory</div>';
+        return;
+      }
+      let html = '';
+      for (const file of files) {
+        const icon = FILE_ICONS[file.icon] || 'FILE';
+        html += `
+          <div class="file-item" data-name="${file.name}" data-is-dir="${file.isDirectory}" data-editable="${file.editable}">
+            <div class="file-name">
+              <span class="file-icon ${file.icon}">${icon}</span>
+              <span>${file.name}</span>
+            </div>
+            <span class="file-size">${formatSize(file.size)}</span>
+            <div class="file-actions">
+              ${file.editable ? '<button class="file-action-btn" data-action="edit">Edit</button>' : ''}
+              <button class="file-action-btn danger" data-action="del">X</button>
+            </div>
+          </div>
+        `;
+      }
+      fileListBody.innerHTML = html;
+
+      fileListBody.querySelectorAll('.file-item').forEach(item => {
+        const name = item.dataset.name;
+        const isDir = item.dataset.isDir === 'true';
+
+        item.addEventListener('dblclick', () => {
+          if (isDir) {
+            navigateTo(currentPath === '/' ? '/' + name : currentPath + '/' + name);
+          } else if (item.dataset.editable === 'true') {
+            openEditor(currentPath === '/' ? '/' + name : currentPath + '/' + name);
+          }
+        });
+
+        item.querySelectorAll('.file-action-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const action = btn.dataset.action;
+            const filePath = currentPath === '/' ? '/' + name : currentPath + '/' + name;
+            if (action === 'edit') {
+              openEditor(filePath);
+            } else if (action === 'del') {
+              if (confirm(`Delete "${name}"?`)) {
+                socket.emit('files:delete', filePath);
+              }
+            }
+          });
+        });
+      });
+    }
+
+    function openEditor(filePath) {
+      currentEditingFile = filePath;
+      editorFilename.textContent = filePath;
+      editorStatus.textContent = 'Loading...';
+      editorStatus.className = 'editor-status';
+      editorContent.value = '';
+      editorModal.classList.add('visible');
+      socket.emit('files:read', filePath);
+    }
+
+    function closeEditor() {
+      editorModal.classList.remove('visible');
+      currentEditingFile = null;
+    }
+
+    function saveFile() {
+      if (!currentEditingFile) return;
+      editorStatus.textContent = 'Saving...';
+      editorStatus.className = 'editor-status saving';
+      socket.emit('files:save', {
+        path: currentEditingFile,
+        content: editorContent.value,
+        createBackup: editorBackup.checked
+      });
+    }
+
+    // Socket handlers for file manager
+    socket.on('files:list-result', (result) => {
+      if (result.success) {
+        updateBreadcrumb(result.path);
+        renderFileList(result.files);
+      } else {
+        showToast('Error: ' + result.error, 'error');
+        fileListBody.innerHTML = '<div class="file-empty">Error loading</div>';
+      }
+    });
+
+    socket.on('files:read-result', (result) => {
+      if (result.success) {
+        editorContent.value = result.content;
+        editorStatus.textContent = 'Ready';
+        editorStatus.className = 'editor-status';
+      } else if (result.binary) {
+        editorStatus.textContent = 'Cannot edit binary file';
+        editorStatus.className = 'editor-status error';
+      } else {
+        editorStatus.textContent = 'Error: ' + result.error;
+        editorStatus.className = 'editor-status error';
+      }
+    });
+
+    socket.on('files:save-result', (result) => {
+      if (result.success) {
+        editorStatus.textContent = result.backup?.success ? 'Saved (backup created)' : 'Saved';
+        editorStatus.className = 'editor-status saved';
+        showToast('File saved');
+      } else {
+        editorStatus.textContent = 'Error: ' + result.error;
+        editorStatus.className = 'editor-status error';
+        showToast('Save failed', 'error');
+      }
+    });
+
+    socket.on('files:mkdir-result', (result) => {
+      if (result.success) { showToast('Folder created'); navigateTo(currentPath); }
+      else showToast('Error: ' + result.error, 'error');
+    });
+
+    socket.on('files:delete-result', (result) => {
+      if (result.success) { showToast('Deleted'); navigateTo(currentPath); }
+      else showToast('Error: ' + result.error, 'error');
+    });
+
+    socket.on('files:rename-result', (result) => {
+      if (result.success) { showToast('Renamed'); navigateTo(currentPath); }
+      else showToast('Error: ' + result.error, 'error');
+    });
+
+    // Toolbar buttons
+    $('btn-refresh').addEventListener('click', () => navigateTo(currentPath));
+    $('btn-new-folder').addEventListener('click', () => {
+      const name = prompt('Folder name:');
+      if (name) socket.emit('files:mkdir', currentPath === '/' ? '/' + name : currentPath + '/' + name);
+    });
+    $('btn-upload').addEventListener('click', () => uploadZone.classList.toggle('visible'));
+
+    // Editor buttons
+    $('btn-save').addEventListener('click', saveFile);
+    $('btn-close-editor').addEventListener('click', closeEditor);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's' && editorModal.classList.contains('visible')) {
+        e.preventDefault();
+        saveFile();
+      }
+      if (e.key === 'Escape' && editorModal.classList.contains('visible')) {
+        closeEditor();
+      }
+    });
+
+    // Upload zone
+    uploadZone.addEventListener('click', (e) => {
+      if (e.target === uploadZone || e.target.closest('.upload-content')) fileInput.click();
+    });
+
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.classList.add('dragover');
+    });
+
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      handleFileUpload(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', () => {
+      handleFileUpload(fileInput.files);
+      fileInput.value = '';
+    });
+
+    async function handleFileUpload(files) {
+      const uploadProgress = $('upload-progress');
+      const uploadProgressFill = $('upload-progress-fill');
+      const uploadProgressText = $('upload-progress-text');
+
+      uploadProgress.classList.add('visible');
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        uploadProgressText.textContent = `Uploading ${file.name}...`;
+        uploadProgressFill.style.width = '10%';
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('targetDir', currentPath);
+
+        try {
+          const response = await fetch('/api/files/upload', { method: 'POST', body: formData });
+          const result = await response.json();
+
+          if (result.success) {
+            uploadProgressFill.style.width = '100%';
+            showToast(`Uploaded: ${file.name}`);
+          } else {
+            showToast(`Failed: ${result.error}`, 'error');
+          }
+        } catch (e) {
+          showToast(`Upload error: ${e.message}`, 'error');
+        }
+      }
+
+      setTimeout(() => {
+        uploadProgress.classList.remove('visible');
+        uploadZone.classList.remove('visible');
+        navigateTo(currentPath);
+      }, 500);
+    }
+
+    // Load files when Files tab is clicked
+    document.querySelector('[data-tab="files"]').addEventListener('click', () => {
+      if (fileListBody.textContent.includes('Loading')) navigateTo('/');
+    });
 
     socket.emit('check-files');
   </script>
