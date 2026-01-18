@@ -87,7 +87,6 @@ const translations = {
     downloadComplete: 'Download complete!',
     filesReadyMsg: '✓ Files ready!',
     serverTime: 'Server Time',
-    maxLines: 'Max lines',
     clearConsole: 'Clear'
   },
   es: {
@@ -178,7 +177,6 @@ const translations = {
     downloadComplete: '¡Descarga completa!',
     filesReadyMsg: '✓ ¡Archivos listos!',
     serverTime: 'Hora del Servidor',
-    maxLines: 'Máx líneas',
     clearConsole: 'Limpiar',
     username: 'Usuario',
     password: 'Contraseña',
@@ -274,7 +272,6 @@ const translations = {
     downloadComplete: 'Завантаження завершено!',
     filesReadyMsg: '✓ Файли готові!',
     serverTime: 'Час сервера',
-    maxLines: 'Макс рядків',
     clearConsole: 'Очистити'
   }
 };
