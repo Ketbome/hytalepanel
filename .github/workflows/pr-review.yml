@@ -11,12 +11,12 @@ permissions:
 jobs:
   auto-review:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      
+
       - name: Get changed files
         id: changed-files
         uses: tj-actions/changed-files@v47
@@ -25,7 +25,7 @@ jobs:
             panel/**
             *.yml
             Dockerfile
-      
+
       - name: Check file sizes
         if: steps.changed-files.outputs.any_changed == 'true'
         run: |
@@ -40,16 +40,16 @@ jobs:
               fi
             fi
           done
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
-      
+          node-version: "20"
+
       - name: Install dependencies
         working-directory: panel
         run: npm install
-      
+
       - name: Syntax check
         working-directory: panel
         run: |
@@ -60,16 +60,49 @@ jobs:
             echo "❌ Syntax errors detected" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
-      
+
+      - name: Run tests
+        id: tests
+        working-directory: panel
+        continue-on-error: true
+        run: |
+          echo "## 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
+          npm test -- --coverage --ci 2>&1 | tee test-output.txt
+          TEST_EXIT_CODE=$?
+
+          # Extract results
+          if grep -q "Tests:.*passed" test-output.txt; then
+            PASSED=$(grep "Tests:" test-output.txt | grep -oP '\d+(?= passed)' || echo "0")
+            TOTAL=$(grep "Tests:" test-output.txt | grep -oP '\d+(?= total)' || echo "0")
+            echo "✅ **$PASSED/$TOTAL tests passed**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Extract coverage
+          if grep -q "All files" test-output.txt; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Coverage" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            grep -A1 "All files" test-output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Set output using new syntax
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
+            echo "status=passed" >> $GITHUB_OUTPUT
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
       - name: Add review comment
         uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
-            
+
             // Get changed files
             const changedFiles = `${{ steps.changed-files.outputs.all_changed_files }}`.split(' ').filter(f => f);
-            
+
             // Categorize changes
             const categories = {
               backend: changedFiles.filter(f => f.startsWith('panel/src/')),
@@ -77,9 +110,9 @@ jobs:
               docker: changedFiles.filter(f => f.includes('Dockerfile') || f.includes('docker-compose')),
               config: changedFiles.filter(f => f.endsWith('.yml') || f.endsWith('.json') || f.endsWith('.env'))
             };
-            
+
             let body = '## 🤖 Automated PR Review\n\n';
-            
+
             if (categories.backend.length > 0) {
               body += '### Backend Changes\n';
               categories.backend.forEach(f => body += `- \`${f}\`\n`);
@@ -88,7 +121,7 @@ jobs:
               body += '- [ ] Auth middleware applied where needed\n';
               body += '- [ ] No hardcoded secrets\n\n';
             }
-            
+
             if (categories.frontend.length > 0) {
               body += '### Frontend Changes\n';
               categories.frontend.forEach(f => body += `- \`${f}\`\n`);
@@ -96,7 +129,7 @@ jobs:
               body += '- [ ] Translations updated (i18n.js)\n';
               body += '- [ ] UI matches existing style\n\n';
             }
-            
+
             if (categories.docker.length > 0) {
               body += '### Docker Changes\n';
               categories.docker.forEach(f => body += `- \`${f}\`\n`);
@@ -104,10 +137,19 @@ jobs:
               body += '- [ ] .env.example updated if new vars\n';
               body += '- [ ] Both compose files updated\n\n';
             }
-            
+
+            // Test results
+            const testStatus = '${{ steps.tests.outputs.status }}' || '${{ steps.tests.outcome }}';
+            if (testStatus === 'passed' || testStatus === 'success') {
+              body += '### ✅ Tests Passed\n\n';
+            } else {
+              body += '### ❌ Tests Failed\n';
+              body += '**Please fix failing tests before merging.**\n\n';
+            }
+
             body += '---\n';
             body += '*This is an automated review. A human should verify the changes.*';
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,

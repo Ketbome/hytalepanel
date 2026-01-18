@@ -145,11 +145,61 @@ t('keyName'); // Returns translated string
 - **No build step**: Frontend is vanilla JS
 - **Entry point**: `panel/src/server.js`
 
+## Testing
+
+Tests use Jest + Supertest. Run from `panel/` directory:
+
+```bash
+npm test              # Run all tests
+npm run test:watch    # Watch mode
+npm run test:coverage # With coverage report
+```
+
+### Test Files
+
+| File | What it tests |
+|------|---------------|
+| `auth.test.js` | JWT generation, verification, middleware |
+| `docker.test.js` | Container status, exec, start/stop/restart |
+| `downloader.test.js` | Download flow, auth detection, errors |
+| `files.test.js` | Path security, file validation |
+| `routes.api.test.js` | Upload/download endpoints |
+| `routes.auth.test.js` | Login/logout/status |
+
+### Coverage Thresholds
+
+Global minimum: **80% statements, 70% branches**
+
+Excluded from coverage:
+- `server.js` - Entry point, no logic
+- `socket/handlers.js` - Requires full Socket.IO integration
+- `services/files.js` - Heavy Docker dependency
+
+### Writing Tests
+
+```javascript
+// Mock Docker before importing
+jest.mock('../src/services/docker', () => ({
+  execCommand: jest.fn(),
+  getStatus: jest.fn()
+}));
+
+const docker = require('../src/services/docker');
+
+test('example', async () => {
+  docker.execCommand.mockResolvedValue('output');
+  // test logic
+});
+```
+
 ## Quick Commands
 
 ```bash
 # Dev with hot reload (manual restart needed)
 cd panel && npm start
+
+# Run tests
+cd panel && npm test
 
 # Full Docker test
 docker-compose -f docker-compose.dev.yml up --build

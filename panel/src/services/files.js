@@ -7,7 +7,11 @@ const { basePath, editableExtensions, uploadAllowedExtensions } = config.files;
 
 // Security: prevent path traversal
 function sanitizePath(requestedPath) {
-  const normalized = path.normalize(requestedPath).replace(/^(\.\.(\/|\\|$))+/, "");
+  // Reject any path containing ..
+  if (requestedPath.includes('..')) {
+    throw new Error("Path traversal attempt detected");
+  }
+  const normalized = path.normalize(requestedPath);
   const fullPath = path.join(basePath, normalized);
   if (!fullPath.startsWith(basePath)) {
     throw new Error("Path traversal attempt detected");
@@ -254,6 +258,8 @@ module.exports = {
   sanitizePath,
   getRelativePath,
   isAllowedUpload,
+  isEditable,
+  getFileIcon,
   listDirectory,
   createDirectory,
   deleteItem,
