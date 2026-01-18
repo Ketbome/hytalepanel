@@ -52,12 +52,16 @@ BIND_PORT=5520
 PANEL_USER=admin
 PANEL_PASS=changeme
 JWT_SECRET=optional-random-string
+
+# Timezone (for correct log timestamps)
+TZ=America/New_York
 ```
 
 ### All Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `TZ` | `UTC` | Timezone for logs ([list](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)) |
 | `JAVA_XMS` | `4G` | Minimum RAM |
 | `JAVA_XMX` | `8G` | Maximum RAM |
 | `BIND_PORT` | `5520` | Game UDP port |
