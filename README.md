@@ -1,6 +1,6 @@
 # Hytale Dedicated Server - Docker
 
-Docker image for Hytale dedicated server with web panel and auto-download.
+Docker image for Hytale dedicated server with web panel, auto-download, and JWT authentication.
 
 ![Panel Preview](docs/images/panel.png)
 
@@ -10,56 +10,85 @@ Docker image for Hytale dedicated server with web panel and auto-download.
 # 1. Create folder
 mkdir hytale && cd hytale
 
-# 2. Download compose file
+# 2. Download files
 curl -O https://raw.githubusercontent.com/ketbome/hytale-server/main/docker-compose.yml
+curl -O https://raw.githubusercontent.com/ketbome/hytale-server/main/.env.example
 
-# 3. Start everything
+# 3. Configure
+cp .env.example .env
+nano .env  # Change PANEL_USER and PANEL_PASS!
+
+# 4. Start
 docker compose up -d
 
-# 4. Open panel
+# 5. Open panel
 # http://localhost:3000
 ```
 
-The server will automatically try to download the game files. If authentication is required, check the panel for instructions.
+## Authentication
 
-## Manual Download (Alternative)
+The panel requires login. Default credentials:
+- **User**: `admin`
+- **Pass**: `changeme`
 
-If auto-download doesn't work, download from https://hytale.com and place in `./server/`:
+⚠️ **Change these in your `.env` file before deploying!**
 
-- `HytaleServer.jar`
-- `Assets.zip`
-
-## Web Panel
-
-Access at **http://localhost:3000**
-
-- 📜 Real-time logs
-- ⌨️ Send commands
-- 🔐 One-click auth
-- 📊 Server status
+```env
+PANEL_USER=your_username
+PANEL_PASS=your_secure_password
+```
 
 ## Configuration
 
-Edit `docker-compose.yml`:
+Copy `.env.example` to `.env` and edit:
 
-| Variable        | Default | Description     |
-| --------------- | ------- | --------------- |
-| `JAVA_XMS`      | `4G`    | Minimum RAM     |
-| `JAVA_XMX`      | `8G`    | Maximum RAM     |
-| `AUTO_DOWNLOAD` | `true`  | Auto-download   |
-| `BIND_PORT`     | `5520`  | UDP port        |
-| `VIEW_DISTANCE` | -       | Render distance |
-| `MAX_PLAYERS`   | -       | Max players     |
-| `SERVER_NAME`   | -       | Server name     |
+```env
+# Server
+JAVA_XMS=4G
+JAVA_XMX=8G
+BIND_PORT=5520
+
+# Panel Auth
+PANEL_USER=admin
+PANEL_PASS=changeme
+JWT_SECRET=optional-random-string
+```
+
+### All Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `JAVA_XMS` | `4G` | Minimum RAM |
+| `JAVA_XMX` | `8G` | Maximum RAM |
+| `BIND_PORT` | `5520` | Game UDP port |
+| `AUTO_DOWNLOAD` | `true` | Auto-download game |
+| `PANEL_USER` | `admin` | Panel username |
+| `PANEL_PASS` | `changeme` | Panel password |
+| `PANEL_PORT` | `3000` | Panel HTTP port |
 
 ### RAM Guide
 
 | Players | JAVA_XMX |
-| ------- | -------- |
-| 1-10    | 4G       |
-| 10-20   | 6G       |
-| 20-50   | 8G       |
-| 50+     | 12G+     |
+|---------|----------|
+| 1-10 | 4G |
+| 10-20 | 6G |
+| 20-50 | 8G |
+| 50+ | 12G+ |
+
+## Web Panel Features
+
+- 📜 Real-time console logs
+- ⌨️ Send server commands
+- 🔐 JWT authentication
+- 📁 File manager (upload, edit, delete)
+- 🌍 Multi-language (EN/ES/UK)
+- 📊 Server status & uptime
+
+## Manual Download
+
+If auto-download fails, get files from https://hytale.com and place in `./server/`:
+- `HytaleServer.jar`
+- `Assets.zip`
 
 ## Commands
 
@@ -75,7 +104,7 @@ docker compose pull && docker compose up -d
 
 # Backup
 docker compose stop
-tar -czvf backup.tar.gz data/
+tar -czvf backup.tar.gz server/
 docker compose start
 ```
 
@@ -91,11 +120,21 @@ New-NetFirewallRule -DisplayName "Hytale" -Direction Inbound -Protocol UDP -Loca
 
 ## Ports
 
-| Service | Port     |
-| ------- | -------- |
-| Server  | 5520/UDP |
-| Panel   | 3000/TCP |
+| Service | Port |
+|---------|------|
+| Game | 5520/UDP |
+| Panel | 3000/TCP |
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License
 
-MIT
+**Free for personal and non-commercial use.**
+
+Commercial use by companies with >$100k revenue requires permission. See [LICENSE](LICENSE).
+
+---
+
+*This project is not affiliated with Hypixel Studios or Hytale.*

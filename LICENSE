@@ -1,0 +1,59 @@
+Hytale Server Docker - License
+
+Copyright (c) 2024-2026 Ketbome
+
+This software is provided under a dual license:
+
+================================================================================
+1. FREE USE LICENSE (Non-Commercial)
+================================================================================
+
+Permission is hereby granted, free of charge, to any person or organization 
+obtaining a copy of this software and associated documentation files (the 
+"Software"), to use, copy, modify, merge, publish, and distribute the Software, 
+subject to the following conditions:
+
+- Personal use: Allowed without restrictions
+- Educational use: Allowed without restrictions  
+- Non-profit organizations: Allowed without restrictions
+- Open source projects: Allowed without restrictions
+- Small businesses (<$50k annual revenue): Allowed without restrictions
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+================================================================================
+2. COMMERCIAL USE RESTRICTION
+================================================================================
+
+Commercial use by for-profit companies, enterprises, or organizations with 
+annual revenue exceeding $50,000 USD is NOT permitted without explicit written 
+permission from the copyright holder.
+
+"Commercial use" includes but is not limited to:
+- Hosting paid game servers using this software
+- Selling services that include this software
+- Using this software as part of a paid product or service
+- Using this software in a business environment for profit
+
+To obtain a commercial license, contact: [your-email@example.com]
+
+================================================================================
+3. DISCLAIMER
+================================================================================
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+================================================================================
+4. HYTALE TRADEMARK
+================================================================================
+
+"Hytale" is a trademark of Hypixel Studios. This project is not affiliated with,
+endorsed by, or connected to Hypixel Studios in any way. This software is a 
+community tool for managing Hytale dedicated servers.
