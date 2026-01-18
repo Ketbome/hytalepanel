@@ -24,14 +24,7 @@ jobs:
 
       - name: Run tests
         working-directory: panel
-        run: npm test -- --coverage --ci
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        if: always()
-        with:
-          directory: panel/coverage
-          fail_ci_if_error: false
+        run: npm test -- --ci
 
   build:
     runs-on: ubuntu-latest
