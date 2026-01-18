@@ -217,6 +217,7 @@ header {
 .log-line.warn { color: var(--warning); }
 .log-line.info { color: var(--success); }
 .log-line.cmd { color: var(--hytale-cyan); }
+.log-time { color: #666; font-size: 11px; }
 .log-line.auth {
   color: var(--hytale-yellow);
   background: rgba(245, 166, 35, 0.15);
