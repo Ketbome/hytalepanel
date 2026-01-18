@@ -22,14 +22,26 @@ module.exports = {
   },
   files: {
     basePath: "/opt/hytale",
-    maxUploadSize: 100 * 1024 * 1024,
+    maxUploadSize: 500 * 1024 * 1024, // 500MB for world folders
     editableExtensions: [
       ".json", ".yaml", ".yml", ".properties", 
-      ".txt", ".cfg", ".conf", ".xml", ".toml", ".ini"
+      ".txt", ".cfg", ".conf", ".xml", ".toml", ".ini",
+      ".lua", ".js", ".sh", ".bat", ".md", ".log"
     ],
     uploadAllowedExtensions: [
-      ".jar", ".zip", ".json", ".yaml", ".yml", ".properties",
-      ".txt", ".cfg", ".conf", ".xml", ".toml", ".ini", ".png", ".jpg"
+      // Archives (worlds, backups)
+      ".jar", ".zip", ".tar", ".gz", ".7z", ".rar",
+      // Config files
+      ".json", ".yaml", ".yml", ".properties", ".txt", 
+      ".cfg", ".conf", ".xml", ".toml", ".ini",
+      // Scripts
+      ".lua", ".js", ".sh", ".bat",
+      // World data (Minecraft-style)
+      ".dat", ".nbt", ".mca", ".mcr", ".db", ".ldb",
+      // Media
+      ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ogg", ".mp3", ".wav",
+      // Docs
+      ".md", ".log", ".csv"
     ]
   }
 };
