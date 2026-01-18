@@ -4,11 +4,29 @@ const App = {
   lastCmdTime: 0,
   dlStartTime: null,
   dlTimer: null,
+  initialized: false,
 
   elements: {},
 
   init() {
-    this.socket = io();
+    if (this.initialized) return;
+    this.initialized = true;
+
+    // Connect with auth token
+    this.socket = io({
+      auth: { token: Auth.getToken() }
+    });
+
+    // Handle auth errors
+    this.socket.on('connect_error', err => {
+      if (err.message === 'Authentication required' || err.message === 'Invalid or expired token') {
+        console.error('Socket auth failed:', err.message);
+        this.initialized = false;
+        Auth.showLogin();
+        Auth.showError('Session expired. Please login again.');
+      }
+    });
+
     this.cacheElements();
     this.bindEvents();
     this.bindSocketHandlers();
@@ -365,8 +383,9 @@ const App = {
 
 // Global function for i18n to call
 function updateAllTranslations() {
-  App.updateAllTranslations();
+  if (App.initialized) {
+    App.updateAllTranslations();
+  }
 }
 
-// Initialize app on DOM ready
-document.addEventListener('DOMContentLoaded', () => App.init());
+// Note: App.init() is called by Auth module after successful authentication
