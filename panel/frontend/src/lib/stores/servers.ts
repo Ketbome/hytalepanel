@@ -29,23 +29,6 @@ export const activeServer = derived([servers, activeServerId], ([$servers, $acti
   return $servers.find((s) => s.id === $activeServerId) || null;
 });
 
-export function setActiveServer(id: string | null): void {
-  activeServerId.set(id);
-}
-
 export function updateServerStatus(id: string, status: 'running' | 'stopped' | 'unknown'): void {
   servers.update((list) => list.map((s) => (s.id === id ? { ...s, status } : s)));
-}
-
-export function addServer(server: Server): void {
-  servers.update((list) => [...list, server]);
-}
-
-export function removeServer(id: string): void {
-  servers.update((list) => list.filter((s) => s.id !== id));
-  activeServerId.update((current) => (current === id ? null : current));
-}
-
-export function updateServer(id: string, updates: Partial<Server>): void {
-  servers.update((list) => list.map((s) => (s.id === id ? { ...s, ...updates } : s)));
 }
