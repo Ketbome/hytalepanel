@@ -2,7 +2,7 @@
 
 Docker image for Hytale dedicated server with web panel, auto-download, and JWT authentication.
 
-![Panel Preview](docs/images/panel.png)
+![Panel Preview](docs/public/images/panel.png)
 
 ## Quick Start
 
