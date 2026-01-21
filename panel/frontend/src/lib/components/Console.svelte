@@ -95,7 +95,8 @@
     showAutocomplete = false;
   }
 
-  function selectCommand(cmd: string): void {
+  function selectCommand(cmd: string, e?: MouseEvent): void {
+    e?.preventDefault();
     cmdInput = cmd;
     showAutocomplete = false;
     inputEl?.focus();
@@ -169,7 +170,7 @@
           <button
             class="autocomplete-item"
             class:selected={i === selectedIndex}
-            onclick={() => selectCommand(cmd)}
+            onmousedown={(e) => selectCommand(cmd, e)}
             onmouseenter={() => selectedIndex = i}
           >
             {cmd}
