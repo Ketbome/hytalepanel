@@ -192,7 +192,7 @@ router.post('/files/upload', upload.single('file'), async (req, res) => {
     const file = req.file;
 
     if (!containerName) {
-      res.status(400).json({ success: false, error: 'Server ID required' });
+      res.status(400).json({ success: false, error: 'Container name is missing' });
       return;
     }
 
