@@ -17,6 +17,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-}
       MODTALE_API_KEY: ${MODTALE_API_KEY:-}
       DATA_PATH: /opt/hytale-panel/data
+      HOST_DATA_PATH: ${HOST_DATA_PATH:-${PWD}/data/panel}
     volumes:
       - ./panel/backend/src:/app/backend/src
       - ./panel/frontend/src:/app/frontend/src

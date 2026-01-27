@@ -34,6 +34,7 @@ export interface Config {
   };
   data: {
     path: string;
+    hostPath: string | null; // Host path for bind mounts (servers inherit this)
   };
 }
 
@@ -123,7 +124,8 @@ const config: Config = {
     apiKey: process.env.MODTALE_API_KEY || null
   },
   data: {
-    path: process.env.DATA_PATH || '/opt/hytale-panel/data'
+    path: process.env.DATA_PATH || '/opt/hytale-panel/data',
+    hostPath: process.env.HOST_DATA_PATH || null
   }
 };
 
