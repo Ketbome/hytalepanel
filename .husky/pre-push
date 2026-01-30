@@ -1,0 +1,13 @@
+#!/bin/sh
+
+cd panel
+
+# Type checking (catches type errors before push)
+echo "Running type check..."
+pnpm check || exit 1
+
+# Lint check (no auto-fix on push, just verify)
+echo "Running lint..."
+pnpm lint || exit 1
+
+echo "All checks passed!"
