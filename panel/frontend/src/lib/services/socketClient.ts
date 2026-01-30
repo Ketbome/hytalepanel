@@ -1,5 +1,5 @@
-import { isAuthenticated } from "$lib/stores/auth";
-import { panelConfig } from "$lib/stores/config";
+import { isAuthenticated } from '$lib/stores/auth';
+import { panelConfig } from '$lib/stores/config';
 import {
   addLog,
   clearLogs,
@@ -11,42 +11,26 @@ import {
   isLoadingMore,
   loadedCount,
   logs,
-  prependLogs,
-} from "$lib/stores/console";
-import {
-  currentPath,
-  fileList,
-  setEditorContent,
-  setEditorStatus,
-} from "$lib/stores/files";
+  prependLogs
+} from '$lib/stores/console';
+import { currentPath, fileList, setEditorContent, setEditorStatus } from '$lib/stores/files';
 import {
   apiConfigured,
   availableUpdates,
   cfApiConfigured,
-  curseforgeStatus,
   currentPage,
-  currentProvider,
+  curseforgeStatus,
   hasMore,
   installedMods,
   isModsLoading,
   modtaleStatus,
   searchResults,
-  total,
-} from "$lib/stores/mods";
-import {
-  downloadProgress,
-  downloaderAuth,
-  filesReady,
-  serverStatus,
-  updateInfo,
-} from "$lib/stores/server";
-import { activeServerId, updateServerStatus } from "$lib/stores/servers";
-import {
-  navigateToServer,
-  navigateToDashboard,
-  currentRoute,
-} from "$lib/stores/router";
-import { showToast } from "$lib/stores/ui";
+  total
+} from '$lib/stores/mods';
+import { currentRoute, navigateToDashboard, navigateToServer } from '$lib/stores/router';
+import { downloadProgress, downloaderAuth, filesReady, serverStatus, updateInfo } from '$lib/stores/server';
+import { activeServerId, updateServerStatus } from '$lib/stores/servers';
+import { showToast } from '$lib/stores/ui';
 import type {
   ActionStatus,
   CommandResult,
@@ -63,11 +47,11 @@ import type {
   ModProject,
   ModSearchResult,
   ModUpdatesResult,
-  ServerStatus,
-} from "$lib/types";
-import { type Socket, io } from "socket.io-client";
-import { _ } from "svelte-i18n";
-import { get, writable } from "svelte/store";
+  ServerStatus
+} from '$lib/types';
+import { type Socket, io } from 'socket.io-client';
+import { _ } from 'svelte-i18n';
+import { get, writable } from 'svelte/store';
 
 export const socket = writable<Socket | null>(null);
 export const isConnected = writable<boolean>(false);
@@ -89,18 +73,16 @@ export function connectSocket(): Socket {
   }
 
   const config = get(panelConfig);
-  const socketPath = config.basePath
-    ? `${config.basePath}/socket.io`
-    : "/socket.io";
+  const socketPath = config.basePath ? `${config.basePath}/socket.io` : '/socket.io';
   socketInstance = io({ path: socketPath });
 
-  socketInstance.on("connect", () => {
+  socketInstance.on('connect', () => {
     isConnected.set(true);
     // If there's a server ID in the URL, join it automatically
     const route = get(currentRoute);
     if (route.serverId) {
       lastJoinedServerId = route.serverId;
-      socketInstance?.emit("server:join", route.serverId);
+      socketInstance?.emit('server:join', route.serverId);
     }
   });
 
@@ -113,205 +95,193 @@ export function connectSocket(): Socket {
     if (route.serverId !== lastJoinedServerId) {
       if (lastJoinedServerId && !route.serverId) {
         // Left server, going to dashboard
-        socketInstance.emit("server:leave");
+        socketInstance.emit('server:leave');
         joinedServerId.set(null);
       } else if (route.serverId) {
         // Joined new server
-        socketInstance.emit("server:join", route.serverId);
+        socketInstance.emit('server:join', route.serverId);
       }
       lastJoinedServerId = route.serverId;
     }
   });
 
-  socketInstance.on("disconnect", () => {
+  socketInstance.on('disconnect', () => {
     isConnected.set(false);
     joinedServerId.set(null);
   });
 
-  socketInstance.on("connect_error", (err: Error) => {
-    if (
-      err.message === "Authentication required" ||
-      err.message === "Invalid or expired token"
-    ) {
+  socketInstance.on('connect_error', (err: Error) => {
+    if (err.message === 'Authentication required' || err.message === 'Invalid or expired token') {
       disconnectSocket();
       isAuthenticated.set(false);
-      showToast("Session expired. Please login again.", "error");
+      showToast('Session expired. Please login again.', 'error');
     }
   });
 
   // Server join result
-  socketInstance.on("server:joined", ({ serverId }: { serverId: string }) => {
+  socketInstance.on('server:joined', ({ serverId }: { serverId: string }) => {
     joinedServerId.set(serverId);
   });
 
-  socketInstance.on("server:join-error", ({ error }: { error: string }) => {
-    showToast(`Error: ${error}`, "error");
+  socketInstance.on('server:join-error', ({ error }: { error: string }) => {
+    showToast(`Error: ${error}`, 'error');
   });
 
   // Server status
-  socketInstance.on("status", (s: ServerStatus) => {
+  socketInstance.on('status', (s: ServerStatus) => {
     const wasRunning = get(serverStatus).running;
     const isNowRunning = s.running;
 
     serverStatus.set({
       running: isNowRunning,
-      status: s.status || "unknown",
-      startedAt: s.startedAt,
+      status: s.status || 'unknown',
+      startedAt: s.startedAt
     });
 
     const serverId = get(activeServerId);
     if (serverId) {
-      updateServerStatus(serverId, isNowRunning ? "running" : "stopped");
+      updateServerStatus(serverId, isNowRunning ? 'running' : 'stopped');
     }
 
     if (isNowRunning && !wasRunning) {
-      socketInstance?.emit("files:list", "/");
-      socketInstance?.emit("mods:list");
+      socketInstance?.emit('files:list', '/');
+      socketInstance?.emit('mods:list');
     }
   });
 
-  socketInstance.on("files", (f: FilesReady) => {
+  socketInstance.on('files', (f: FilesReady) => {
     filesReady.set({
       hasJar: f.hasJar,
       hasAssets: f.hasAssets,
-      ready: f.ready,
+      ready: f.ready
     });
-    socketInstance?.emit("mods:check-config");
-    socketInstance?.emit("cf:check-config");
+    socketInstance?.emit('mods:check-config');
+    socketInstance?.emit('cf:check-config');
   });
 
   // Downloader auth status
-  socketInstance.on("downloader-auth", (a: boolean) => {
+  socketInstance.on('downloader-auth', (a: boolean) => {
     downloaderAuth.set(a);
   });
 
   // Download status
-  socketInstance.on("download-status", handleDownloadStatus);
+  socketInstance.on('download-status', handleDownloadStatus);
 
   // Logs
-  socketInstance.on("log", (msg: string) => {
+  socketInstance.on('log', (msg: string) => {
     addLog(msg.trim());
   });
 
-  socketInstance.on("logs:history", handleLogsHistory);
+  socketInstance.on('logs:history', handleLogsHistory);
 
   // Command result
-  socketInstance.on("command-result", (r: CommandResult) => {
+  socketInstance.on('command-result', (r: CommandResult) => {
     if (r.error) {
-      addLog(`Error: ${r.error}`, "error");
-      showToast(get(_)("failed"), "error");
+      addLog(`Error: ${r.error}`, 'error');
+      showToast(get(_)('failed'), 'error');
     }
   });
 
   // Action status
-  socketInstance.on("action-status", (s: ActionStatus) => {
+  socketInstance.on('action-status', (s: ActionStatus) => {
     const t = get(_);
     if (s.success) {
       const msgs: Record<string, string> = {
-        restart: t("restarted"),
-        stop: t("stopped"),
-        start: t("started"),
-        wipe: t("dataWiped"),
-        kill: t("killed"),
+        restart: t('restarted'),
+        stop: t('stopped'),
+        start: t('started'),
+        wipe: t('dataWiped'),
+        kill: t('killed')
       };
-      showToast(msgs[s.action] || t("done"));
+      showToast(msgs[s.action] || t('done'));
     } else if (s.error) {
-      showToast(`${s.action} ${t("failed")}`, "error");
+      showToast(`${s.action} ${t('failed')}`, 'error');
     }
   });
 
   // Error
-  socketInstance.on("error", (m: string) => {
-    addLog(m, "error");
-    showToast(m, "error");
+  socketInstance.on('error', (m: string) => {
+    addLog(m, 'error');
+    showToast(m, 'error');
   });
 
   // File manager events
-  socketInstance.on("files:list-result", (result: FileListResult) => {
+  socketInstance.on('files:list-result', (result: FileListResult) => {
     if (result.success) {
       currentPath.set(result.path);
       fileList.set(result.files);
     } else {
-      showToast(`Error: ${result.error}`, "error");
+      showToast(`Error: ${result.error}`, 'error');
       fileList.set([]);
     }
   });
 
-  socketInstance.on("files:read-result", (result: FileReadResult) => {
+  socketInstance.on('files:read-result', (result: FileReadResult) => {
     if (result.success && result.content !== undefined) {
       setEditorContent(result.content);
     } else if (result.binary) {
-      setEditorStatus("Cannot edit binary file", "error");
+      setEditorStatus('Cannot edit binary file', 'error');
     } else {
-      setEditorStatus(`Error: ${result.error}`, "error");
+      setEditorStatus(`Error: ${result.error}`, 'error');
     }
   });
 
-  socketInstance.on("files:save-result", (result: FileSaveResult) => {
+  socketInstance.on('files:save-result', (result: FileSaveResult) => {
     if (result.success) {
-      setEditorStatus(
-        result.backup?.success ? "Saved (backup created)" : "Saved",
-        "saved",
-      );
-      showToast("File saved");
+      setEditorStatus(result.backup?.success ? 'Saved (backup created)' : 'Saved', 'saved');
+      showToast('File saved');
     } else {
-      setEditorStatus(`Error: ${result.error}`, "error");
-      showToast("Save failed", "error");
+      setEditorStatus(`Error: ${result.error}`, 'error');
+      showToast('Save failed', 'error');
     }
   });
 
-  socketInstance.on("files:mkdir-result", (result: FileOperationResult) => {
+  socketInstance.on('files:mkdir-result', (result: FileOperationResult) => {
     if (result.success) {
-      showToast("Folder created");
-      emit("files:list", get(currentPath));
+      showToast('Folder created');
+      emit('files:list', get(currentPath));
     } else {
-      showToast(`Error: ${result.error}`, "error");
+      showToast(`Error: ${result.error}`, 'error');
     }
   });
 
-  socketInstance.on("files:delete-result", (result: FileOperationResult) => {
+  socketInstance.on('files:delete-result', (result: FileOperationResult) => {
     if (result.success) {
-      showToast("Deleted");
-      emit("files:list", get(currentPath));
+      showToast('Deleted');
+      emit('files:list', get(currentPath));
     } else {
-      showToast(`Error: ${result.error}`, "error");
+      showToast(`Error: ${result.error}`, 'error');
     }
   });
 
-  socketInstance.on("files:rename-result", (result: FileOperationResult) => {
+  socketInstance.on('files:rename-result', (result: FileOperationResult) => {
     if (result.success) {
-      showToast("Renamed");
-      emit("files:list", get(currentPath));
+      showToast('Renamed');
+      emit('files:list', get(currentPath));
     } else {
-      showToast(`Error: ${result.error}`, "error");
+      showToast(`Error: ${result.error}`, 'error');
     }
   });
 
   // Mods events
-  socketInstance.on(
-    "mods:config-status",
-    (result: { configured: boolean; valid: boolean; error?: string }) => {
-      modtaleStatus.set(result);
-      apiConfigured.set(result.configured && result.valid);
-      if (result.configured && !result.valid && result.error) {
-        showToast(`Modtale: ${result.error}`, "error");
-      }
-    },
-  );
+  socketInstance.on('mods:config-status', (result: { configured: boolean; valid: boolean; error?: string }) => {
+    modtaleStatus.set(result);
+    apiConfigured.set(result.configured && result.valid);
+    if (result.configured && !result.valid && result.error) {
+      showToast(`Modtale: ${result.error}`, 'error');
+    }
+  });
 
-  socketInstance.on(
-    "mods:list-result",
-    (result: { success: boolean; mods?: InstalledMod[]; error?: string }) => {
-      isModsLoading.set(false);
-      if (result.success && result.mods) {
-        installedMods.set(result.mods);
-      } else {
-        showToast(`${get(_)("error")}: ${result.error}`, "error");
-      }
-    },
-  );
+  socketInstance.on('mods:list-result', (result: { success: boolean; mods?: InstalledMod[]; error?: string }) => {
+    isModsLoading.set(false);
+    if (result.success && result.mods) {
+      installedMods.set(result.mods);
+    } else {
+      showToast(`${get(_)('error')}: ${result.error}`, 'error');
+    }
+  });
 
-  socketInstance.on("mods:search-result", (result: ModSearchResult) => {
+  socketInstance.on('mods:search-result', (result: ModSearchResult) => {
     isModsLoading.set(false);
     if (result.success) {
       searchResults.set(result.projects || []);
@@ -319,125 +289,117 @@ export function connectSocket(): Socket {
       hasMore.set(result.hasMore || false);
       currentPage.set(result.page || 1);
     } else {
-      showToast(`Error: ${result.error}`, "error");
+      showToast(`Error: ${result.error}`, 'error');
       searchResults.set([]);
     }
   });
 
-  socketInstance.on("mods:install-result", (result: ModOperationResult) => {
+  socketInstance.on('mods:install-result', (result: ModOperationResult) => {
     const t = get(_);
     if (result.success) {
-      showToast(t("modInstalled"));
-      emit("mods:list");
+      showToast(t('modInstalled'));
+      emit('mods:list');
     } else {
-      showToast(`${t("installFailed")}: ${result.error}`, "error");
+      showToast(`${t('installFailed')}: ${result.error}`, 'error');
     }
   });
 
-  socketInstance.on("mods:uninstall-result", (result: ModOperationResult) => {
+  socketInstance.on('mods:uninstall-result', (result: ModOperationResult) => {
     const t = get(_);
     if (result.success) {
-      showToast(t("modUninstalled"));
-      emit("mods:list");
+      showToast(t('modUninstalled'));
+      emit('mods:list');
     } else {
-      showToast(`${t("error")}: ${result.error}`, "error");
+      showToast(`${t('error')}: ${result.error}`, 'error');
     }
   });
 
-  socketInstance.on("mods:enable-result", (result: ModOperationResult) => {
+  socketInstance.on('mods:enable-result', (result: ModOperationResult) => {
     const t = get(_);
     if (result.success) {
-      showToast(t("modEnabled"));
-      emit("mods:list");
+      showToast(t('modEnabled'));
+      emit('mods:list');
     } else {
-      showToast(`${t("error")}: ${result.error}`, "error");
+      showToast(`${t('error')}: ${result.error}`, 'error');
     }
   });
 
-  socketInstance.on("mods:disable-result", (result: ModOperationResult) => {
+  socketInstance.on('mods:disable-result', (result: ModOperationResult) => {
     const t = get(_);
     if (result.success) {
-      showToast(t("modDisabled"));
-      emit("mods:list");
+      showToast(t('modDisabled'));
+      emit('mods:list');
     } else {
-      showToast(`${t("error")}: ${result.error}`, "error");
+      showToast(`${t('error')}: ${result.error}`, 'error');
     }
   });
 
-  socketInstance.on("mods:check-updates-result", (result: ModUpdatesResult) => {
+  socketInstance.on('mods:check-updates-result', (result: ModUpdatesResult) => {
     const t = get(_);
     if (result.success) {
       availableUpdates.set(result.updates || []);
       if (result.updates && result.updates.length > 0) {
-        showToast(
-          t("updatesAvailable", { values: { count: result.updates.length } }),
-        );
+        showToast(t('updatesAvailable', { values: { count: result.updates.length } }));
       } else {
-        showToast(t("noUpdates"));
+        showToast(t('noUpdates'));
       }
     } else {
-      showToast(`${t("error")}: ${result.error}`, "error");
+      showToast(`${t('error')}: ${result.error}`, 'error');
     }
   });
 
-  socketInstance.on("mods:update-result", (result: ModOperationResult) => {
+  socketInstance.on('mods:update-result', (result: ModOperationResult) => {
     const t = get(_);
     if (result.success) {
-      showToast(t("modUpdated"));
-      emit("mods:list");
-      emit("mods:check-updates");
+      showToast(t('modUpdated'));
+      emit('mods:list');
+      emit('mods:check-updates');
     } else {
-      showToast(`${t("updateFailed")}: ${result.error}`, "error");
+      showToast(`${t('updateFailed')}: ${result.error}`, 'error');
     }
   });
 
-  socketInstance.on(
-    "mods:get-result",
-    (result: { success: boolean; project?: ModProject; error?: string }) => {
-      if (result.success && result.project) {
-        const project = result.project;
-        // Update search results with full project details
-        searchResults.update((results) => {
-          const index = results.findIndex((m) => m.id === project.id);
-          if (index >= 0) {
-            results[index] = project;
-          }
-          return results;
-        });
-        // Auto-install with version info now available
-        const latestVersion = project.latestVersion || project.versions?.[0];
-        if (latestVersion?.id) {
-          emit("mods:install", {
-            projectId: project.id,
-            versionId: latestVersion.id,
-            metadata: {
-              projectTitle: project.title,
-              projectSlug: project.slug,
-              projectIconUrl: project.iconUrl,
-              versionName: latestVersion.version,
-              classification: project.classification,
-              fileName: latestVersion.fileName,
-            },
-          });
+  socketInstance.on('mods:get-result', (result: { success: boolean; project?: ModProject; error?: string }) => {
+    if (result.success && result.project) {
+      const project = result.project;
+      // Update search results with full project details
+      searchResults.update((results) => {
+        const index = results.findIndex((m) => m.id === project.id);
+        if (index >= 0) {
+          results[index] = project;
         }
-      } else if (result.error) {
-        showToast(`${get(_)("error")}: ${result.error}`, "error");
+        return results;
+      });
+      // Auto-install with version info now available
+      const latestVersion = project.latestVersion || project.versions?.[0];
+      if (latestVersion?.id) {
+        emit('mods:install', {
+          projectId: project.id,
+          versionId: latestVersion.id,
+          metadata: {
+            projectTitle: project.title,
+            projectSlug: project.slug,
+            projectIconUrl: project.iconUrl,
+            versionName: latestVersion.version,
+            classification: project.classification,
+            fileName: latestVersion.fileName
+          }
+        });
       }
-    },
-  );
+    } else if (result.error) {
+      showToast(`${get(_)('error')}: ${result.error}`, 'error');
+    }
+  });
 
-  socketInstance.on(
-    "cf:config-status",
-    (result: { configured: boolean; valid: boolean; error?: string }) => {
-      curseforgeStatus.set(result);
-      cfApiConfigured.set(result.configured && result.valid);
-      if (result.configured && !result.valid && result.error) {
-        showToast(`CurseForge: ${result.error}`, "error");
-      }
-    },
-  );
+  socketInstance.on('cf:config-status', (result: { configured: boolean; valid: boolean; error?: string }) => {
+    curseforgeStatus.set(result);
+    cfApiConfigured.set(result.configured && result.valid);
+    if (result.configured && !result.valid && result.error) {
+      showToast(`CurseForge: ${result.error}`, 'error');
+    }
+  });
 
-  socketInstance.on("cf:search-result", (result: ModSearchResult) => {
+  socketInstance.on('cf:search-result', (result: ModSearchResult) => {
     isModsLoading.set(false);
     if (result.success) {
       searchResults.set(result.projects || []);
@@ -445,58 +407,55 @@ export function connectSocket(): Socket {
       hasMore.set(result.hasMore || false);
       currentPage.set(result.page || 1);
     } else {
-      showToast(`Error: ${result.error}`, "error");
+      showToast(`Error: ${result.error}`, 'error');
       searchResults.set([]);
     }
   });
 
-  socketInstance.on(
-    "cf:get-result",
-    (result: { success: boolean; project?: ModProject; error?: string }) => {
-      if (result.success && result.project) {
-        const project = result.project;
-        searchResults.update((results) => {
-          const index = results.findIndex((m) => m.id === project.id);
-          if (index >= 0) {
-            results[index] = project;
-          }
-          return results;
-        });
-        // Auto-install with version info now available
-        const latestVersion = project.latestVersion || project.versions?.[0];
-        if (latestVersion?.id) {
-          emit("cf:install", {
-            modId: project.id,
-            fileId: latestVersion.id,
-            metadata: {
-              projectTitle: project.title,
-              projectSlug: project.slug,
-              projectIconUrl: project.iconUrl,
-              versionName: latestVersion.version,
-              classification: project.classification,
-              fileName: latestVersion.fileName,
-            },
-          });
+  socketInstance.on('cf:get-result', (result: { success: boolean; project?: ModProject; error?: string }) => {
+    if (result.success && result.project) {
+      const project = result.project;
+      searchResults.update((results) => {
+        const index = results.findIndex((m) => m.id === project.id);
+        if (index >= 0) {
+          results[index] = project;
         }
-      } else if (result.error) {
-        showToast(`${get(_)("error")}: ${result.error}`, "error");
+        return results;
+      });
+      // Auto-install with version info now available
+      const latestVersion = project.latestVersion || project.versions?.[0];
+      if (latestVersion?.id) {
+        emit('cf:install', {
+          modId: project.id,
+          fileId: latestVersion.id,
+          metadata: {
+            projectTitle: project.title,
+            projectSlug: project.slug,
+            projectIconUrl: project.iconUrl,
+            versionName: latestVersion.version,
+            classification: project.classification,
+            fileName: latestVersion.fileName
+          }
+        });
       }
-    },
-  );
+    } else if (result.error) {
+      showToast(`${get(_)('error')}: ${result.error}`, 'error');
+    }
+  });
 
-  socketInstance.on("cf:install-result", (result: ModOperationResult) => {
+  socketInstance.on('cf:install-result', (result: ModOperationResult) => {
     const t = get(_);
     if (result.success) {
-      showToast(t("modInstalled"));
-      emit("mods:list");
+      showToast(t('modInstalled'));
+      emit('mods:list');
     } else {
-      showToast(`${t("installFailed")}: ${result.error}`, "error");
+      showToast(`${t('installFailed')}: ${result.error}`, 'error');
     }
   });
 
   // Server update events
   socketInstance.on(
-    "update:check-result",
+    'update:check-result',
     (result: {
       success: boolean;
       lastUpdate: string | null;
@@ -507,29 +466,26 @@ export function connectSocket(): Socket {
         ...u,
         isChecking: false,
         lastUpdate: result.lastUpdate,
-        daysSinceUpdate: result.daysSinceUpdate,
+        daysSinceUpdate: result.daysSinceUpdate
       }));
-    },
+    }
   );
 
-  socketInstance.on(
-    "update:status",
-    (data: { status: string; message: string }) => {
-      updateInfo.update((u) => ({
-        ...u,
-        updateStatus: data.message,
-        isUpdating: data.status !== "complete" && data.status !== "error",
-      }));
+  socketInstance.on('update:status', (data: { status: string; message: string }) => {
+    updateInfo.update((u) => ({
+      ...u,
+      updateStatus: data.message,
+      isUpdating: data.status !== 'complete' && data.status !== 'error'
+    }));
 
-      if (data.status === "complete") {
-        showToast(get(_)("updateComplete"));
-        emit("check-files");
-        emit("update:check");
-      } else if (data.status === "error") {
-        showToast(`${get(_)("updateFailed")}: ${data.message}`, "error");
-      }
-    },
-  );
+    if (data.status === 'complete') {
+      showToast(get(_)('updateComplete'));
+      emit('check-files');
+      emit('update:check');
+    } else if (data.status === 'error') {
+      showToast(`${get(_)('updateFailed')}: ${data.message}`, 'error');
+    }
+  });
 
   socket.set(socketInstance);
   return socketInstance;
@@ -564,25 +520,25 @@ export function joinServer(serverId: string): void {
     loadedCount.set(0);
     hasMoreHistory.set(true);
     filesReady.set({ hasJar: false, hasAssets: false, ready: false });
-    serverStatus.set({ running: false, status: "offline", startedAt: null });
+    serverStatus.set({ running: false, status: 'offline', startedAt: null });
     installedMods.set([]);
     fileList.set([]);
-    currentPath.set("/");
+    currentPath.set('/');
     downloaderAuth.set(false);
 
     // Reset download progress completely
     stopDlTimer();
     downloadProgress.set({
       active: false,
-      status: "",
+      status: '',
       percentage: 0,
-      step: "auth",
+      step: 'auth',
       authUrl: null,
       authCode: null,
-      time: "0s",
+      time: '0s'
     });
 
-    socketInstance.emit("server:join", serverId);
+    socketInstance.emit('server:join', serverId);
     lastJoinedServerId = serverId;
     // Navigate to server URL (this also sets activeServerId via router subscription)
     navigateToServer(serverId);
@@ -591,7 +547,7 @@ export function joinServer(serverId: string): void {
 
 export function leaveServer(): void {
   if (socketInstance) {
-    socketInstance.emit("server:leave");
+    socketInstance.emit('server:leave');
     joinedServerId.set(null);
     lastJoinedServerId = null;
     // Navigate to dashboard (this also sets activeServerId to null via router)
@@ -599,65 +555,54 @@ export function leaveServer(): void {
   }
 }
 
-function handleDownloadStatus(
-  d: DownloadStatusEvent & { serverId?: string },
-): void {
+function handleDownloadStatus(d: DownloadStatusEvent & { serverId?: string }): void {
   // Ignore events from other servers
   const currentServerId = get(activeServerId);
   if (d.serverId && d.serverId !== currentServerId) {
-    console.log(
-      "[Download] Ignoring event for different server:",
-      d.serverId,
-      "current:",
-      currentServerId,
-    );
+    console.log('[Download] Ignoring event for different server:', d.serverId, 'current:', currentServerId);
     return;
   }
 
-  console.log("[Download] Status:", d.status, "Message:", d.message);
+  console.log('[Download] Status:', d.status, 'Message:', d.message);
   switch (d.status) {
-    case "starting":
+    case 'starting':
       dlStartTime = Date.now();
       startDlTimer();
       downloadProgress.set({
         active: true,
-        status: get(_)("starting"),
+        status: get(_)('starting'),
         percentage: 5,
-        step: "auth",
+        step: 'auth',
         authUrl: null,
         authCode: null,
-        time: "0s",
+        time: '0s'
       });
       break;
 
-    case "auth-required":
+    case 'auth-required':
       if (d.message) {
-        addLog(d.message, "auth");
-        const url = d.message.match(
-          /https:\/\/oauth\.accounts\.hytale\.com\S+/,
-        );
-        const code = d.message.match(
-          /(?:user_code[=:]\s*|code:\s*)([A-Za-z0-9]+)/i,
-        );
+        addLog(d.message, 'auth');
+        const url = d.message.match(/https:\/\/oauth\.accounts\.hytale\.com\S+/);
+        const code = d.message.match(/(?:user_code[=:]\s*|code:\s*)([A-Za-z0-9]+)/i);
         downloadProgress.update((p) => ({
           ...p,
-          status: get(_)("waitingAuth"),
+          status: get(_)('waitingAuth'),
           percentage: 10,
           authUrl: url ? url[0] : null,
-          authCode: code ? code[1] : null,
+          authCode: code ? code[1] : null
         }));
       }
       break;
 
-    case "output":
+    case 'output':
       if (d.message) {
         addLog(d.message);
-        if (d.message.toLowerCase().includes("download")) {
+        if (d.message.toLowerCase().includes('download')) {
           downloadProgress.update((p) => ({
             ...p,
-            status: get(_)("downloading"),
+            status: get(_)('downloading'),
             percentage: 30,
-            step: "download",
+            step: 'download'
           }));
         }
         const pMatch = d.message.match(/(\d+)\.?\d*%/);
@@ -666,49 +611,49 @@ function handleDownloadStatus(
           downloadProgress.update((p) => ({
             ...p,
             status: `${Math.round(percent)}%`,
-            percentage: 30 + percent * 0.5,
+            percentage: 30 + percent * 0.5
           }));
         }
       }
       break;
 
-    case "extracting":
-      if (d.message) addLog(d.message, "info");
+    case 'extracting':
+      if (d.message) addLog(d.message, 'info');
       downloadProgress.update((p) => ({
         ...p,
-        status: get(_)("extracting"),
+        status: get(_)('extracting'),
         percentage: 85,
-        step: "extract",
+        step: 'extract'
       }));
       break;
 
-    case "complete":
+    case 'complete':
       stopDlTimer();
       downloadProgress.update((p) => ({
         ...p,
         active: false,
-        status: get(_)("done"),
+        status: get(_)('done'),
         percentage: 100,
-        step: "complete",
+        step: 'complete',
         authUrl: null,
-        authCode: null,
+        authCode: null
       }));
-      showToast(get(_)("downloadComplete"));
-      addLog(get(_)("filesReadyMsg"), "info");
+      showToast(get(_)('downloadComplete'));
+      addLog(get(_)('filesReadyMsg'), 'info');
       break;
 
-    case "done":
-    case "error":
+    case 'done':
+    case 'error':
       stopDlTimer();
-      if (d.status === "error") {
+      if (d.status === 'error') {
         downloadProgress.update((p) => ({
           ...p,
-          status: get(_)("error"),
-          active: false,
+          status: get(_)('error'),
+          active: false
         }));
         if (d.message) {
-          showToast(d.message, "error");
-          addLog(`${get(_)("error")}: ${d.message}`, "error");
+          showToast(d.message, 'error');
+          addLog(`${get(_)('error')}: ${d.message}`, 'error');
         }
       } else {
         downloadProgress.update((p) => ({ ...p, active: false }));
@@ -719,7 +664,7 @@ function handleDownloadStatus(
 
 function handleLogsHistory(data: LogsHistoryData): void {
   if (data.error) {
-    console.error("Failed to load logs:", data.error);
+    console.error('Failed to load logs:', data.error);
     isLoadingMore.set(false);
     return;
   }
@@ -737,13 +682,11 @@ function handleLogsHistory(data: LogsHistoryData): void {
   const parsedLogs: LogEntry[] = data.logs
     .map((line) => {
       const ts = extractTimestamp(line);
-      const cleaned = line
-        .replace(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?\s*/, "")
-        .trim();
+      const cleaned = line.replace(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?\s*/, '').trim();
       return {
         text: cleaned,
         type: getLogType(cleaned),
-        timestamp: formatTimestamp(ts),
+        timestamp: formatTimestamp(ts)
       };
     })
     .filter((l) => l.text);

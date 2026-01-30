@@ -1,5 +1,5 @@
-import { writable, derived } from "svelte/store";
-import { activeServerId } from "./servers";
+import { derived, writable } from 'svelte/store';
+import { activeServerId } from './servers';
 
 export interface Route {
   path: string;
@@ -7,17 +7,15 @@ export interface Route {
 }
 
 function getBasePath(): string {
-  const config = (
-    window as unknown as { __PANEL_CONFIG__?: { basePath?: string } }
-  ).__PANEL_CONFIG__;
-  return config?.basePath || "/";
+  const config = (window as unknown as { __PANEL_CONFIG__?: { basePath?: string } }).__PANEL_CONFIG__;
+  return config?.basePath || '/';
 }
 
 function parseRoute(pathname: string): Route {
   const basePath = getBasePath();
   let path = pathname;
-  if (basePath !== "/" && path.startsWith(basePath)) {
-    path = path.slice(basePath.length) || "/";
+  if (basePath !== '/' && path.startsWith(basePath)) {
+    path = path.slice(basePath.length) || '/';
   }
 
   const serverMatch = path.match(/^\/server\/([^/]+)/);
@@ -30,17 +28,15 @@ function parseRoute(pathname: string): Route {
 
 function buildUrl(serverId: string | null): string {
   const basePath = getBasePath();
-  const base = basePath === "/" ? "" : basePath;
+  const base = basePath === '/' ? '' : basePath;
 
   if (serverId) {
     return `${base}/server/${serverId}`;
   }
-  return base || "/";
+  return base || '/';
 }
 
-export const currentRoute = writable<Route>(
-  parseRoute(window.location.pathname),
-);
+export const currentRoute = writable<Route>(parseRoute(window.location.pathname));
 
 currentRoute.subscribe((route) => {
   activeServerId.set(route.serverId);
@@ -48,18 +44,18 @@ currentRoute.subscribe((route) => {
 
 export function navigateToServer(serverId: string): void {
   const url = buildUrl(serverId);
-  window.history.pushState({}, "", url);
+  window.history.pushState({}, '', url);
   currentRoute.set(parseRoute(url));
 }
 
 export function navigateToDashboard(): void {
   const url = buildUrl(null);
-  window.history.pushState({}, "", url);
-  currentRoute.set({ path: "/", serverId: null });
+  window.history.pushState({}, '', url);
+  currentRoute.set({ path: '/', serverId: null });
 }
 
 export function initRouter(): void {
-  window.addEventListener("popstate", () => {
+  window.addEventListener('popstate', () => {
     currentRoute.set(parseRoute(window.location.pathname));
   });
 
@@ -67,7 +63,4 @@ export function initRouter(): void {
   currentRoute.set(initial);
 }
 
-export const isOnDashboard = derived(
-  currentRoute,
-  ($route) => !$route.serverId,
-);
+export const isOnDashboard = derived(currentRoute, ($route) => !$route.serverId);

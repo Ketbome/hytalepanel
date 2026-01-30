@@ -126,7 +126,6 @@
   "updatesAvailable": "{count} actualizacion(es) disponible(s)",
   "noUpdates": "Todos los mods estan actualizados",
   "modUpdated": "Mod actualizado!",
-  "updateFailed": "Error al actualizar",
   "prev": "Ant",
   "next": "Sig",
   "allTypes": "Todos",
