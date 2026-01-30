@@ -1,9 +1,9 @@
-import { exec } from 'node:child_process';
-import crypto from 'node:crypto';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { promisify } from 'node:util';
-import config from '../config/index.js';
+import { exec } from "node:child_process";
+import crypto from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { promisify } from "node:util";
+import config from "../config/index.js";
 
 const execAsync = promisify(exec);
 
@@ -45,17 +45,17 @@ export interface ServersListResult extends OperationResult {
 }
 
 const DATA_PATH = config.data.path;
-const SERVERS_FILE = path.join(DATA_PATH, 'servers.json');
-const SERVERS_DIR = path.join(DATA_PATH, 'servers');
+const SERVERS_FILE = path.join(DATA_PATH, "servers.json");
+const SERVERS_DIR = path.join(DATA_PATH, "servers");
 
 const DEFAULT_CONFIG: ServerConfig = {
-  javaXms: '4G',
-  javaXmx: '8G',
-  bindAddr: '0.0.0.0',
+  javaXms: "4G",
+  javaXmx: "8G",
+  bindAddr: "0.0.0.0",
   autoDownload: true,
   useG1gc: true,
-  extraArgs: '',
-  useMachineId: false // Default false for compatibility (CasaOS/Windows)
+  extraArgs: "",
+  useMachineId: false, // Default false for compatibility (CasaOS/Windows)
 };
 
 async function ensureDataDir(): Promise<void> {
@@ -66,7 +66,7 @@ async function ensureDataDir(): Promise<void> {
 async function loadServersData(): Promise<ServersData> {
   try {
     await ensureDataDir();
-    const content = await fs.readFile(SERVERS_FILE, 'utf-8');
+    const content = await fs.readFile(SERVERS_FILE, "utf-8");
     return JSON.parse(content) as ServersData;
   } catch {
     return { version: 1, servers: [] };
@@ -83,13 +83,13 @@ function generateDockerCompose(server: Server): string {
     ? `      - /etc/machine-id:/etc/machine-id:ro
       - /sys/class/dmi/id:/sys/class/dmi/id:ro
 `
-    : '';
+    : "";
 
   // Use host path if available, otherwise relative path
   const hostDataPath = config.data.hostPath;
   const serverVolume = hostDataPath
     ? `${hostDataPath}/servers/${server.id}/server:/opt/hytale`
-    : './server:/opt/hytale';
+    : "./server:/opt/hytale";
 
   return `services:
   ${server.containerName}:
@@ -142,7 +142,7 @@ export async function getServer(id: string): Promise<ServerResult> {
     const data = await loadServersData();
     const server = data.servers.find((s) => s.id === id);
     if (!server) {
-      return { success: false, error: 'Server not found' };
+      return { success: false, error: "Server not found" };
     }
     return { success: true, server };
   } catch (e) {
@@ -156,7 +156,9 @@ export interface CreateServerParams {
   config?: Partial<ServerConfig>;
 }
 
-export async function createServer(params: CreateServerParams): Promise<ServerResult> {
+export async function createServer(
+  params: CreateServerParams,
+): Promise<ServerResult> {
   try {
     const data = await loadServersData();
 
@@ -175,17 +177,17 @@ export async function createServer(params: CreateServerParams): Promise<ServerRe
       port,
       containerName,
       config: { ...DEFAULT_CONFIG, ...params.config },
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
     // Create server directory
     const serverDir = path.join(SERVERS_DIR, id);
     await fs.mkdir(serverDir, { recursive: true });
-    await fs.mkdir(path.join(serverDir, 'server'), { recursive: true });
+    await fs.mkdir(path.join(serverDir, "server"), { recursive: true });
 
     // Generate docker-compose.yml
     const compose = generateDockerCompose(server);
-    await fs.writeFile(path.join(serverDir, 'docker-compose.yml'), compose);
+    await fs.writeFile(path.join(serverDir, "docker-compose.yml"), compose);
 
     // Save to servers.json
     data.servers.push(server);
@@ -197,13 +199,16 @@ export async function createServer(params: CreateServerParams): Promise<ServerRe
   }
 }
 
-export async function updateServer(id: string, updates: Partial<CreateServerParams>): Promise<ServerResult> {
+export async function updateServer(
+  id: string,
+  updates: Partial<CreateServerParams>,
+): Promise<ServerResult> {
   try {
     const data = await loadServersData();
     const index = data.servers.findIndex((s) => s.id === id);
 
     if (index < 0) {
-      return { success: false, error: 'Server not found' };
+      return { success: false, error: "Server not found" };
     }
 
     const server = data.servers[index];
@@ -223,7 +228,7 @@ export async function updateServer(id: string, updates: Partial<CreateServerPara
     // Regenerate docker-compose
     const serverDir = path.join(SERVERS_DIR, id);
     const compose = generateDockerCompose(server);
-    await fs.writeFile(path.join(serverDir, 'docker-compose.yml'), compose);
+    await fs.writeFile(path.join(serverDir, "docker-compose.yml"), compose);
 
     data.servers[index] = server;
     await saveServersData(data);
@@ -234,13 +239,16 @@ export async function updateServer(id: string, updates: Partial<CreateServerPara
   }
 }
 
-export async function deleteServer(id: string, removeData = true): Promise<OperationResult> {
+export async function deleteServer(
+  id: string,
+  removeData = true,
+): Promise<OperationResult> {
   try {
     const data = await loadServersData();
     const index = data.servers.findIndex((s) => s.id === id);
 
     if (index < 0) {
-      return { success: false, error: 'Server not found' };
+      return { success: false, error: "Server not found" };
     }
 
     const server = data.servers[index];
@@ -248,14 +256,18 @@ export async function deleteServer(id: string, removeData = true): Promise<Opera
 
     // Stop container first if running
     try {
-      await execAsync(`docker stop ${server.containerName}`, { timeout: 30000 });
+      await execAsync(`docker stop ${server.containerName}`, {
+        timeout: 30000,
+      });
     } catch {
       // Container might not be running
     }
 
     // Remove container and volumes
     try {
-      await execAsync('docker compose down -v --remove-orphans', { cwd: serverDir });
+      await execAsync("docker compose down -v --remove-orphans", {
+        cwd: serverDir,
+      });
     } catch {
       // Compose might not exist
     }
@@ -286,11 +298,11 @@ export async function startServer(id: string): Promise<OperationResult> {
   try {
     const result = await getServer(id);
     if (!result.success || !result.server) {
-      return { success: false, error: result.error || 'Server not found' };
+      return { success: false, error: result.error || "Server not found" };
     }
 
     const serverDir = path.join(SERVERS_DIR, id);
-    await execAsync('docker compose up -d', { cwd: serverDir });
+    await execAsync("docker compose up -d", { cwd: serverDir });
 
     return { success: true };
   } catch (e) {
@@ -302,11 +314,11 @@ export async function stopServer(id: string): Promise<OperationResult> {
   try {
     const result = await getServer(id);
     if (!result.success || !result.server) {
-      return { success: false, error: result.error || 'Server not found' };
+      return { success: false, error: result.error || "Server not found" };
     }
 
     const serverDir = path.join(SERVERS_DIR, id);
-    await execAsync('docker compose down', { cwd: serverDir });
+    await execAsync("docker compose down", { cwd: serverDir });
 
     return { success: true };
   } catch (e) {
@@ -318,11 +330,11 @@ export async function restartServer(id: string): Promise<OperationResult> {
   try {
     const result = await getServer(id);
     if (!result.success || !result.server) {
-      return { success: false, error: result.error || 'Server not found' };
+      return { success: false, error: result.error || "Server not found" };
     }
 
     const serverDir = path.join(SERVERS_DIR, id);
-    await execAsync('docker compose restart', { cwd: serverDir });
+    await execAsync("docker compose restart", { cwd: serverDir });
 
     return { success: true };
   } catch (e) {
@@ -331,11 +343,11 @@ export async function restartServer(id: string): Promise<OperationResult> {
 }
 
 export function getServerDataPath(id: string): string {
-  return path.join(SERVERS_DIR, id, 'server');
+  return path.join(SERVERS_DIR, id, "server");
 }
 
 export function getServerModsPath(id: string): string {
-  return path.join(SERVERS_DIR, id, 'server', 'mods');
+  return path.join(SERVERS_DIR, id, "server", "mods");
 }
 
 // Docker Compose management
@@ -346,18 +358,21 @@ export interface ComposeResult extends OperationResult {
 export async function getServerCompose(id: string): Promise<ComposeResult> {
   try {
     const serverDir = path.join(SERVERS_DIR, id);
-    const composePath = path.join(serverDir, 'docker-compose.yml');
-    const content = await fs.readFile(composePath, 'utf-8');
+    const composePath = path.join(serverDir, "docker-compose.yml");
+    const content = await fs.readFile(composePath, "utf-8");
     return { success: true, content };
   } catch (e) {
     return { success: false, error: (e as Error).message };
   }
 }
 
-export async function saveServerCompose(id: string, content: string): Promise<OperationResult> {
+export async function saveServerCompose(
+  id: string,
+  content: string,
+): Promise<OperationResult> {
   try {
     const serverDir = path.join(SERVERS_DIR, id);
-    const composePath = path.join(serverDir, 'docker-compose.yml');
+    const composePath = path.join(serverDir, "docker-compose.yml");
     await fs.writeFile(composePath, content);
     return { success: true };
   } catch (e) {
@@ -365,16 +380,18 @@ export async function saveServerCompose(id: string, content: string): Promise<Op
   }
 }
 
-export async function regenerateServerCompose(id: string): Promise<ComposeResult> {
+export async function regenerateServerCompose(
+  id: string,
+): Promise<ComposeResult> {
   try {
     const result = await getServer(id);
     if (!result.success || !result.server) {
-      return { success: false, error: result.error || 'Server not found' };
+      return { success: false, error: result.error || "Server not found" };
     }
 
     const compose = generateDockerCompose(result.server);
     const serverDir = path.join(SERVERS_DIR, id);
-    await fs.writeFile(path.join(serverDir, 'docker-compose.yml'), compose);
+    await fs.writeFile(path.join(serverDir, "docker-compose.yml"), compose);
 
     return { success: true, content: compose };
   } catch (e) {

@@ -4,32 +4,33 @@ Referencia completa de todas las variables de entorno.
 
 ## Variables del Servidor
 
-| Variable | Por defecto | Descripción |
-|----------|-------------|-------------|
-| `JAVA_XMS` | `4G` | Tamaño mínimo del heap de Java |
-| `JAVA_XMX` | `8G` | Tamaño máximo del heap de Java |
-| `BIND_PORT` | `5520` | Puerto UDP del servidor |
-| `AUTO_DOWNLOAD` | `true` | Descarga automática al iniciar |
-| `SERVER_EXTRA_ARGS` | - | Argumentos adicionales |
-| `TZ` | `UTC` | Zona horaria del contenedor |
+| Variable            | Por defecto | Descripción                    |
+| ------------------- | ----------- | ------------------------------ |
+| `JAVA_XMS`          | `4G`        | Tamaño mínimo del heap de Java |
+| `JAVA_XMX`          | `8G`        | Tamaño máximo del heap de Java |
+| `BIND_PORT`         | `5520`      | Puerto UDP del servidor        |
+| `AUTO_DOWNLOAD`     | `true`      | Descarga automática al iniciar |
+| `SERVER_EXTRA_ARGS` | -           | Argumentos adicionales         |
+| `TZ`                | `UTC`       | Zona horaria del contenedor    |
 
 ## Variables del Panel
 
-| Variable | Por defecto | Descripción |
-|----------|-------------|-------------|
-| `PANEL_USER` | `admin` | Usuario de login |
-| `PANEL_PASS` | `admin` | Contraseña de login |
-| `PANEL_PORT` | `3000` | Puerto HTTP del servidor |
-| `JWT_SECRET` | (aleatorio) | Clave secreta para firmar JWT |
-| `MODTALE_API_KEY` | - | API key para integración Modtale |
-| `HOST_DATA_PATH` | - | Ruta del host para acceso directo |
-| `DISABLE_AUTH` | `false` | Deshabilitar autenticación del panel |
-| `BASE_PATH` | - | Prefijo de ruta URL (ej: `/panel`) |
+| Variable             | Por defecto | Descripción                          |
+| -------------------- | ----------- | ------------------------------------ |
+| `PANEL_USER`         | `admin`     | Usuario de login                     |
+| `PANEL_PASS`         | `admin`     | Contraseña de login                  |
+| `PANEL_PORT`         | `3000`      | Puerto HTTP del servidor             |
+| `JWT_SECRET`         | (aleatorio) | Clave secreta para firmar JWT        |
+| `MODTALE_API_KEY`    | -           | API key para integración Modtale     |
+| `CURSEFORGE_API_KEY` | -           | API key para integración CurseForge  |
+| `HOST_DATA_PATH`     | -           | Ruta del host para acceso directo    |
+| `DISABLE_AUTH`       | `false`     | Deshabilitar autenticación del panel |
+| `BASE_PATH`          | -           | Prefijo de ruta URL (ej: `/panel`)   |
 
 ## Variables de Docker
 
-| Variable | Por defecto | Descripción |
-|----------|-------------|-------------|
+| Variable         | Por defecto     | Descripción                        |
+| ---------------- | --------------- | ---------------------------------- |
 | `CONTAINER_NAME` | `hytale-server` | Nombre del contenedor del servidor |
 
 ## Descripciones Detalladas
@@ -112,9 +113,34 @@ MODTALE_API_KEY=tu-modtale-api-key
 ```
 
 Cuando está configurado, habilita:
+
 - Exploración de mods en el panel
 - Instalación de mods con un click
 - Verificación de actualizaciones
+
+### CURSEFORGE_API_KEY
+
+API key para la integración con el repositorio de mods [CurseForge](https://www.curseforge.com).
+
+::: warning Importante
+Las API keys de CurseForge contienen caracteres `$` que se interpretan como variables en shell/Docker. **Envuelve la key en comillas simples** para evitar problemas:
+:::
+
+```bash
+CURSEFORGE_API_KEY='$2a$10$tu-key-aqui'
+```
+
+Obtén tu API key en [console.curseforge.com](https://console.curseforge.com).
+
+Cuando está configurado, habilita:
+
+- Exploración de mods de CurseForge en el panel
+- Instalación de mods con un click desde CurseForge
+- Acceso a más de 2,600 mods de Hytale
+
+::: warning Restricciones de Distribución
+Algunos mods de CurseForge no permiten distribución via API. Estos mods mostrarán una advertencia y deben descargarse manualmente desde el sitio web de CurseForge.
+:::
 
 ### HOST_DATA_PATH
 
@@ -125,6 +151,7 @@ HOST_DATA_PATH=/home/user/hytale-data
 ```
 
 Cuando está configurado:
+
 - Los datos del panel se almacenan en la ruta del host
 - Los nuevos servidores usan rutas absolutas: `/home/user/hytale-data/servers/{id}/server:/opt/hytale`
 - Los archivos son accesibles directamente desde el host sin usar el panel
@@ -156,6 +183,7 @@ BASE_PATH=/panel
 ```
 
 Cuando está configurado:
+
 - Panel accesible en `https://dominio.com/panel/` en lugar de la raíz
 - Todas las rutas API con prefijo: `/panel/api/`, `/panel/auth/`
 - Path de Socket.IO: `/panel/socket.io`
@@ -188,7 +216,8 @@ JWT_SECRET=cambia-esto-a-una-cadena-aleatoria
 # ===================
 # Integraciones Opcionales
 # ===================
-MODTALE_API_KEY=tu-api-key
+MODTALE_API_KEY=tu-modtale-api-key
+CURSEFORGE_API_KEY='$2a$10$tu-curseforge-key'
 
 # ===================
 # Almacenamiento de Datos

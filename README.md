@@ -13,7 +13,8 @@ Docker-based web panel for managing multiple Hytale dedicated servers with auto-
 - 📁 File manager (upload, edit, delete)
 - 🌍 Multi-language (EN/ES/UK)
 - 📊 Server status & uptime
-- 🔧 Mod manager with Modtale integration
+- 🔧 Mod manager with Modtale and CurseForge integration
+- 🔄 Server auto-update tracking and one-click updates
 - ⚙️ Per-server configuration (RAM, ports, args)
 
 ## Quick Start
@@ -69,16 +70,16 @@ data/panel/
 
 Each server can be configured individually from the **Config** tab:
 
-| Setting | Description |
-|---------|-------------|
-| Port | UDP port for the game (default: 5520, 5521, ...) |
-| Min RAM | Minimum Java heap (`-Xms`) |
-| Max RAM | Maximum Java heap (`-Xmx`) |
-| Bind Address | Network interface (default: 0.0.0.0) |
-| Extra Args | Additional server arguments |
-| Auto-download | Enable automatic game file download |
-| G1GC | Use G1 garbage collector (recommended) |
-| Linux Native | Mount machine-id volumes (Linux only) |
+| Setting       | Description                                      |
+| ------------- | ------------------------------------------------ |
+| Port          | UDP port for the game (default: 5520, 5521, ...) |
+| Min RAM       | Minimum Java heap (`-Xms`)                       |
+| Max RAM       | Maximum Java heap (`-Xmx`)                       |
+| Bind Address  | Network interface (default: 0.0.0.0)             |
+| Extra Args    | Additional server arguments                      |
+| Auto-download | Enable automatic game file download              |
+| G1GC          | Use G1 garbage collector (recommended)           |
+| Linux Native  | Mount machine-id volumes (Linux only)            |
 
 Changes are saved to both `servers.json` and the server's `docker-compose.yml`.
 
@@ -95,6 +96,7 @@ HOST_DATA_PATH=/path/to/data docker compose up -d
 ```
 
 When `HOST_DATA_PATH` is set:
+
 - Panel data is stored at the specified host path
 - New servers use absolute bind mounts instead of relative paths
 - You can browse/edit files directly without using the panel
@@ -118,11 +120,13 @@ data/panel/
 ### Backup Recommendation
 
 Backup the entire data folder before updates:
+
 ```bash
 tar -czvf backup-$(date +%Y%m%d).tar.gz data/
 ```
 
 Or backup a specific server:
+
 ```bash
 tar -czvf server1-backup.tar.gz data/panel/servers/{server-id}/
 ```
@@ -130,6 +134,7 @@ tar -czvf server1-backup.tar.gz data/panel/servers/{server-id}/
 ## Authentication
 
 The panel requires login. Default credentials:
+
 - **User**: `admin`
 - **Pass**: `admin`
 
@@ -148,9 +153,11 @@ For Single Sign-On with Authentik, Authelia, or similar:
 Your SSO proxy injects `Authorization: Basic ...` header. The panel accepts it automatically.
 
 **Option 2: Disable panel auth**
+
 ```env
 DISABLE_AUTH=true
 ```
+
 ⚠️ Only use behind a properly configured reverse proxy with authentication!
 
 ### Custom URL Path
@@ -162,6 +169,7 @@ BASE_PATH=/panel docker compose up -d
 ```
 
 **Nginx example:**
+
 ```nginx
 location /panel/ {
     proxy_pass http://hytale-panel:3000/panel/;
@@ -172,6 +180,7 @@ location /panel/ {
 ```
 
 **Caddy example:**
+
 ```
 domain.com {
     handle /panel/* {
@@ -201,49 +210,52 @@ TZ=America/New_York
 
 ### All Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `TZ` | `UTC` | Timezone for logs ([list](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)) |
-| `JAVA_XMS` | `4G` | Minimum RAM |
-| `JAVA_XMX` | `8G` | Maximum RAM |
-| `BIND_PORT` | `5520` | Game UDP port |
-| `AUTO_DOWNLOAD` | `true` | Auto-download game (x64 only) |
-| `SERVER_EXTRA_ARGS` | - | Extra server args (e.g. `--mods mods`) |
-| `PANEL_USER` | `admin` | Panel username |
-| `PANEL_PASS` | `admin` | Panel password |
-| `PANEL_PORT` | `3000` | Panel HTTP port |
-| `HOST_DATA_PATH` | - | Host path for direct file access |
-| `DISABLE_AUTH` | `false` | Disable auth (for SSO) |
-| `BASE_PATH` | - | URL path prefix (e.g., `/panel`) |
+| Variable             | Default | Description                                                                              |
+| -------------------- | ------- | ---------------------------------------------------------------------------------------- |
+| `TZ`                 | `UTC`   | Timezone for logs ([list](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)) |
+| `JAVA_XMS`           | `4G`    | Minimum RAM                                                                              |
+| `JAVA_XMX`           | `8G`    | Maximum RAM                                                                              |
+| `BIND_PORT`          | `5520`  | Game UDP port                                                                            |
+| `AUTO_DOWNLOAD`      | `true`  | Auto-download game (x64 only)                                                            |
+| `SERVER_EXTRA_ARGS`  | -       | Extra server args (e.g. `--mods mods`)                                                   |
+| `PANEL_USER`         | `admin` | Panel username                                                                           |
+| `PANEL_PASS`         | `admin` | Panel password                                                                           |
+| `PANEL_PORT`         | `3000`  | Panel HTTP port                                                                          |
+| `HOST_DATA_PATH`     | -       | Host path for direct file access                                                         |
+| `DISABLE_AUTH`       | `false` | Disable auth (for SSO)                                                                   |
+| `BASE_PATH`          | -       | URL path prefix (e.g., `/panel`)                                                         |
+| `MODTALE_API_KEY`    | -       | [Modtale](https://modtale.net) API key for mods                                          |
+| `CURSEFORGE_API_KEY` | -       | [CurseForge](https://console.curseforge.com) API key for mods                            |
 
 ### RAM Guide
 
 | Players | JAVA_XMX |
-|---------|----------|
-| 1-10 | 4G |
-| 10-20 | 6G |
-| 20-50 | 8G |
-| 50+ | 12G+ |
+| ------- | -------- |
+| 1-10    | 4G       |
+| 10-20   | 6G       |
+| 20-50   | 8G       |
+| 50+     | 12G+     |
 
 ## Web Panel
 
 ### Dashboard
 
 The main dashboard shows all your servers with:
+
 - Server name and status (Online/Offline)
 - Quick actions (Start, Stop, Enter, Delete)
 - Create new server button
 
 ### Server Management Tabs
 
-| Tab | Description |
-|-----|-------------|
-| **Setup** | Download game files, authenticate with Hytale |
-| **Files** | Browse, upload, edit, delete server files |
-| **Mods** | Install mods from Modtale, manage local mods |
-| **Commands** | Quick command buttons and reference |
-| **Control** | Start, Stop, Restart, Wipe data |
-| **Config** | Server configuration (RAM, port, options) |
+| Tab          | Description                                                  |
+| ------------ | ------------------------------------------------------------ |
+| **Setup**    | Download game files, authenticate with Hytale, update server |
+| **Files**    | Browse, upload, edit, delete server files                    |
+| **Mods**     | Install mods from Modtale or CurseForge, manage local mods   |
+| **Commands** | Quick command buttons and reference                          |
+| **Control**  | Start, Stop, Restart, Wipe data                              |
+| **Config**   | Server configuration (RAM, port, options)                    |
 
 ## Development Mode
 
@@ -265,12 +277,14 @@ docker compose -f docker-compose.dev.yml up --build
 The `hytale-downloader` binary is x64 only. On ARM64 Macs, you have two options:
 
 **Option 1: Build with x64 emulation** (slower but downloader works):
+
 ```bash
 DOCKER_DEFAULT_PLATFORM=linux/amd64 docker compose -f docker-compose.dev.yml build
 DOCKER_DEFAULT_PLATFORM=linux/amd64 docker compose -f docker-compose.dev.yml up
 ```
 
 **Option 2: Download files manually** (faster, native ARM64):
+
 ```bash
 # Download HytaleServer.jar and Assets.zip from hytale.com
 # Place them in ./server/ folder
@@ -278,12 +292,14 @@ docker compose -f docker-compose.dev.yml up --build
 ```
 
 The dev mode features:
+
 - **Hot Module Replacement (HMR)** for Svelte frontend
 - **Live reload** for backend changes
 - **Volume mounts** for instant code updates
 - **pnpm** for fast package management
 
 ### Frontend Stack
+
 - **Svelte 5** with TypeScript
 - **Vite 6** for bundling
 - **Biome** for linting/formatting
@@ -311,7 +327,7 @@ panel/
 │   │   ├── config/    # Configuration
 │   │   ├── middleware/# JWT auth middleware
 │   │   ├── routes/    # API routes
-│   │   ├── services/  # Docker, files, mods, modtale
+│   │   ├── services/  # Docker, files, mods, modtale, curseforge, updater
 │   │   └── socket/    # Socket.IO handlers
 │   └── __tests__/     # Jest tests
 ├── frontend/          # Svelte 5 + Vite + TypeScript
@@ -328,6 +344,7 @@ panel/
 ## Manual Download
 
 If auto-download fails (or on ARM64), get files from https://hytale.com and place in `./server/`:
+
 - `HytaleServer.jar`
 - `Assets.zip`
 
@@ -390,10 +407,10 @@ New-NetFirewallRule -DisplayName "Hytale" -Direction Inbound -Protocol UDP -Loca
 
 ## Ports
 
-| Service | Port |
-|---------|------|
-| Game | 5520/UDP |
-| Panel | 3000/TCP |
+| Service | Port     |
+| ------- | -------- |
+| Game    | 5520/UDP |
+| Panel   | 3000/TCP |
 
 ## Contributing
 
@@ -413,4 +430,4 @@ Commercial use by companies with >$100k revenue requires permission. See [LICENS
 
 ---
 
-*This project is not affiliated with Hypixel Studios or Hytale.*
+_This project is not affiliated with Hypixel Studios or Hytale._

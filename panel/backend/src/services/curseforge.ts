@@ -1,19 +1,55 @@
 import config from "../config/index.js";
 
 const CURSEFORGE_API_BASE = "https://api.curseforge.com";
-const HYTALE_GAME_ID = 6399; // Hytale game ID on CurseForge
+let HYTALE_GAME_ID = 6399; // Default, will be verified on init
 
 const apiKey = config.curseforge?.apiKey || null;
 
 if (apiKey) {
+  const masked =
+    apiKey.length > 8
+      ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`
+      : "****";
   console.log(
-    "[CurseForge] API key configured from CURSEFORGE_API_KEY env var",
-  );
-} else {
-  console.log(
-    "[CurseForge] No API key configured. Set CURSEFORGE_API_KEY environment variable.",
+    `[CurseForge] API key configured: ${masked} (length: ${apiKey.length})`,
   );
 }
+
+// Find and cache Hytale game ID on startup
+async function findHytaleGameId(): Promise<void> {
+  if (!apiKey) return;
+
+  try {
+    const response = await fetch(`${CURSEFORGE_API_BASE}/v1/games`, {
+      headers: { "x-api-key": apiKey, Accept: "application/json" },
+    });
+
+    if (!response.ok) return;
+
+    const data = (await response.json()) as {
+      data: Array<{ id: number; name: string; slug: string }>;
+    };
+    const hytale = data.data.find(
+      (g) => g.slug === "hytale" || g.name.toLowerCase() === "hytale",
+    );
+
+    if (hytale) {
+      HYTALE_GAME_ID = hytale.id;
+      console.log(`[CurseForge] Found Hytale game ID: ${HYTALE_GAME_ID}`);
+    } else {
+      console.log(
+        `[CurseForge] Hytale not found in games list, using default ID: ${HYTALE_GAME_ID}`,
+      );
+    }
+  } catch (e) {
+    console.log(
+      `[CurseForge] Could not verify game ID: ${(e as Error).message}`,
+    );
+  }
+}
+
+// Initialize on module load
+findHytaleGameId();
 
 export interface ModVersion {
   id: string;
@@ -171,6 +207,43 @@ export function isConfigured(): boolean {
   return !!apiKey;
 }
 
+export interface VerifyResult {
+  configured: boolean;
+  valid: boolean;
+  error?: string;
+}
+
+export async function verifyApiKey(): Promise<VerifyResult> {
+  if (!apiKey) {
+    return { configured: false, valid: false, error: "API key not configured" };
+  }
+
+  try {
+    // Use the games list endpoint - works with any valid API key
+    const response = await fetch(`${CURSEFORGE_API_BASE}/v1/games`, {
+      headers: {
+        "x-api-key": apiKey,
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      if (response.status === 403) {
+        throw new Error("Invalid API key or insufficient permissions");
+      }
+      throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}`);
+    }
+
+    console.log("[CurseForge] API key verified successfully");
+    return { configured: true, valid: true };
+  } catch (e) {
+    const error = (e as Error).message;
+    console.error("[CurseForge] API key verification failed:", error);
+    return { configured: true, valid: false, error };
+  }
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -304,7 +377,11 @@ export async function searchProjects(
     }
 
     const endpoint = `/v1/mods/search?${queryParams.toString()}`;
+    console.log(`[CurseForge] Search: ${endpoint}`);
     const response = await request<CFSearchResponse>(endpoint);
+    console.log(
+      `[CurseForge] Found ${response.data?.length || 0} mods, total: ${response.pagination?.totalCount || 0}`,
+    );
 
     return {
       success: true,
@@ -317,6 +394,7 @@ export async function searchProjects(
         response.pagination.totalCount,
     };
   } catch (e) {
+    console.error(`[CurseForge] Search error:`, (e as Error).message);
     return {
       success: false,
       error: (e as Error).message,

@@ -4,6 +4,7 @@
   import { loadPanelConfig } from '$lib/stores/config';
   import { activeServerId } from '$lib/stores/servers';
   import { sidebarHidden, panelExpanded } from '$lib/stores/ui';
+  import { initRouter, isOnDashboard } from '$lib/stores/router';
   import { connectSocket, disconnectSocket } from '$lib/services/socketClient';
   import LoginScreen from '$lib/components/LoginScreen.svelte';
   import Dashboard from '$lib/components/Dashboard.svelte';
@@ -15,6 +16,8 @@
   onMount(async () => {
     // Load panel config first (for BASE_PATH)
     await loadPanelConfig();
+    // Initialize router after config is loaded
+    initRouter();
     const authenticated = await checkStatus();
     isLoading.set(false);
     if (authenticated) {
@@ -59,7 +62,7 @@
   </div>
 {:else if !$isAuthenticated}
   <LoginScreen />
-{:else if !$activeServerId}
+{:else if $isOnDashboard}
   <!-- Dashboard view - no server selected -->
   <Dashboard />
 {:else}

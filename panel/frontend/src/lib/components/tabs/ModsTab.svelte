@@ -1,6 +1,7 @@
 <script lang="ts">
   import { _ } from 'svelte-i18n';
-  import { installedMods, searchResults, availableUpdates, currentView, currentPage, hasMore, apiConfigured, cfApiConfigured, currentProvider, isModsLoading, type ModView, type ModProvider } from '$lib/stores/mods';
+  import { get } from 'svelte/store';
+  import { installedMods, searchResults, availableUpdates, currentView, currentPage, hasMore, apiConfigured, cfApiConfigured, currentProvider, isModsLoading, modtaleStatus, curseforgeStatus, type ModView, type ModProvider } from '$lib/stores/mods';
   import { emit } from '$lib/services/socketClient';
   import { showToast } from '$lib/stores/ui';
   import { formatNumber } from '$lib/utils/formatters';
@@ -41,9 +42,30 @@
     emit('cf:check-config');
   }
 
+  $effect(() => {
+    const mt = $modtaleStatus;
+    const cf = $curseforgeStatus;
+    const provider = $currentProvider;
+
+    if (provider === 'modtale' && (!mt.configured || !mt.valid)) {
+      if (cf.configured && cf.valid) {
+        currentProvider.set('curseforge');
+      }
+    } else if (provider === 'curseforge' && (!cf.configured || !cf.valid)) {
+      if (mt.configured && mt.valid) {
+        currentProvider.set('modtale');
+      }
+    }
+  });
+
   function checkForUpdates(): void {
-    if (!$apiConfigured) {
-      showToast($_('configureApiFirst'), 'error');
+    const mtStatus = get(modtaleStatus);
+    const cfStatus = get(curseforgeStatus);
+    const hasModtale = mtStatus.configured && mtStatus.valid;
+    const hasCurseforge = cfStatus.configured && cfStatus.valid;
+    
+    if (!hasModtale && !hasCurseforge) {
+      showToast(get(_)('updatesRequireApi'), 'error');
       return;
     }
     isCheckingUpdates = true;
@@ -52,18 +74,34 @@
   }
 
   function isCurrentApiConfigured(): boolean {
-    return $currentProvider === 'modtale' ? $apiConfigured : $cfApiConfigured;
+    const provider = get(currentProvider);
+    return provider === 'modtale' ? get(apiConfigured) : get(cfApiConfigured);
+  }
+
+  function getApiErrorMessage(): string {
+    const provider = get(currentProvider);
+    const status = provider === 'curseforge' ? get(curseforgeStatus) : get(modtaleStatus);
+    const providerName = provider === 'curseforge' ? 'CurseForge' : 'Modtale';
+
+    if (!status.configured) {
+      return get(_)('apiKeyNotConfigured', { values: { provider: providerName } });
+    }
+    if (!status.valid) {
+      return get(_)('apiKeyInvalid', { values: { provider: providerName } });
+    }
+    return get(_)('configureApiFirst');
   }
 
   function searchMods(page = 1): void {
     if (!isCurrentApiConfigured()) {
-      showToast($_('configureApiFirst'), 'error');
+      showToast(getApiErrorMessage(), 'error');
       return;
     }
     isModsLoading.set(true);
     initialBrowseLoad = false;
 
-    if ($currentProvider === 'curseforge') {
+    const provider = get(currentProvider);
+    if (provider === 'curseforge') {
       emit('cf:search', {
         query: searchQuery,
         page,
@@ -88,12 +126,13 @@
 
   function installMod(mod: ModProject): void {
     if (!isCurrentApiConfigured()) {
-      showToast($_('configureApiFirst'), 'error');
+      showToast(getApiErrorMessage(), 'error');
       return;
     }
+    const provider = get(currentProvider);
     const latestVersion = mod.latestVersion || mod.versions?.[0];
     if (!latestVersion?.id) {
-      if ($currentProvider === 'curseforge') {
+      if (provider === 'curseforge') {
         emit('cf:get', mod.id);
       } else {
         emit('mods:get', mod.id);
@@ -101,10 +140,10 @@
       return;
     }
 
-    if ($currentProvider === 'curseforge') {
+    if (provider === 'curseforge') {
       // Check if mod allows distribution
       if ('allowDistribution' in mod && mod.allowDistribution === false) {
-        showToast($_('modNoDistribution'), 'error');
+        showToast(get(_)('modNoDistribution'), 'error');
         return;
       }
       emit('cf:install', {
@@ -161,11 +200,11 @@
   }
 
   function isModInstalled(projectId: string): boolean {
-    return $installedMods.some(m => m.projectId === projectId);
+    return get(installedMods).some(m => m.projectId === projectId);
   }
 
   function getUpdateInfo(modId: string): ModUpdate | undefined {
-    return $availableUpdates.find(u => u.modId === modId);
+    return get(availableUpdates).find(u => u.modId === modId);
   }
 
   function getModUrl(mod: InstalledMod | ModProject): string | null {
@@ -179,7 +218,8 @@
       }
     } else {
       // ModProject from browse
-      if ($currentProvider === 'curseforge') {
+      const provider = get(currentProvider);
+      if (provider === 'curseforge') {
         return `https://www.curseforge.com/hytale/mods/${mod.slug}`;
       }
       return `https://modtale.net/mod/${mod.slug}-${mod.id}`;
@@ -190,8 +230,18 @@
 
 <div class="mods-view-toggle">
   <div class="mods-api-status">
-    <span class="mods-api-dot" class:ok={$apiConfigured} title="Modtale API">M</span>
-    <span class="mods-api-dot" class:ok={$cfApiConfigured} title="CurseForge API">CF</span>
+    <span
+      class="mods-api-dot"
+      class:ok={$modtaleStatus.valid}
+      class:error={$modtaleStatus.configured && !$modtaleStatus.valid}
+      title={$modtaleStatus.valid ? 'Modtale: OK' : $modtaleStatus.configured ? `Modtale: ${$modtaleStatus.error || 'Invalid'}` : 'Modtale: Not configured'}
+    >M</span>
+    <span
+      class="mods-api-dot"
+      class:ok={$curseforgeStatus.valid}
+      class:error={$curseforgeStatus.configured && !$curseforgeStatus.valid}
+      title={$curseforgeStatus.valid ? 'CurseForge: OK' : $curseforgeStatus.configured ? `CurseForge: ${$curseforgeStatus.error || 'Invalid'}` : 'CurseForge: Not configured'}
+    >CF</span>
   </div>
   <button class="mc-btn small" class:active={$currentView === 'installed'} onclick={() => switchView('installed')}>
     {$_('local')}
@@ -206,10 +256,24 @@
 
 {#if $currentView === 'browse'}
   <div class="mods-provider-toggle">
-    <button class="provider-btn" class:active={$currentProvider === 'modtale'} onclick={() => switchProvider('modtale')}>
+    <button
+      class="provider-btn"
+      class:active={$currentProvider === 'modtale'}
+      class:unavailable={!$modtaleStatus.configured || !$modtaleStatus.valid}
+      onclick={() => switchProvider('modtale')}
+      title={$modtaleStatus.valid ? 'Modtale API ready' : ($modtaleStatus.configured ? 'API key invalid' : 'API key not configured')}
+    >
+      <span class="provider-dot" class:ok={$modtaleStatus.valid} class:error={$modtaleStatus.configured && !$modtaleStatus.valid}></span>
       Modtale
     </button>
-    <button class="provider-btn" class:active={$currentProvider === 'curseforge'} onclick={() => switchProvider('curseforge')}>
+    <button
+      class="provider-btn"
+      class:active={$currentProvider === 'curseforge'}
+      class:unavailable={!$curseforgeStatus.configured || !$curseforgeStatus.valid}
+      onclick={() => switchProvider('curseforge')}
+      title={$curseforgeStatus.valid ? 'CurseForge API ready' : ($curseforgeStatus.configured ? 'API key invalid' : 'API key not configured')}
+    >
+      <span class="provider-dot" class:ok={$curseforgeStatus.valid} class:error={$curseforgeStatus.configured && !$curseforgeStatus.valid}></span>
       CurseForge
     </button>
   </div>

@@ -23,11 +23,13 @@ import {
   apiConfigured,
   availableUpdates,
   cfApiConfigured,
+  curseforgeStatus,
   currentPage,
   currentProvider,
   hasMore,
   installedMods,
   isModsLoading,
+  modtaleStatus,
   searchResults,
   total,
 } from "$lib/stores/mods";
@@ -39,6 +41,11 @@ import {
   updateInfo,
 } from "$lib/stores/server";
 import { activeServerId, updateServerStatus } from "$lib/stores/servers";
+import {
+  navigateToServer,
+  navigateToDashboard,
+  currentRoute,
+} from "$lib/stores/router";
 import { showToast } from "$lib/stores/ui";
 import type {
   ActionStatus,
@@ -69,6 +76,8 @@ export const joinedServerId = writable<string | null>(null);
 let socketInstance: Socket | null = null;
 let dlStartTime: number | null = null;
 let dlTimer: ReturnType<typeof setInterval> | null = null;
+let routeUnsubscribe: (() => void) | null = null;
+let lastJoinedServerId: string | null = null;
 
 export function connectSocket(): Socket {
   if (socketInstance?.connected) {
@@ -79,7 +88,6 @@ export function connectSocket(): Socket {
     socketInstance.disconnect();
   }
 
-  // Configure socket path based on BASE_PATH
   const config = get(panelConfig);
   const socketPath = config.basePath
     ? `${config.basePath}/socket.io`
@@ -88,6 +96,31 @@ export function connectSocket(): Socket {
 
   socketInstance.on("connect", () => {
     isConnected.set(true);
+    // If there's a server ID in the URL, join it automatically
+    const route = get(currentRoute);
+    if (route.serverId) {
+      lastJoinedServerId = route.serverId;
+      socketInstance?.emit("server:join", route.serverId);
+    }
+  });
+
+  // Subscribe to route changes for browser back/forward navigation
+  if (routeUnsubscribe) routeUnsubscribe();
+  routeUnsubscribe = currentRoute.subscribe((route) => {
+    if (!socketInstance?.connected) return;
+
+    // Server changed via browser navigation
+    if (route.serverId !== lastJoinedServerId) {
+      if (lastJoinedServerId && !route.serverId) {
+        // Left server, going to dashboard
+        socketInstance.emit("server:leave");
+        joinedServerId.set(null);
+      } else if (route.serverId) {
+        // Joined new server
+        socketInstance.emit("server:join", route.serverId);
+      }
+      lastJoinedServerId = route.serverId;
+    }
   });
 
   socketInstance.on("disconnect", () => {
@@ -126,27 +159,23 @@ export function connectSocket(): Socket {
       startedAt: s.startedAt,
     });
 
-    // Also update in servers list
     const serverId = get(activeServerId);
     if (serverId) {
       updateServerStatus(serverId, isNowRunning ? "running" : "stopped");
     }
 
-    // Load files and mods when server becomes running (or on first status if running)
     if (isNowRunning && !wasRunning) {
       socketInstance?.emit("files:list", "/");
       socketInstance?.emit("mods:list");
     }
   });
 
-  // Files check - just update the state, don't auto-load files
   socketInstance.on("files", (f: FilesReady) => {
     filesReady.set({
       hasJar: f.hasJar,
       hasAssets: f.hasAssets,
       ready: f.ready,
     });
-    // Check mods config for both providers - files will be loaded when status confirms server is running
     socketInstance?.emit("mods:check-config");
     socketInstance?.emit("cf:check-config");
   });
@@ -259,9 +288,16 @@ export function connectSocket(): Socket {
   });
 
   // Mods events
-  socketInstance.on("mods:config-status", (result: { configured: boolean }) => {
-    apiConfigured.set(result.configured);
-  });
+  socketInstance.on(
+    "mods:config-status",
+    (result: { configured: boolean; valid: boolean; error?: string }) => {
+      modtaleStatus.set(result);
+      apiConfigured.set(result.configured && result.valid);
+      if (result.configured && !result.valid && result.error) {
+        showToast(`Modtale: ${result.error}`, "error");
+      }
+    },
+  );
 
   socketInstance.on(
     "mods:list-result",
@@ -390,9 +426,16 @@ export function connectSocket(): Socket {
     },
   );
 
-  socketInstance.on("cf:config-status", (result: { configured: boolean }) => {
-    cfApiConfigured.set(result.configured);
-  });
+  socketInstance.on(
+    "cf:config-status",
+    (result: { configured: boolean; valid: boolean; error?: string }) => {
+      curseforgeStatus.set(result);
+      cfApiConfigured.set(result.configured && result.valid);
+      if (result.configured && !result.valid && result.error) {
+        showToast(`CurseForge: ${result.error}`, "error");
+      }
+    },
+  );
 
   socketInstance.on("cf:search-result", (result: ModSearchResult) => {
     isModsLoading.set(false);
@@ -493,6 +536,10 @@ export function connectSocket(): Socket {
 }
 
 export function disconnectSocket(): void {
+  if (routeUnsubscribe) {
+    routeUnsubscribe();
+    routeUnsubscribe = null;
+  }
   if (socketInstance) {
     socketInstance.disconnect();
     socketInstance = null;
@@ -500,6 +547,7 @@ export function disconnectSocket(): void {
   socket.set(null);
   isConnected.set(false);
   joinedServerId.set(null);
+  lastJoinedServerId = null;
 }
 
 export function emit(event: string, data?: unknown): void {
@@ -535,7 +583,9 @@ export function joinServer(serverId: string): void {
     });
 
     socketInstance.emit("server:join", serverId);
-    activeServerId.set(serverId);
+    lastJoinedServerId = serverId;
+    // Navigate to server URL (this also sets activeServerId via router subscription)
+    navigateToServer(serverId);
   }
 }
 
@@ -543,7 +593,9 @@ export function leaveServer(): void {
   if (socketInstance) {
     socketInstance.emit("server:leave");
     joinedServerId.set(null);
-    activeServerId.set(null);
+    lastJoinedServerId = null;
+    // Navigate to dashboard (this also sets activeServerId to null via router)
+    navigateToDashboard();
   }
 }
 
