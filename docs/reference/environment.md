@@ -4,32 +4,33 @@ Complete reference of all environment variables.
 
 ## Server Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `JAVA_XMS` | `4G` | Minimum Java heap size |
-| `JAVA_XMX` | `8G` | Maximum Java heap size |
-| `BIND_PORT` | `5520` | Game server UDP port |
-| `AUTO_DOWNLOAD` | `true` | Auto-download game files on startup |
-| `SERVER_EXTRA_ARGS` | - | Additional arguments for the server |
-| `TZ` | `UTC` | Container timezone |
+| Variable            | Default | Description                         |
+| ------------------- | ------- | ----------------------------------- |
+| `JAVA_XMS`          | `4G`    | Minimum Java heap size              |
+| `JAVA_XMX`          | `8G`    | Maximum Java heap size              |
+| `BIND_PORT`         | `5520`  | Game server UDP port                |
+| `AUTO_DOWNLOAD`     | `true`  | Auto-download game files on startup |
+| `SERVER_EXTRA_ARGS` | -       | Additional arguments for the server |
+| `TZ`                | `UTC`   | Container timezone                  |
 
 ## Panel Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PANEL_USER` | `admin` | Login username |
-| `PANEL_PASS` | `admin` | Login password |
-| `PANEL_PORT` | `3000` | HTTP server port |
-| `JWT_SECRET` | (random) | Secret key for JWT signing |
-| `MODTALE_API_KEY` | - | API key for Modtale integration |
-| `HOST_DATA_PATH` | - | Host path for direct file access |
-| `DISABLE_AUTH` | `false` | Disable panel authentication |
-| `BASE_PATH` | - | URL path prefix (e.g., `/panel`) |
+| Variable             | Default  | Description                        |
+| -------------------- | -------- | ---------------------------------- |
+| `PANEL_USER`         | `admin`  | Login username                     |
+| `PANEL_PASS`         | `admin`  | Login password                     |
+| `PANEL_PORT`         | `3000`   | HTTP server port                   |
+| `JWT_SECRET`         | (random) | Secret key for JWT signing         |
+| `MODTALE_API_KEY`    | -        | API key for Modtale integration    |
+| `CURSEFORGE_API_KEY` | -        | API key for CurseForge integration |
+| `HOST_DATA_PATH`     | -        | Host path for direct file access   |
+| `DISABLE_AUTH`       | `false`  | Disable panel authentication       |
+| `BASE_PATH`          | -        | URL path prefix (e.g., `/panel`)   |
 
 ## Docker Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
+| Variable         | Default         | Description                       |
+| ---------------- | --------------- | --------------------------------- |
 | `CONTAINER_NAME` | `hytale-server` | Name of the game server container |
 
 ## Detailed Descriptions
@@ -112,9 +113,34 @@ MODTALE_API_KEY=your-modtale-api-key
 ```
 
 When configured, enables:
+
 - Mod browsing in the panel
 - One-click mod installation
 - Update checking
+
+### CURSEFORGE_API_KEY
+
+API key for [CurseForge](https://www.curseforge.com) mod repository integration.
+
+::: warning Important
+CurseForge API keys contain `$` characters which are interpreted as variables in shell/Docker. **Wrap the key in single quotes** to prevent issues:
+:::
+
+```env
+CURSEFORGE_API_KEY='$2a$10$your-key-here'
+```
+
+Get your API key at [console.curseforge.com](https://console.curseforge.com).
+
+When configured, enables:
+
+- Browse CurseForge mods in the panel
+- One-click mod installation from CurseForge
+- Access to 2,600+ Hytale mods
+
+::: warning Distribution Restrictions
+Some CurseForge mods don't allow API distribution. These mods will show a warning and must be downloaded manually from the CurseForge website.
+:::
 
 ### HOST_DATA_PATH
 
@@ -125,6 +151,7 @@ HOST_DATA_PATH=/home/user/hytale-data
 ```
 
 When configured:
+
 - Panel data stored at the host path
 - New servers use absolute paths: `/home/user/hytale-data/servers/{id}/server:/opt/hytale`
 - Files accessible directly from host without using the panel
@@ -156,6 +183,7 @@ BASE_PATH=/panel
 ```
 
 When configured:
+
 - Panel accessible at `https://domain.com/panel/` instead of root
 - All API routes prefixed: `/panel/api/`, `/panel/auth/`
 - Socket.IO path: `/panel/socket.io`
@@ -188,7 +216,8 @@ JWT_SECRET=change-this-to-a-random-string
 # ===================
 # Optional Integrations
 # ===================
-MODTALE_API_KEY=your-api-key
+MODTALE_API_KEY=your-modtale-api-key
+CURSEFORGE_API_KEY='$2a$10$your-curseforge-key'
 
 # ===================
 # Data Storage

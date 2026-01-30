@@ -178,16 +178,13 @@ export async function createServer(params: CreateServerParams): Promise<ServerRe
       createdAt: new Date().toISOString()
     };
 
-    // Create server directory
     const serverDir = path.join(SERVERS_DIR, id);
     await fs.mkdir(serverDir, { recursive: true });
     await fs.mkdir(path.join(serverDir, 'server'), { recursive: true });
 
-    // Generate docker-compose.yml
     const compose = generateDockerCompose(server);
     await fs.writeFile(path.join(serverDir, 'docker-compose.yml'), compose);
 
-    // Save to servers.json
     data.servers.push(server);
     await saveServersData(data);
 
@@ -220,7 +217,6 @@ export async function updateServer(id: string, updates: Partial<CreateServerPara
       server.config = { ...server.config, ...updates.config };
     }
 
-    // Regenerate docker-compose
     const serverDir = path.join(SERVERS_DIR, id);
     const compose = generateDockerCompose(server);
     await fs.writeFile(path.join(serverDir, 'docker-compose.yml'), compose);
@@ -246,28 +242,28 @@ export async function deleteServer(id: string, removeData = true): Promise<Opera
     const server = data.servers[index];
     const serverDir = path.join(SERVERS_DIR, id);
 
-    // Stop container first if running
     try {
-      await execAsync(`docker stop ${server.containerName}`, { timeout: 30000 });
+      await execAsync(`docker stop ${server.containerName}`, {
+        timeout: 30000
+      });
     } catch {
       // Container might not be running
     }
 
-    // Remove container and volumes
     try {
-      await execAsync('docker compose down -v --remove-orphans', { cwd: serverDir });
+      await execAsync('docker compose down -v --remove-orphans', {
+        cwd: serverDir
+      });
     } catch {
       // Compose might not exist
     }
 
-    // Force remove container if still exists
     try {
       await execAsync(`docker rm -f ${server.containerName}`);
     } catch {
       // Container might not exist
     }
 
-    // Remove data directory
     if (removeData) {
       await fs.rm(serverDir, { recursive: true, force: true });
     }
@@ -338,7 +334,6 @@ export function getServerModsPath(id: string): string {
   return path.join(SERVERS_DIR, id, 'server', 'mods');
 }
 
-// Docker Compose management
 export interface ComposeResult extends OperationResult {
   content?: string;
 }

@@ -2,9 +2,7 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": ["src/main.ts"],
   "project": ["src/**/*.{ts,svelte}"],
-  "ignore": [
-    "src/lib/i18n/locales/**",
-    "src/lib/*/index.ts"
-  ],
+  "ignore": ["src/lib/i18n/locales/**", "src/lib/*/index.ts"],
+  "ignoreBinaries": ["biome"],
   "ignoreExportsUsedInFile": true
 }

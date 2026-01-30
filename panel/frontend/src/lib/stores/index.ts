@@ -3,6 +3,7 @@ export * from './auth';
 export * from './console';
 export * from './files';
 export * from './mods';
+export * from './router';
 export * from './server';
 export * from './servers';
 export * from './ui';

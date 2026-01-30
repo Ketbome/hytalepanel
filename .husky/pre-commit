@@ -1,0 +1,9 @@
+#!/bin/sh
+
+cd panel
+
+# Auto-fix lint issues before commit
+pnpm lint:fix
+
+# Stage any auto-fixed files
+git add -u

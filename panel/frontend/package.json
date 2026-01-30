@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "knip": "knip"
+    "knip": "knip",
+    "lint": "biome check src/",
+    "lint:fix": "biome check --write src/"
   },
   "dependencies": {
     "socket.io-client": "^4.7.2",

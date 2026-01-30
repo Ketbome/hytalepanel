@@ -167,6 +167,7 @@ export interface ModProject {
   latestVersion: ModVersion | null;
   createdAt: string;
   updatedAt: string;
+  allowDistribution?: boolean; // CurseForge specific - some mods don't allow API distribution
 }
 
 export interface ModUpdate {

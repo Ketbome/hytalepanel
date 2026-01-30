@@ -1,6 +1,7 @@
 import type { Socket } from 'socket.io';
 import * as docker from './docker.js';
 import * as files from './files.js';
+import * as updater from './updater.js';
 
 export interface DownloadStatus {
   status: 'starting' | 'auth-required' | 'output' | 'error' | 'extracting' | 'complete' | 'done';
@@ -47,7 +48,11 @@ export async function downloadServerFiles(socket: Socket, containerName?: string
         text.includes('user_code') ||
         text.includes('Authorization code')
       ) {
-        socket.emit('download-status', { status: 'auth-required', message: text, serverId });
+        socket.emit('download-status', {
+          status: 'auth-required',
+          message: text,
+          serverId
+        });
       } else if (text.includes('403') || text.includes('Forbidden')) {
         socket.emit('download-status', {
           status: 'error',
@@ -55,7 +60,11 @@ export async function downloadServerFiles(socket: Socket, containerName?: string
           serverId
         });
       } else {
-        socket.emit('download-status', { status: 'output', message: text, serverId });
+        socket.emit('download-status', {
+          status: 'output',
+          message: text,
+          serverId
+        });
       }
     });
 
@@ -91,6 +100,8 @@ export async function downloadServerFiles(socket: Socket, containerName?: string
         );
         await docker.execCommand(`rm -rf ${downloadPath}`, 30000, containerName);
 
+        await updater.recordDownload(containerName);
+
         socket.emit('download-status', {
           status: 'complete',
           message: 'Download complete!',
@@ -110,10 +121,18 @@ export async function downloadServerFiles(socket: Socket, containerName?: string
 
     stream.on('error', (err: Error) => {
       console.error('Download stream error:', err);
-      socket.emit('download-status', { status: 'error', message: err.message, serverId });
+      socket.emit('download-status', {
+        status: 'error',
+        message: err.message,
+        serverId
+      });
     });
   } catch (e) {
     console.error('Download error:', e);
-    socket.emit('download-status', { status: 'error', message: (e as Error).message, serverId });
+    socket.emit('download-status', {
+      status: 'error',
+      message: (e as Error).message,
+      serverId
+    });
   }
 }

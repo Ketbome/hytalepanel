@@ -4,20 +4,19 @@ The web panel provides a complete interface to manage multiple Hytale servers fr
 
 ![Panel Preview](/images/panel.png)
 
-## Multi-Server Dashboard
+## URLs and Navigation
 
-The main dashboard displays all your servers with their current status.
+Each server has its own URL for direct access:
 
-![Dashboard Preview](/images/dashboard.png)
+```
+/                     → Dashboard (list all servers)
+/server/{server-id}   → Specific server management
+```
 
-### Server Cards
-
-Each server shows:
-- **Name** - Custom server name
-- **Status** - Online (green) or Offline (red)
-- **Actions**:
-  - **Enter** - Access server management
-  - **Delete** - Remove server and data
+Features:
+- **Bookmarkable URLs** - Save links to specific servers
+- **Browser navigation** - Back/Forward buttons work correctly
+- **Direct access** - Share server URLs with team members
 
 ### Creating a Server
 
@@ -51,10 +50,12 @@ Commands are disabled when the server is offline.
 
 ### Setup Tab
 
-Manage game file downloads and authentication:
+Manage game file downloads, updates, and authentication:
 
 - **Download Status** - Shows if game files are present
 - **Download Button** - Downloads HytaleServer.jar and Assets.zip (~2GB)
+- **Update Tracking** - Shows days since last update
+- **Check Updates** - Re-download server files to get latest version
 - **Authentication** - Device OAuth flow for Hytale authentication
 
 ### Files Tab
@@ -73,15 +74,20 @@ File operations require the server to be running.
 
 ### Mods Tab
 
-Manage server mods with Modtale integration:
+Manage server mods with Modtale and CurseForge integration:
 
-- **Browse** - Search Modtale catalog
+- **Browse** - Search mod catalogs (toggle between Modtale/CurseForge)
 - **Install** - One-click mod installation
-- **Local** - View installed mods
+- **Installed** - View and manage installed mods
 - **Enable/Disable** - Toggle mods without removing
-- **Updates** - Check for mod updates
+- **Updates** - Check for mod updates from both providers
 
-Requires `MODTALE_API_KEY` environment variable.
+Provider status indicators:
+- 🟢 Green = API working
+- 🔴 Red = Invalid key
+- ⚫ Gray = Not configured
+
+See [Mods Guide](/guide/mods) for setup instructions.
 
 ### Commands Tab
 

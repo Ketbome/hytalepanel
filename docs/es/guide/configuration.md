@@ -4,33 +4,34 @@ Toda la configuración se realiza mediante variables de entorno en tu archivo `.
 
 ## Configuración del Servidor
 
-| Variable | Por defecto | Descripción |
-|----------|-------------|-------------|
-| `JAVA_XMS` | `4G` | Asignación mínima de RAM |
-| `JAVA_XMX` | `8G` | Asignación máxima de RAM |
-| `BIND_PORT` | `5520` | Puerto UDP del servidor |
-| `AUTO_DOWNLOAD` | `true` | Descarga automática (solo x64) |
-| `SERVER_EXTRA_ARGS` | - | Argumentos extra para el servidor |
-| `TZ` | `UTC` | Zona horaria para logs |
+| Variable            | Por defecto | Descripción                       |
+| ------------------- | ----------- | --------------------------------- |
+| `JAVA_XMS`          | `4G`        | Asignación mínima de RAM          |
+| `JAVA_XMX`          | `8G`        | Asignación máxima de RAM          |
+| `BIND_PORT`         | `5520`      | Puerto UDP del servidor           |
+| `AUTO_DOWNLOAD`     | `true`      | Descarga automática (solo x64)    |
+| `SERVER_EXTRA_ARGS` | -           | Argumentos extra para el servidor |
+| `TZ`                | `UTC`       | Zona horaria para logs            |
 
 ## Configuración del Panel
 
-| Variable | Por defecto | Descripción |
-|----------|-------------|-------------|
-| `PANEL_USER` | `admin` | Usuario de login |
-| `PANEL_PASS` | `admin` | Contraseña de login |
-| `PANEL_PORT` | `3000` | Puerto HTTP del panel |
-| `JWT_SECRET` | (aleatorio) | Clave de firma JWT |
-| `MODTALE_API_KEY` | - | API key para Modtale |
+| Variable             | Por defecto | Descripción             |
+| -------------------- | ----------- | ----------------------- |
+| `PANEL_USER`         | `admin`     | Usuario de login        |
+| `PANEL_PASS`         | `admin`     | Contraseña de login     |
+| `PANEL_PORT`         | `3000`      | Puerto HTTP del panel   |
+| `JWT_SECRET`         | (aleatorio) | Clave de firma JWT      |
+| `MODTALE_API_KEY`    | -           | API key para Modtale    |
+| `CURSEFORGE_API_KEY` | -           | API key para CurseForge |
 
 ## Guía de RAM
 
 | Jugadores | `JAVA_XMX` Recomendado |
-|-----------|------------------------|
-| 1-10 | 4G |
-| 10-20 | 6G |
-| 20-50 | 8G |
-| 50+ | 12G+ |
+| --------- | ---------------------- |
+| 1-10      | 4G                     |
+| 10-20     | 6G                     |
+| 20-50     | 8G                     |
+| 50+       | 12G+                   |
 
 ## Ejemplo de Configuración
 
@@ -56,6 +57,9 @@ TZ=Europe/Madrid
 
 # Integración Modtale (opcional)
 MODTALE_API_KEY=tu-api-key
+
+# Integración CurseForge (opcional - nota las comillas simples!)
+CURSEFORGE_API_KEY='$2a$10$tu-key-aqui'
 ```
 
 ## Personalización de Docker Compose
@@ -75,17 +79,17 @@ services:
 
   hytale-panel:
     ports:
-      - "8080:3000"  # Cambiar puerto del panel a 8080
+      - "8080:3000" # Cambiar puerto del panel a 8080
 ```
 
 ## Zonas Horarias Comunes
 
-| Región | Zona Horaria |
-|--------|--------------|
-| España | `Europe/Madrid` |
-| México | `America/Mexico_City` |
+| Región    | Zona Horaria           |
+| --------- | ---------------------- |
+| España    | `Europe/Madrid`        |
+| México    | `America/Mexico_City`  |
 | Argentina | `America/Buenos_Aires` |
-| Colombia | `America/Bogota` |
-| Chile | `America/Santiago` |
+| Colombia  | `America/Bogota`       |
+| Chile     | `America/Santiago`     |
 
 [Lista completa de zonas horarias](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)

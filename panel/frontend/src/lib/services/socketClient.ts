@@ -17,14 +17,18 @@ import { currentPath, fileList, setEditorContent, setEditorStatus } from '$lib/s
 import {
   apiConfigured,
   availableUpdates,
+  cfApiConfigured,
   currentPage,
+  curseforgeStatus,
   hasMore,
   installedMods,
   isModsLoading,
+  modtaleStatus,
   searchResults,
   total
 } from '$lib/stores/mods';
-import { downloadProgress, downloaderAuth, filesReady, serverStatus } from '$lib/stores/server';
+import { currentRoute, navigateToDashboard, navigateToServer } from '$lib/stores/router';
+import { downloadProgress, downloaderAuth, filesReady, serverStatus, updateInfo } from '$lib/stores/server';
 import { activeServerId, updateServerStatus } from '$lib/stores/servers';
 import { showToast } from '$lib/stores/ui';
 import type {
@@ -56,6 +60,8 @@ export const joinedServerId = writable<string | null>(null);
 let socketInstance: Socket | null = null;
 let dlStartTime: number | null = null;
 let dlTimer: ReturnType<typeof setInterval> | null = null;
+let routeUnsubscribe: (() => void) | null = null;
+let lastJoinedServerId: string | null = null;
 
 export function connectSocket(): Socket {
   if (socketInstance?.connected) {
@@ -66,13 +72,37 @@ export function connectSocket(): Socket {
     socketInstance.disconnect();
   }
 
-  // Configure socket path based on BASE_PATH
   const config = get(panelConfig);
   const socketPath = config.basePath ? `${config.basePath}/socket.io` : '/socket.io';
   socketInstance = io({ path: socketPath });
 
   socketInstance.on('connect', () => {
     isConnected.set(true);
+    // If there's a server ID in the URL, join it automatically
+    const route = get(currentRoute);
+    if (route.serverId) {
+      lastJoinedServerId = route.serverId;
+      socketInstance?.emit('server:join', route.serverId);
+    }
+  });
+
+  // Subscribe to route changes for browser back/forward navigation
+  if (routeUnsubscribe) routeUnsubscribe();
+  routeUnsubscribe = currentRoute.subscribe((route) => {
+    if (!socketInstance?.connected) return;
+
+    // Server changed via browser navigation
+    if (route.serverId !== lastJoinedServerId) {
+      if (lastJoinedServerId && !route.serverId) {
+        // Left server, going to dashboard
+        socketInstance.emit('server:leave');
+        joinedServerId.set(null);
+      } else if (route.serverId) {
+        // Joined new server
+        socketInstance.emit('server:join', route.serverId);
+      }
+      lastJoinedServerId = route.serverId;
+    }
   });
 
   socketInstance.on('disconnect', () => {
@@ -108,28 +138,25 @@ export function connectSocket(): Socket {
       startedAt: s.startedAt
     });
 
-    // Also update in servers list
     const serverId = get(activeServerId);
     if (serverId) {
       updateServerStatus(serverId, isNowRunning ? 'running' : 'stopped');
     }
 
-    // Load files and mods when server becomes running (or on first status if running)
     if (isNowRunning && !wasRunning) {
       socketInstance?.emit('files:list', '/');
       socketInstance?.emit('mods:list');
     }
   });
 
-  // Files check - just update the state, don't auto-load files
   socketInstance.on('files', (f: FilesReady) => {
     filesReady.set({
       hasJar: f.hasJar,
       hasAssets: f.hasAssets,
       ready: f.ready
     });
-    // Only check mods config - files will be loaded when status confirms server is running
     socketInstance?.emit('mods:check-config');
+    socketInstance?.emit('cf:check-config');
   });
 
   // Downloader auth status
@@ -237,8 +264,12 @@ export function connectSocket(): Socket {
   });
 
   // Mods events
-  socketInstance.on('mods:config-status', (result: { configured: boolean }) => {
-    apiConfigured.set(result.configured);
+  socketInstance.on('mods:config-status', (result: { configured: boolean; valid: boolean; error?: string }) => {
+    modtaleStatus.set(result);
+    apiConfigured.set(result.configured && result.valid);
+    if (result.configured && !result.valid && result.error) {
+      showToast(`Modtale: ${result.error}`, 'error');
+    }
   });
 
   socketInstance.on('mods:list-result', (result: { success: boolean; mods?: InstalledMod[]; error?: string }) => {
@@ -360,11 +391,111 @@ export function connectSocket(): Socket {
     }
   });
 
+  socketInstance.on('cf:config-status', (result: { configured: boolean; valid: boolean; error?: string }) => {
+    curseforgeStatus.set(result);
+    cfApiConfigured.set(result.configured && result.valid);
+    if (result.configured && !result.valid && result.error) {
+      showToast(`CurseForge: ${result.error}`, 'error');
+    }
+  });
+
+  socketInstance.on('cf:search-result', (result: ModSearchResult) => {
+    isModsLoading.set(false);
+    if (result.success) {
+      searchResults.set(result.projects || []);
+      total.set(result.total || 0);
+      hasMore.set(result.hasMore || false);
+      currentPage.set(result.page || 1);
+    } else {
+      showToast(`Error: ${result.error}`, 'error');
+      searchResults.set([]);
+    }
+  });
+
+  socketInstance.on('cf:get-result', (result: { success: boolean; project?: ModProject; error?: string }) => {
+    if (result.success && result.project) {
+      const project = result.project;
+      searchResults.update((results) => {
+        const index = results.findIndex((m) => m.id === project.id);
+        if (index >= 0) {
+          results[index] = project;
+        }
+        return results;
+      });
+      // Auto-install with version info now available
+      const latestVersion = project.latestVersion || project.versions?.[0];
+      if (latestVersion?.id) {
+        emit('cf:install', {
+          modId: project.id,
+          fileId: latestVersion.id,
+          metadata: {
+            projectTitle: project.title,
+            projectSlug: project.slug,
+            projectIconUrl: project.iconUrl,
+            versionName: latestVersion.version,
+            classification: project.classification,
+            fileName: latestVersion.fileName
+          }
+        });
+      }
+    } else if (result.error) {
+      showToast(`${get(_)('error')}: ${result.error}`, 'error');
+    }
+  });
+
+  socketInstance.on('cf:install-result', (result: ModOperationResult) => {
+    const t = get(_);
+    if (result.success) {
+      showToast(t('modInstalled'));
+      emit('mods:list');
+    } else {
+      showToast(`${t('installFailed')}: ${result.error}`, 'error');
+    }
+  });
+
+  // Server update events
+  socketInstance.on(
+    'update:check-result',
+    (result: {
+      success: boolean;
+      lastUpdate: string | null;
+      daysSinceUpdate: number | null;
+      error?: string;
+    }) => {
+      updateInfo.update((u) => ({
+        ...u,
+        isChecking: false,
+        lastUpdate: result.lastUpdate,
+        daysSinceUpdate: result.daysSinceUpdate
+      }));
+    }
+  );
+
+  socketInstance.on('update:status', (data: { status: string; message: string }) => {
+    updateInfo.update((u) => ({
+      ...u,
+      updateStatus: data.message,
+      isUpdating: data.status !== 'complete' && data.status !== 'error'
+    }));
+
+    if (data.status === 'complete') {
+      showToast(get(_)('updateComplete'));
+      emit('check-files');
+      emit('update:check');
+    } else if (data.status === 'error') {
+      showToast(`${get(_)('updateFailed')}: ${data.message}`, 'error');
+    }
+  });
+
   socket.set(socketInstance);
   return socketInstance;
 }
 
 export function disconnectSocket(): void {
+  if (routeUnsubscribe) {
+    routeUnsubscribe();
+    routeUnsubscribe = null;
+  }
   if (socketInstance) {
     socketInstance.disconnect();
     socketInstance = null;
@@ -372,6 +503,7 @@ export function disconnectSocket(): void {
   socket.set(null);
   isConnected.set(false);
   joinedServerId.set(null);
+  lastJoinedServerId = null;
 }
 
 export function emit(event: string, data?: unknown): void {
@@ -407,7 +539,9 @@ export function joinServer(serverId: string): void {
     });
 
     socketInstance.emit('server:join', serverId);
-    activeServerId.set(serverId);
+    lastJoinedServerId = serverId;
+    // Navigate to server URL (this also sets activeServerId via router subscription)
+    navigateToServer(serverId);
   }
 }
 
@@ -415,7 +549,9 @@ export function leaveServer(): void {
   if (socketInstance) {
     socketInstance.emit('server:leave');
     joinedServerId.set(null);
-    activeServerId.set(null);
+    lastJoinedServerId = null;
+    // Navigate to dashboard (this also sets activeServerId to null via router)
+    navigateToDashboard();
   }
 }
 

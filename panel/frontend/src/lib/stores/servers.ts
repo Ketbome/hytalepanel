@@ -30,7 +30,13 @@ export const activeServer = derived([servers, activeServerId], ([$servers, $acti
 });
 
 export function updateServerStatus(id: string, status: 'running' | 'stopped' | 'unknown'): void {
-  servers.update((list) => list.map((s) => (s.id === id ? { ...s, status } : s)));
+  servers.update((list) => {
+    const server = list.find((s) => s.id === id);
+    if (server && server.status === status) {
+      return list; // No changes, same reference - prevents unnecessary re-renders
+    }
+    return list.map((s) => (s.id === id ? { ...s, status } : s));
+  });
 }
 
 export function updateServer(id: string, updates: Partial<Server>): void {

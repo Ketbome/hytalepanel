@@ -1,6 +1,7 @@
 <script lang="ts">
   import { _ } from 'svelte-i18n';
-  import { installedMods, searchResults, availableUpdates, currentView, currentPage, hasMore, apiConfigured, isModsLoading, type ModView } from '$lib/stores/mods';
+  import { get } from 'svelte/store';
+  import { installedMods, searchResults, availableUpdates, currentView, currentPage, hasMore, apiConfigured, cfApiConfigured, currentProvider, isModsLoading, modtaleStatus, curseforgeStatus, type ModView, type ModProvider } from '$lib/stores/mods';
   import { emit } from '$lib/services/socketClient';
   import { showToast } from '$lib/stores/ui';
   import { formatNumber } from '$lib/utils/formatters';
@@ -20,6 +21,17 @@
     }
   }
 
+  function switchProvider(provider: ModProvider): void {
+    currentProvider.set(provider);
+    searchResults.set([]);
+    currentPage.set(1);
+    hasMore.set(false);
+    initialBrowseLoad = true;
+    if ($currentView === 'browse') {
+      searchMods();
+    }
+  }
+
   function loadInstalledMods(): void {
     isModsLoading.set(true);
     emit('mods:list');
@@ -27,11 +39,33 @@
 
   function checkConfig(): void {
     emit('mods:check-config');
+    emit('cf:check-config');
   }
 
+  $effect(() => {
+    const mt = $modtaleStatus;
+    const cf = $curseforgeStatus;
+    const provider = $currentProvider;
+
+    if (provider === 'modtale' && (!mt.configured || !mt.valid)) {
+      if (cf.configured && cf.valid) {
+        currentProvider.set('curseforge');
+      }
+    } else if (provider === 'curseforge' && (!cf.configured || !cf.valid)) {
+      if (mt.configured && mt.valid) {
+        currentProvider.set('modtale');
+      }
+    }
+  });
+
   function checkForUpdates(): void {
-    if (!$apiConfigured) {
-      showToast($_('configureApiFirst'), 'error');
+    const mtStatus = get(modtaleStatus);
+    const cfStatus = get(curseforgeStatus);
+    const hasModtale = mtStatus.configured && mtStatus.valid;
+    const hasCurseforge = cfStatus.configured && cfStatus.valid;
+    
+    if (!hasModtale && !hasCurseforge) {
+      showToast(get(_)('updatesRequireApi'), 'error');
       return;
     }
     isCheckingUpdates = true;
@@ -39,19 +73,48 @@
     setTimeout(() => { isCheckingUpdates = false; }, 5000);
   }
 
+  function isCurrentApiConfigured(): boolean {
+    const provider = get(currentProvider);
+    return provider === 'modtale' ? get(apiConfigured) : get(cfApiConfigured);
+  }
+
+  function getApiErrorMessage(): string {
+    const provider = get(currentProvider);
+    const status = provider === 'curseforge' ? get(curseforgeStatus) : get(modtaleStatus);
+    const providerName = provider === 'curseforge' ? 'CurseForge' : 'Modtale';
+
+    if (!status.configured) {
+      return get(_)('apiKeyNotConfigured', { values: { provider: providerName } });
+    }
+    if (!status.valid) {
+      return get(_)('apiKeyInvalid', { values: { provider: providerName } });
+    }
+    return get(_)('configureApiFirst');
+  }
+
   function searchMods(page = 1): void {
-    if (!$apiConfigured) {
-      showToast($_('configureApiFirst'), 'error');
+    if (!isCurrentApiConfigured()) {
+      showToast(getApiErrorMessage(), 'error');
       return;
     }
     isModsLoading.set(true);
     initialBrowseLoad = false;
-    emit('mods:search', {
-      query: searchQuery,
-      classification: classificationFilter || undefined,
-      page,
-      pageSize: 20
-    });
+
+    const provider = get(currentProvider);
+    if (provider === 'curseforge') {
+      emit('cf:search', {
+        query: searchQuery,
+        page,
+        pageSize: 20
+      });
+    } else {
+      emit('mods:search', {
+        query: searchQuery,
+        classification: classificationFilter || undefined,
+        page,
+        pageSize: 20
+      });
+    }
   }
 
   function changePage(delta: number): void {
@@ -62,28 +125,53 @@
   }
 
   function installMod(mod: ModProject): void {
-    if (!$apiConfigured) {
-      showToast($_('configureApiFirst'), 'error');
+    if (!isCurrentApiConfigured()) {
+      showToast(getApiErrorMessage(), 'error');
       return;
     }
+    const provider = get(currentProvider);
     const latestVersion = mod.latestVersion || mod.versions?.[0];
     if (!latestVersion?.id) {
-      // Need to fetch project details first
-      emit('mods:get', mod.id);
+      if (provider === 'curseforge') {
+        emit('cf:get', mod.id);
+      } else {
+        emit('mods:get', mod.id);
+      }
       return;
     }
-    emit('mods:install', {
-      projectId: mod.id,
-      versionId: latestVersion.id,
-      metadata: {
-        projectTitle: mod.title,
-        projectSlug: mod.slug,
-        projectIconUrl: mod.iconUrl,
-        versionName: latestVersion.version,
-        classification: mod.classification,
-        fileName: latestVersion.fileName
+
+    if (provider === 'curseforge') {
+      // Check if mod allows distribution
+      if ('allowDistribution' in mod && mod.allowDistribution === false) {
+        showToast(get(_)('modNoDistribution'), 'error');
+        return;
       }
-    });
+      emit('cf:install', {
+        modId: mod.id,
+        fileId: latestVersion.id,
+        metadata: {
+          projectTitle: mod.title,
+          projectSlug: mod.slug,
+          projectIconUrl: mod.iconUrl,
+          versionName: latestVersion.version,
+          classification: mod.classification,
+          fileName: latestVersion.fileName
+        }
+      });
+    } else {
+      emit('mods:install', {
+        projectId: mod.id,
+        versionId: latestVersion.id,
+        metadata: {
+          projectTitle: mod.title,
+          projectSlug: mod.slug,
+          projectIconUrl: mod.iconUrl,
+          versionName: latestVersion.version,
+          classification: mod.classification,
+          fileName: latestVersion.fileName
+        }
+      });
+    }
   }
 
   function uninstallMod(modId: string): void {
@@ -112,23 +200,49 @@
   }
 
   function isModInstalled(projectId: string): boolean {
-    return $installedMods.some(m => m.projectId === projectId);
+    return get(installedMods).some(m => m.projectId === projectId);
   }
 
   function getUpdateInfo(modId: string): ModUpdate | undefined {
-    return $availableUpdates.find(u => u.modId === modId);
+    return get(availableUpdates).find(u => u.modId === modId);
   }
 
-  function getModtaleUrl(mod: InstalledMod): string | null {
-    if (mod.projectId && mod.projectSlug) {
-      return `https://modtale.net/mod/${mod.projectSlug}-${mod.projectId}`;
+  function getModUrl(mod: InstalledMod | ModProject): string | null {
+    if ('providerId' in mod) {
+      // InstalledMod
+      if (mod.providerId === 'curseforge' && mod.projectId) {
+        return `https://www.curseforge.com/hytale/mods/${mod.projectSlug || mod.projectId}`;
+      }
+      if (mod.projectId && mod.projectSlug) {
+        return `https://modtale.net/mod/${mod.projectSlug}-${mod.projectId}`;
+      }
+    } else {
+      // ModProject from browse
+      const provider = get(currentProvider);
+      if (provider === 'curseforge') {
+        return `https://www.curseforge.com/hytale/mods/${mod.slug}`;
+      }
+      return `https://modtale.net/mod/${mod.slug}-${mod.id}`;
     }
     return null;
   }
 </script>
 
 <div class="mods-view-toggle">
-  <span class="mods-api-dot" class:ok={$apiConfigured} title="Modtale API"></span>
+  <div class="mods-api-status">
+    <span
+      class="mods-api-dot"
+      class:ok={$modtaleStatus.valid}
+      class:error={$modtaleStatus.configured && !$modtaleStatus.valid}
+      title={$modtaleStatus.valid ? 'Modtale: OK' : $modtaleStatus.configured ? `Modtale: ${$modtaleStatus.error || 'Invalid'}` : 'Modtale: Not configured'}
+    >M</span>
+    <span
+      class="mods-api-dot"
+      class:ok={$curseforgeStatus.valid}
+      class:error={$curseforgeStatus.configured && !$curseforgeStatus.valid}
+      title={$curseforgeStatus.valid ? 'CurseForge: OK' : $curseforgeStatus.configured ? `CurseForge: ${$curseforgeStatus.error || 'Invalid'}` : 'CurseForge: Not configured'}
+    >CF</span>
+  </div>
   <button class="mc-btn small" class:active={$currentView === 'installed'} onclick={() => switchView('installed')}>
     {$_('local')}
   </button>
@@ -141,6 +255,31 @@
 </div>
 
 {#if $currentView === 'browse'}
+  <div class="mods-provider-toggle">
+    <button
+      class="provider-btn"
+      class:active={$currentProvider === 'modtale'}
+      class:unavailable={!$modtaleStatus.configured || !$modtaleStatus.valid}
+      onclick={() => switchProvider('modtale')}
+      title={$modtaleStatus.valid ? 'Modtale API ready' : ($modtaleStatus.configured ? 'API key invalid' : 'API key not configured')}
+    >
+      <span class="provider-dot" class:ok={$modtaleStatus.valid} class:error={$modtaleStatus.configured && !$modtaleStatus.valid}></span>
+      Modtale
+    </button>
+    <button
+      class="provider-btn"
+      class:active={$currentProvider === 'curseforge'}
+      class:unavailable={!$curseforgeStatus.configured || !$curseforgeStatus.valid}
+      onclick={() => switchProvider('curseforge')}
+      title={$curseforgeStatus.valid ? 'CurseForge API ready' : ($curseforgeStatus.configured ? 'API key invalid' : 'API key not configured')}
+    >
+      <span class="provider-dot" class:ok={$curseforgeStatus.valid} class:error={$curseforgeStatus.configured && !$curseforgeStatus.valid}></span>
+      CurseForge
+    </button>
+  </div>
+{/if}
+
+{#if $currentView === 'browse'}
   <div class="mods-search">
     <input
       type="text"
@@ -149,14 +288,16 @@
       bind:value={searchQuery}
       onkeypress={(e: KeyboardEvent) => e.key === 'Enter' && searchMods()}
     />
-    <select class="mods-filter-select" bind:value={classificationFilter} onchange={() => searchMods()}>
-      <option value="">{$_('allTypes')}</option>
-      <option value="PLUGIN">{$_('typePlugin')}</option>
-      <option value="DATA">{$_('typeData')}</option>
-      <option value="ART">{$_('typeArt')}</option>
-      <option value="SAVE">{$_('typeSave')}</option>
-      <option value="MODPACK">{$_('typeModpack')}</option>
-    </select>
+    {#if $currentProvider === 'modtale'}
+      <select class="mods-filter-select" bind:value={classificationFilter} onchange={() => searchMods()}>
+        <option value="">{$_('allTypes')}</option>
+        <option value="PLUGIN">{$_('typePlugin')}</option>
+        <option value="DATA">{$_('typeData')}</option>
+        <option value="ART">{$_('typeArt')}</option>
+        <option value="SAVE">{$_('typeSave')}</option>
+        <option value="MODPACK">{$_('typeModpack')}</option>
+      </select>
+    {/if}
     <button class="mc-btn small" onclick={() => searchMods()}>{$_('search')}</button>
   </div>
 {/if}
@@ -170,7 +311,7 @@
     {:else}
       {#each $installedMods as mod}
         {@const updateInfo = getUpdateInfo(mod.id)}
-        {@const modtaleUrl = getModtaleUrl(mod)}
+        {@const modUrl = getModUrl(mod)}
         <div class="mod-card" class:has-update={updateInfo}>
           <div class="mod-icon">
             {#if mod.projectIconUrl}
@@ -181,12 +322,15 @@
           </div>
           <div class="mod-info">
             <div class="mod-title">
-              {#if modtaleUrl}
-                <a href={modtaleUrl} target="_blank" class="mod-link">{mod.projectTitle}</a>
+              {#if modUrl}
+                <a href={modUrl} target="_blank" class="mod-link">{mod.projectTitle}</a>
               {:else}
                 {mod.projectTitle}
               {/if}
               <span class="mod-classification {mod.classification}">{mod.classification}</span>
+              {#if mod.providerId === 'curseforge'}
+                <span class="mod-provider-badge cf">CF</span>
+              {/if}
               {#if updateInfo}
                 <span class="mod-update-badge">{$_('updateAvailable')}</span>
               {/if}
@@ -223,7 +367,9 @@
       {#each $searchResults as mod}
         {@const alreadyInstalled = isModInstalled(mod.id)}
         {@const latestVersion = mod.latestVersion || mod.versions?.[0]}
-        <div class="mod-card">
+        {@const modUrl = getModUrl(mod)}
+        {@const noDistribution = 'allowDistribution' in mod && mod.allowDistribution === false}
+        <div class="mod-card" class:no-distribution={noDistribution}>
           <div class="mod-icon">
             {#if mod.iconUrl}
               <img src={mod.iconUrl} alt="" onerror={(e: Event) => (e.target as HTMLImageElement).style.display='none'} />
@@ -233,8 +379,15 @@
           </div>
           <div class="mod-info">
             <div class="mod-title">
-              <a href="https://modtale.net/mod/{mod.slug}-{mod.id}" target="_blank" class="mod-link">{mod.title}</a>
+              {#if modUrl}
+                <a href={modUrl} target="_blank" class="mod-link">{mod.title}</a>
+              {:else}
+                {mod.title}
+              {/if}
               <span class="mod-classification {mod.classification}">{mod.classification}</span>
+              {#if noDistribution}
+                <span class="mod-no-dist-badge" title={$_('modNoDistribution')}>⚠</span>
+              {/if}
             </div>
             <div class="mod-meta">
               <span>{mod.author}</span>
@@ -250,8 +403,14 @@
             {/if}
           </div>
           <div class="mod-actions">
-            <button class="mod-btn install" onclick={() => installMod(mod)} disabled={alreadyInstalled}>
-              {alreadyInstalled ? $_('installed') : $_('install')}
+            <button class="mod-btn install" onclick={() => installMod(mod)} disabled={alreadyInstalled || noDistribution}>
+              {#if noDistribution}
+                {$_('manualOnly')}
+              {:else if alreadyInstalled}
+                {$_('installed')}
+              {:else}
+                {$_('install')}
+              {/if}
             </button>
           </div>
         </div>

@@ -1541,17 +1541,113 @@ header {
 }
 
 .mods-api-dot {
-  width: 8px;
-  height: 8px;
+  width: auto;
+  min-width: 16px;
+  height: 16px;
   align-self: center;
-  border-radius: 50%;
-  background: var(--error);
+  border-radius: 3px;
+  background: var(--mc-darker);
+  color: var(--text-dim);
   flex-shrink: 0;
   margin-right: 4px;
+  font-size: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  cursor: help;
 }
 
 .mods-api-dot.ok {
   background: var(--success);
+  color: white;
+}
+
+.mods-api-dot.error {
+  background: var(--error);
+  color: white;
+  animation: pulse-error 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-error {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.mods-provider-toggle {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.provider-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--mc-dark);
+  border: 2px solid var(--mc-border-light);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.provider-btn:hover {
+  background: var(--mc-darker);
+  border-color: var(--hytale-orange);
+}
+
+.provider-btn.active {
+  background: var(--hytale-orange);
+  border-color: var(--hytale-orange);
+  color: white;
+}
+
+.provider-btn.unavailable {
+  opacity: 0.6;
+}
+
+.provider-btn.unavailable:not(.active) {
+  border-style: dashed;
+}
+
+.provider-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.provider-dot.ok {
+  background: var(--success);
+}
+
+.provider-dot.error {
+  background: var(--error);
+  animation: pulse-error 1.5s ease-in-out infinite;
+}
+
+.provider-btn.active .provider-dot {
+  background: white;
+}
+
+.provider-btn.active .provider-dot.ok {
+  background: #90ee90;
+}
+
+.provider-btn.active .provider-dot.error {
+  background: #ffb6c1;
 }
 
 .mods-search {

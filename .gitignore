@@ -31,3 +31,5 @@ Thumbs.db
 docker-compose.override.yml
 
 **/public-dist
+
+.pnpm-store

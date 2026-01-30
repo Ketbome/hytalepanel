@@ -1,10 +1,12 @@
 import type { Server, Socket } from 'socket.io';
+import * as curseforge from '../services/curseforge.js';
 import * as docker from '../services/docker.js';
 import * as downloader from '../services/downloader.js';
 import * as files from '../services/files.js';
 import * as mods from '../services/mods.js';
 import * as modtale from '../services/modtale.js';
 import * as servers from '../services/servers.js';
+import * as updater from '../services/updater.js';
 
 interface LogsMoreParams {
   currentCount?: number;
@@ -25,6 +27,19 @@ interface RenameParams {
 interface InstallParams {
   projectId: string;
   versionId: string;
+  metadata: {
+    versionName: string;
+    projectTitle: string;
+    classification?: string;
+    fileName?: string;
+    projectIconUrl?: string | null;
+    projectSlug?: string | null;
+  };
+}
+
+interface CFInstallParams {
+  modId: string;
+  fileId: string;
   metadata: {
     versionName: string;
     projectTitle: string;
@@ -74,7 +89,10 @@ export function setupSocketHandlers(io: Server): void {
       if (!ctx.containerName) return;
 
       try {
-        logStream = await docker.getLogs({ tail, containerName: ctx.containerName });
+        logStream = await docker.getLogs({
+          tail,
+          containerName: ctx.containerName
+        });
 
         logStream.on('data', (chunk: Buffer) => {
           socket.emit('log', chunk.slice(8).toString('utf8'));
@@ -162,7 +180,11 @@ export function setupSocketHandlers(io: Server): void {
 
     socket.on('command', async (cmd: string) => {
       if (!ctx.containerName) {
-        socket.emit('command-result', { cmd, success: false, error: 'No server selected' });
+        socket.emit('command-result', {
+          cmd,
+          success: false,
+          error: 'No server selected'
+        });
         return;
       }
       const result = await docker.sendCommand(cmd, ctx.containerName);
@@ -251,7 +273,10 @@ export function setupSocketHandlers(io: Server): void {
           hasMore: allLogs.length >= total
         });
       } catch (e) {
-        socket.emit('logs:history', { logs: [], error: (e as Error).message });
+        socket.emit('logs:history', {
+          logs: [],
+          error: (e as Error).message
+        });
       }
     });
 
@@ -315,7 +340,10 @@ export function setupSocketHandlers(io: Server): void {
 
               if (!searchTerm || searchTerm.length < 2) return;
 
-              const searchResult = await modtale.searchProjects({ query: searchTerm, pageSize: 5 });
+              const searchResult = await modtale.searchProjects({
+                query: searchTerm,
+                pageSize: 5
+              });
               if (!searchResult.success || !searchResult.projects.length) return;
 
               const match = searchResult.projects.find(
@@ -372,11 +400,17 @@ export function setupSocketHandlers(io: Server): void {
 
     socket.on('mods:install', async ({ projectId, versionId, metadata }: InstallParams) => {
       if (!ctx.containerName) return;
-      socket.emit('mods:install-status', { status: 'downloading', projectId });
+      socket.emit('mods:install-status', {
+        status: 'downloading',
+        projectId
+      });
 
       const downloadResult = await modtale.downloadVersion(projectId, metadata.versionName);
       if (!downloadResult.success || !downloadResult.buffer) {
-        socket.emit('mods:install-result', { success: false, error: downloadResult.error });
+        socket.emit('mods:install-result', {
+          success: false,
+          error: downloadResult.error
+        });
         return;
       }
 
@@ -418,13 +452,85 @@ export function setupSocketHandlers(io: Server): void {
     });
 
     socket.on('mods:check-config', async () => {
-      socket.emit('mods:config-status', {
-        configured: modtale.isConfigured()
-      });
+      const result = await modtale.verifyApiKey();
+      socket.emit('mods:config-status', result);
     });
 
     socket.on('mods:classifications', async () => {
       socket.emit('mods:classifications-result', await modtale.getClassifications());
+    });
+
+    // CurseForge handlers
+    socket.on('cf:check-config', async () => {
+      const result = await curseforge.verifyApiKey();
+      socket.emit('cf:config-status', result);
+    });
+
+    socket.on('cf:search', async (params: curseforge.SearchParams) => {
+      socket.emit('cf:search-result', await curseforge.searchProjects(params));
+    });
+
+    socket.on('cf:get', async (modId: string) => {
+      socket.emit('cf:get-result', await curseforge.getProject(modId));
+    });
+
+    socket.on('cf:categories', async () => {
+      socket.emit('cf:categories-result', await curseforge.getCategories());
+    });
+
+    socket.on('cf:files', async (modId: string) => {
+      socket.emit('cf:files-result', await curseforge.getModFiles(modId));
+    });
+
+    socket.on('cf:install', async ({ modId, fileId, metadata }: CFInstallParams) => {
+      if (!ctx.containerName) return;
+      socket.emit('cf:install-status', { status: 'downloading', modId });
+
+      const downloadResult = await curseforge.downloadVersion(modId, fileId);
+      if (!downloadResult.success || !downloadResult.buffer) {
+        socket.emit('cf:install-result', {
+          success: false,
+          error: downloadResult.error
+        });
+        return;
+      }
+
+      socket.emit('cf:install-status', { status: 'installing', modId });
+
+      let fileName = downloadResult.fileName || metadata.fileName;
+      if (!fileName) {
+        const ext = metadata.classification === 'PACK' ? 'zip' : 'jar';
+        fileName = `${metadata.projectTitle.replace(/[^a-zA-Z0-9]/g, '-')}-${metadata.versionName}.${ext}`;
+      }
+
+      const installResult = await mods.installMod(
+        downloadResult.buffer,
+        {
+          providerId: 'curseforge',
+          projectId: modId,
+          versionId: fileId,
+          versionName: metadata.versionName,
+          projectTitle: metadata.projectTitle,
+          classification: metadata.classification,
+          fileName,
+          projectIconUrl: metadata.projectIconUrl,
+          projectSlug: metadata.projectSlug
+        },
+        ctx.containerName
+      );
+
+      socket.emit('cf:install-result', installResult);
+    });
+
+    // Server update handlers
+    socket.on('update:check', async () => {
+      if (!ctx.containerName) return;
+      socket.emit('update:check-result', await updater.checkForUpdate(ctx.containerName));
+    });
+
+    socket.on('update:apply', async () => {
+      if (!ctx.containerName || !ctx.serverId) return;
+      await updater.applyUpdate(socket, ctx.containerName, ctx.serverId);
     });
 
     socket.on('mods:check-updates', async () => {
@@ -432,41 +538,100 @@ export function setupSocketHandlers(io: Server): void {
       try {
         const listResult = await mods.listInstalledMods(ctx.containerName);
         if (!listResult.success) {
-          socket.emit('mods:check-updates-result', { success: false, error: listResult.error });
+          socket.emit('mods:check-updates-result', {
+            success: false,
+            error: listResult.error
+          });
           return;
         }
 
-        const modtaleMods = listResult.mods.filter((m) => m.providerId === 'modtale' && m.projectId);
+        const allUpdates: Array<{
+          modId: string;
+          projectId: string | null;
+          projectTitle: string;
+          currentVersion: string;
+          latestVersion: string;
+          latestVersionId: string;
+          latestFileName?: string;
+          providerId: string;
+        }> = [];
 
-        const updateChecks = await Promise.all(
-          modtaleMods.map(async (mod) => {
-            try {
-              const projectResult = await modtale.getProject(mod.projectId!);
-              if (projectResult.success && projectResult.project?.latestVersion) {
-                const latest = projectResult.project.latestVersion;
-                if (latest.id && latest.id !== mod.versionId) {
-                  return {
-                    modId: mod.id,
-                    projectId: mod.projectId,
-                    projectTitle: mod.projectTitle,
-                    currentVersion: mod.versionName,
-                    latestVersion: latest.version,
-                    latestVersionId: latest.id,
-                    latestFileName: latest.fileName
-                  };
+        // Check Modtale mods if API is configured
+        if (modtale.isConfigured()) {
+          const modtaleMods = listResult.mods.filter((m) => m.providerId === 'modtale' && m.projectId);
+
+          const modtaleChecks = await Promise.all(
+            modtaleMods.map(async (mod) => {
+              try {
+                const projectResult = await modtale.getProject(mod.projectId!);
+                if (projectResult.success && projectResult.project?.latestVersion) {
+                  const latest = projectResult.project.latestVersion;
+                  if (latest.id && latest.id !== mod.versionId) {
+                    return {
+                      modId: mod.id,
+                      projectId: mod.projectId,
+                      projectTitle: mod.projectTitle,
+                      currentVersion: mod.versionName,
+                      latestVersion: latest.version,
+                      latestVersionId: latest.id,
+                      latestFileName: latest.fileName,
+                      providerId: 'modtale'
+                    };
+                  }
                 }
+              } catch (e) {
+                console.error(`[Mods] Error checking Modtale updates for ${mod.projectTitle}:`, (e as Error).message);
               }
-            } catch (e) {
-              console.error(`[Mods] Error checking updates for ${mod.projectTitle}:`, (e as Error).message);
-            }
-            return null;
-          })
-        );
+              return null;
+            })
+          );
+          allUpdates.push(...(modtaleChecks.filter(Boolean) as typeof allUpdates));
+        }
 
-        const updates = updateChecks.filter(Boolean);
-        socket.emit('mods:check-updates-result', { success: true, updates });
+        // Check CurseForge mods if API is configured
+        if (curseforge.isConfigured()) {
+          const cfMods = listResult.mods.filter((m) => m.providerId === 'curseforge' && m.projectId);
+
+          const cfChecks = await Promise.all(
+            cfMods.map(async (mod) => {
+              try {
+                const projectResult = await curseforge.getProject(mod.projectId!);
+                if (projectResult.success && projectResult.project?.latestVersion) {
+                  const latest = projectResult.project.latestVersion;
+                  if (latest.id && latest.id !== mod.versionId) {
+                    return {
+                      modId: mod.id,
+                      projectId: mod.projectId,
+                      projectTitle: mod.projectTitle,
+                      currentVersion: mod.versionName,
+                      latestVersion: latest.version,
+                      latestVersionId: latest.id,
+                      latestFileName: latest.fileName,
+                      providerId: 'curseforge'
+                    };
+                  }
+                }
+              } catch (e) {
+                console.error(
+                  `[Mods] Error checking CurseForge updates for ${mod.projectTitle}:`,
+                  (e as Error).message
+                );
+              }
+              return null;
+            })
+          );
+          allUpdates.push(...(cfChecks.filter(Boolean) as typeof allUpdates));
+        }
+
+        socket.emit('mods:check-updates-result', {
+          success: true,
+          updates: allUpdates
+        });
       } catch (e) {
-        socket.emit('mods:check-updates-result', { success: false, error: (e as Error).message });
+        socket.emit('mods:check-updates-result', {
+          success: false,
+          error: (e as Error).message
+        });
       }
     });
 
@@ -476,16 +641,34 @@ export function setupSocketHandlers(io: Server): void {
 
       const modResult = await mods.getMod(modId, ctx.containerName);
       if (!modResult.success || !modResult.mod) {
-        socket.emit('mods:update-result', { success: false, error: 'Mod not found' });
+        socket.emit('mods:update-result', {
+          success: false,
+          error: 'Mod not found'
+        });
         return;
       }
 
       const mod = modResult.mod;
       socket.emit('mods:update-status', { status: 'downloading', modId });
 
-      const downloadResult = await modtale.downloadVersion(mod.projectId!, metadata.versionName);
+      let downloadResult: {
+        success: boolean;
+        buffer?: Buffer;
+        fileName?: string | null;
+        error?: string;
+      };
+
+      if (mod.providerId === 'curseforge') {
+        downloadResult = await curseforge.downloadVersion(mod.projectId!, versionId);
+      } else {
+        downloadResult = await modtale.downloadVersion(mod.projectId!, metadata.versionName);
+      }
+
       if (!downloadResult.success || !downloadResult.buffer) {
-        socket.emit('mods:update-result', { success: false, error: downloadResult.error });
+        socket.emit('mods:update-result', {
+          success: false,
+          error: downloadResult.error
+        });
         return;
       }
 
@@ -508,9 +691,15 @@ export function setupSocketHandlers(io: Server): void {
       );
 
       if (installResult.success) {
-        socket.emit('mods:update-result', { success: true, mod: installResult.mod });
+        socket.emit('mods:update-result', {
+          success: true,
+          mod: installResult.mod
+        });
       } else {
-        socket.emit('mods:update-result', { success: false, error: installResult.error });
+        socket.emit('mods:update-result', {
+          success: false,
+          error: installResult.error
+        });
       }
     });
 

@@ -34,6 +34,9 @@ export interface Config {
   modtale: {
     apiKey: string | null;
   };
+  curseforge: {
+    apiKey: string | null;
+  };
   data: {
     path: string;
     hostPath: string | null; // Host path for bind mounts (servers inherit this)
@@ -126,6 +129,9 @@ const config: Config = {
   },
   modtale: {
     apiKey: process.env.MODTALE_API_KEY || null
+  },
+  curseforge: {
+    apiKey: process.env.CURSEFORGE_API_KEY || null
   },
   data: {
     path: process.env.DATA_PATH || '/opt/hytale-panel/data',

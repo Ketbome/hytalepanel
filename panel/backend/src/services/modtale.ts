@@ -85,6 +85,28 @@ export function isConfigured(): boolean {
   return !!apiKey;
 }
 
+export interface VerifyResult {
+  configured: boolean;
+  valid: boolean;
+  error?: string;
+}
+
+export async function verifyApiKey(): Promise<VerifyResult> {
+  if (!apiKey) {
+    return { configured: false, valid: false, error: 'API key not configured' };
+  }
+
+  try {
+    // Make a simple request to verify the key works
+    await request<string[]>('/meta/classifications');
+    return { configured: true, valid: true };
+  } catch (e) {
+    const error = (e as Error).message;
+    console.error('[Modtale] API key verification failed:', error);
+    return { configured: true, valid: false, error };
+  }
+}
+
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   if (!apiKey) {
     throw new Error('Modtale API key not configured');

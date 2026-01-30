@@ -24,3 +24,19 @@ export const downloadProgress = writable<DownloadProgress>({
   authCode: null,
   time: '0s'
 });
+
+export interface UpdateInfo {
+  lastUpdate: string | null;
+  daysSinceUpdate: number | null;
+  isChecking: boolean;
+  isUpdating: boolean;
+  updateStatus: string;
+}
+
+export const updateInfo = writable<UpdateInfo>({
+  lastUpdate: null,
+  daysSinceUpdate: null,
+  isChecking: false,
+  isUpdating: false,
+  updateStatus: ''
+});

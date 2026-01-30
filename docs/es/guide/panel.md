@@ -4,20 +4,20 @@ El panel web proporciona una interfaz completa para administrar múltiples servi
 
 ![Vista del Panel](/images/panel.png)
 
-## Dashboard Multi-Servidor
+## URLs y Navegación
 
-El dashboard principal muestra todos tus servidores con su estado actual.
+Cada servidor tiene su propia URL para acceso directo:
 
-![Vista del Dashboard](/images/dashboard.png)
+```
+/                     → Dashboard (lista todos los servidores)
+/server/{server-id}   → Gestión de servidor específico
+```
 
-### Tarjetas de Servidor
+Características:
 
-Cada servidor muestra:
-- **Nombre** - Nombre personalizado del servidor
-- **Estado** - En Línea (verde) o Desconectado (rojo)
-- **Acciones**:
-  - **Entrar** - Acceder a la gestión del servidor
-  - **Eliminar** - Eliminar servidor y datos
+- **URLs guardables** - Guarda enlaces a servidores específicos
+- **Navegación del navegador** - Los botones Atrás/Adelante funcionan correctamente
+- **Acceso directo** - Comparte URLs de servidores con miembros del equipo
 
 ### Crear un Servidor
 
@@ -30,6 +30,7 @@ Cada servidor muestra:
 3. Haz clic en **"Crear"**
 
 El servidor se crea con su propio:
+
 - Contenedor Docker
 - Directorio de datos
 - Archivos de configuración
@@ -51,10 +52,12 @@ Los comandos están deshabilitados cuando el servidor está offline.
 
 ### Pestaña Setup
 
-Gestiona la descarga de archivos del juego y autenticación:
+Gestiona la descarga de archivos del juego, actualizaciones y autenticación:
 
 - **Estado de Descarga** - Muestra si los archivos del juego están presentes
 - **Botón de Descarga** - Descarga HytaleServer.jar y Assets.zip (~2GB)
+- **Seguimiento de Actualizaciones** - Muestra días desde la última actualización
+- **Verificar Actualizaciones** - Re-descarga archivos del servidor para obtener la última versión
 - **Autenticación** - Flujo OAuth de dispositivo para autenticación de Hytale
 
 ### Pestaña Files
@@ -73,15 +76,21 @@ Las operaciones de archivos requieren que el servidor esté corriendo.
 
 ### Pestaña Mods
 
-Gestiona mods del servidor con integración de Modtale:
+Gestiona mods del servidor con integración de Modtale y CurseForge:
 
-- **Explorar** - Buscar en el catálogo de Modtale
+- **Explorar** - Buscar en catálogos de mods (alternar entre Modtale/CurseForge)
 - **Instalar** - Instalación de mods con un clic
-- **Local** - Ver mods instalados
+- **Instalados** - Ver y gestionar mods instalados
 - **Habilitar/Deshabilitar** - Alternar mods sin eliminarlos
-- **Actualizaciones** - Verificar actualizaciones de mods
+- **Actualizaciones** - Verificar actualizaciones de ambos proveedores
 
-Requiere la variable de entorno `MODTALE_API_KEY`.
+Indicadores de estado del proveedor:
+
+- 🟢 Verde = API funcionando
+- 🔴 Rojo = Key inválida
+- ⚫ Gris = No configurado
+
+Ver [Guía de Mods](/es/guide/mods) para instrucciones de configuración.
 
 ### Pestaña Commands
 
@@ -99,27 +108,27 @@ Referencia rápida y botones para comandos comunes:
 
 Gestión del ciclo de vida del servidor:
 
-| Botón | Acción |
-|-------|--------|
-| **INICIAR** | Iniciar el contenedor del servidor |
-| **REINICIAR** | Reiniciar el servidor |
-| **DETENER** | Detener el servidor graciosamente |
+| Botón            | Acción                                                        |
+| ---------------- | ------------------------------------------------------------- |
+| **INICIAR**      | Iniciar el contenedor del servidor                            |
+| **REINICIAR**    | Reiniciar el servidor                                         |
+| **DETENER**      | Detener el servidor graciosamente                             |
 | **BORRAR DATOS** | Eliminar todos los datos del servidor (requiere confirmación) |
 
 ### Pestaña Config
 
 Edita la configuración del servidor sin tocar archivos YAML:
 
-| Configuración | Descripción |
-|---------------|-------------|
-| **Puerto** | Puerto UDP del juego (1024-65535) |
-| **RAM Mín** | Heap mínimo de Java (ej: 2G, 4G) |
-| **RAM Máx** | Heap máximo de Java (ej: 4G, 8G) |
-| **Dirección de Enlace** | Interfaz de red (por defecto: 0.0.0.0) |
-| **Argumentos Extra** | Args adicionales (ej: --world-seed 123) |
-| **Auto-descarga** | Habilitar descarga automática de archivos |
-| **G1GC** | Usar recolector de basura G1 (recomendado) |
-| **Linux Nativo** | Montar volúmenes machine-id (solo Linux) |
+| Configuración           | Descripción                                |
+| ----------------------- | ------------------------------------------ |
+| **Puerto**              | Puerto UDP del juego (1024-65535)          |
+| **RAM Mín**             | Heap mínimo de Java (ej: 2G, 4G)           |
+| **RAM Máx**             | Heap máximo de Java (ej: 4G, 8G)           |
+| **Dirección de Enlace** | Interfaz de red (por defecto: 0.0.0.0)     |
+| **Argumentos Extra**    | Args adicionales (ej: --world-seed 123)    |
+| **Auto-descarga**       | Habilitar descarga automática de archivos  |
+| **G1GC**                | Usar recolector de basura G1 (recomendado) |
+| **Linux Nativo**        | Montar volúmenes machine-id (solo Linux)   |
 
 ::: warning
 La configuración solo puede editarse cuando el servidor está detenido. Reinicia el servidor para aplicar cambios.
@@ -177,9 +186,9 @@ data/panel/
 
 ## Atajos de Teclado
 
-| Atajo | Acción |
-|-------|--------|
-| `Enter` | Enviar comando |
+| Atajo     | Acción                        |
+| --------- | ----------------------------- |
+| `Enter`   | Enviar comando                |
 | `↑` / `↓` | Navegar historial de comandos |
 
 ## Consideraciones de Seguridad
@@ -191,7 +200,7 @@ Nunca expongas el panel a internet sin medidas de seguridad:
 2. Configura reglas de **firewall**
 3. Usa **contraseñas fuertes**
 4. Considera **VPN** para acceso remoto
-:::
+   :::
 
 ### Ejemplo: Proxy Reverso con Nginx
 
@@ -226,6 +235,7 @@ Este es un bug conocido de Docker Desktop. Solución:
 ### El servidor no inicia
 
 Revisa los logs del servidor para errores. Problemas comunes:
+
 - Puerto en uso - cambia el puerto en la pestaña Config
 - Archivos del juego faltantes - usa la pestaña Setup para descargar
 - RAM insuficiente - aumenta RAM Máx en la pestaña Config

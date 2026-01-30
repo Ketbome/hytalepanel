@@ -1,12 +1,24 @@
 <script lang="ts">
   import { _ } from 'svelte-i18n';
-  import { filesReady, downloaderAuth, downloadProgress } from '$lib/stores/server';
+  import { filesReady, downloaderAuth, downloadProgress, updateInfo } from '$lib/stores/server';
   import { emit } from '$lib/services/socketClient';
   import type { DownloadStep } from '$lib/types';
 
   function handleDownload(): void {
     downloadProgress.update(p => ({ ...p, authUrl: null, authCode: null }));
     emit('download');
+  }
+
+  function checkForUpdate(): void {
+    updateInfo.update(u => ({ ...u, isChecking: true }));
+    emit('update:check');
+  }
+
+  function applyUpdate(): void {
+    if (confirm($_('confirmUpdate'))) {
+      updateInfo.update(u => ({ ...u, isUpdating: true, updateStatus: $_('starting') }));
+      emit('update:apply');
+    }
   }
 
   function getStepState(step: DownloadStep, currentStep: DownloadStep): 'active' | 'done' | '' {
@@ -24,6 +36,21 @@
     download: getStepState('download', $downloadProgress.step),
     extract: getStepState('extract', $downloadProgress.step),
     complete: $downloadProgress.step === 'complete' ? 'done' : ''
+  });
+
+  function formatLastUpdate(lastUpdate: string | null, daysSince: number | null): string {
+    if (!lastUpdate) return $_('never');
+    if (daysSince === 0) return $_('today');
+    if (daysSince === 1) return $_('yesterday');
+    if (daysSince !== null) return $_('daysAgo', { values: { days: daysSince } });
+    return new Date(lastUpdate).toLocaleDateString();
+  }
+
+  // Check for update info on mount
+  $effect(() => {
+    if ($filesReady.ready && !$updateInfo.lastUpdate && !$updateInfo.isChecking) {
+      checkForUpdate();
+    }
   });
 </script>
 
@@ -107,3 +134,27 @@
   {/if}
 </button>
 <p class="hint">{$_('downloadHint')}</p>
+
+{#if $filesReady.ready}
+  <div class="update-section">
+    <div class="update-info">
+      <span class="update-label">{$_('lastUpdate')}:</span>
+      <span class="update-value">{formatLastUpdate($updateInfo.lastUpdate, $updateInfo.daysSinceUpdate)}</span>
+      {#if $updateInfo.isChecking}
+        <span class="spinner small"></span>
+      {/if}
+    </div>
+    {#if $updateInfo.isUpdating}
+      <div class="update-status">{$updateInfo.updateStatus}</div>
+    {/if}
+    <div class="update-actions">
+      <button class="mc-btn small" onclick={checkForUpdate} disabled={$updateInfo.isChecking || $updateInfo.isUpdating}>
+        {$_('checkUpdate')}
+      </button>
+      <button class="mc-btn small primary" onclick={applyUpdate} disabled={$updateInfo.isUpdating || $downloadProgress.active}>
+        {$_('forceUpdate')}
+      </button>
+    </div>
+    <p class="hint">{$_('updateHint')}</p>
+  </div>
+{/if}

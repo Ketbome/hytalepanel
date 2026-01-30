@@ -17,10 +17,12 @@
 
   let isSaving = $state(false);
   let hasChanges = $state(false);
+  let lastLoadedServerId = $state<string | null>(null);
 
-  // Load config when server changes
+  // Load config only when server ID changes (not on every status poll)
   $effect(() => {
-    if ($activeServer) {
+    if ($activeServer && $activeServer.id !== lastLoadedServerId) {
+      lastLoadedServerId = $activeServer.id;
       javaXms = $activeServer.config.javaXms;
       javaXmx = $activeServer.config.javaXmx;
       port = $activeServer.port;
