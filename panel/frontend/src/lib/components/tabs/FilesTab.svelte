@@ -1,7 +1,6 @@
 <script lang="ts">
   import { _ } from 'svelte-i18n';
   import { currentPath, fileList, editorState, openEditor, closeEditor, uploadState, FILE_ICONS, setEditorStatus } from '$lib/stores/files';
-  import { serverStatus } from '$lib/stores/server';
   import { activeServer } from '$lib/stores/servers';
   import { emit } from '$lib/services/socketClient';
   import { uploadFile } from '$lib/services/api';
@@ -21,7 +20,7 @@
   function getBreadcrumbParts(path: string): BreadcrumbPart[] {
     const parts = path.split('/').filter(p => p);
     let accumulated = '';
-    const result: BreadcrumbPart[] = [{ path: '/', label: '/opt/hytale' }];
+    const result: BreadcrumbPart[] = [{ path: '/', label: 'server' }];
     for (const part of parts) {
       accumulated += '/' + part;
       result.push({ path: accumulated, label: part });
@@ -110,7 +109,7 @@
     for (const file of files) {
       uploadState.update(s => ({ ...s, text: $_('uploading') + ` ${file.name}...` }));
       try {
-        const result = await uploadFile(file, $currentPath, $activeServer!.containerName);
+        const result = await uploadFile(file, $currentPath, $activeServer!.id);
         if (result.success) {
           uploadState.update(s => ({ ...s, progress: 100 }));
           showToast($_('uploaded') + `: ${file.name}`);
@@ -159,22 +158,16 @@
 
 </script>
 
-{#if !$serverStatus.running}
-  <div class="offline-notice">
-    <span>⚠</span> {$_('serverOfflineFiles')}
-  </div>
-{/if}
-
 <div class="file-breadcrumb">
   {#each breadcrumbParts as part}
-    <button type="button" class="breadcrumb-item" onclick={() => navigateTo(part.path)} disabled={!$serverStatus.running}>{part.label}</button>
+    <button type="button" class="breadcrumb-item" onclick={() => navigateTo(part.path)}>{part.label}</button>
   {/each}
 </div>
 
 <div class="file-toolbar">
-  <button class="mc-btn small" title={$_('refresh')} onclick={() => navigateTo($currentPath)} disabled={!$serverStatus.running}>↻</button>
-  <button class="mc-btn small" onclick={handleNewFolder} disabled={!$serverStatus.running}>{$_('newFolder')}</button>
-  <button class="mc-btn small" onclick={toggleUploadZone} disabled={!$serverStatus.running}>{$_('upload')}</button>
+  <button class="mc-btn small" title={$_('refresh')} onclick={() => navigateTo($currentPath)}>↻</button>
+  <button class="mc-btn small" onclick={handleNewFolder}>{$_('newFolder')}</button>
+  <button class="mc-btn small" onclick={toggleUploadZone}>{$_('upload')}</button>
 </div>
 
 {#if $uploadState.isVisible}

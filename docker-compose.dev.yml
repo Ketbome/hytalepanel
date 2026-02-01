@@ -18,14 +18,14 @@ services:
       JWT_SECRET: ${JWT_SECRET:-}
       MODTALE_API_KEY: ${MODTALE_API_KEY:-}
       CURSEFORGE_API_KEY: ${CURSEFORGE_API_KEY:-}
-      DATA_PATH: /opt/hytale-panel/data
-      HOST_DATA_PATH: ${HOST_DATA_PATH:-${PWD}/data/panel}
       DISABLE_AUTH: ${DISABLE_AUTH:-false}
       BASE_PATH: ${BASE_PATH:-}
+      # Must be absolute path - used for server container volumes
+      HOST_DATA_PATH: ${HOST_DATA_PATH:-${PWD}/data}
     volumes:
       - ./panel/backend/src:/app/backend/src
       - ./panel/frontend/src:/app/frontend/src
       - ./panel/frontend/public:/app/frontend/public
       - ./panel/tsconfig.base.json:/app/tsconfig.base.json
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./data/panel:/opt/hytale-panel/data
+      - ${HOST_DATA_PATH:-${PWD}/data}:/opt/hytale-panel/data

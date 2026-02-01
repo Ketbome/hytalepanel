@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import config from '../config/index.js';
+import { type BackupConfig, DEFAULT_BACKUP_CONFIG } from './backups.js';
 
 const execAsync = promisify(exec);
 
@@ -15,6 +16,7 @@ export interface ServerConfig {
   useG1gc: boolean;
   extraArgs: string;
   useMachineId: boolean; // Linux only - for CasaOS/Windows set to false
+  backup: BackupConfig;
 }
 
 export interface Server {
@@ -55,7 +57,8 @@ const DEFAULT_CONFIG: ServerConfig = {
   autoDownload: true,
   useG1gc: true,
   extraArgs: '',
-  useMachineId: false // Default false for compatibility (CasaOS/Windows)
+  useMachineId: false, // Default false for compatibility (CasaOS/Windows)
+  backup: DEFAULT_BACKUP_CONFIG
 };
 
 async function ensureDataDir(): Promise<void> {
@@ -85,11 +88,9 @@ function generateDockerCompose(server: Server): string {
 `
     : '';
 
-  // Use host path if available, otherwise relative path
-  const hostDataPath = config.data.hostPath;
-  const serverVolume = hostDataPath
-    ? `${hostDataPath}/servers/${server.id}/server:/opt/hytale`
-    : './server:/opt/hytale';
+  // Server volume - must use absolute host path for Docker-in-Docker to work
+  // HOST_DATA_PATH should always be absolute (e.g., /home/user/hytale/data)
+  const serverVolume = `${config.data.hostPath}/servers/${server.id}/server:/opt/hytale`;
 
   return `services:
   ${server.containerName}:

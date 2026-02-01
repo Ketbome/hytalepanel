@@ -8,8 +8,9 @@
   import CommandsTab from './tabs/CommandsTab.svelte';
   import ControlTab from './tabs/ControlTab.svelte';
   import ConfigTab from './tabs/ConfigTab.svelte';
+  import BackupsTab from './tabs/BackupsTab.svelte';
 
-  const tabs: TabId[] = ['control', 'setup', 'files', 'mods', 'commands', 'config'];
+  const tabs: TabId[] = ['control', 'setup', 'files', 'mods', 'backups', 'commands', 'config'];
 
   function setTab(tab: TabId): void {
     activeTab.set(tab);
@@ -60,6 +61,10 @@
 
     <div id="tab-config" class="tab-content" class:active={$activeTab === 'config'}>
       <ConfigTab />
+    </div>
+
+    <div id="tab-backups" class="tab-content" class:active={$activeTab === 'backups'}>
+      <BackupsTab />
     </div>
 
     <div class="sidebar-toolbar">

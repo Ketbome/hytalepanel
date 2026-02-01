@@ -66,9 +66,9 @@ async function getJarInfo(containerName?: string): Promise<{ size: number; hash:
   }
 }
 
-export async function checkForUpdate(containerName?: string): Promise<UpdateCheckResult> {
+export async function checkForUpdate(serverId: string, containerName?: string): Promise<UpdateCheckResult> {
   try {
-    const filesStatus = await files.checkServerFiles(containerName);
+    const filesStatus = await files.checkServerFiles(serverId);
     const metadata = await getMetadata(containerName);
 
     let daysSinceUpdate: number | null = null;

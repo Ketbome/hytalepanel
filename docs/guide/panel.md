@@ -14,6 +14,7 @@ Each server has its own URL for direct access:
 ```
 
 Features:
+
 - **Bookmarkable URLs** - Save links to specific servers
 - **Browser navigation** - Back/Forward buttons work correctly
 - **Direct access** - Share server URLs with team members
@@ -29,6 +30,7 @@ Features:
 3. Click **"Create"**
 
 The server is created with its own:
+
 - Docker container
 - Data directory
 - Configuration files
@@ -60,17 +62,15 @@ Manage game file downloads, updates, and authentication:
 
 ### Files Tab
 
-Full file manager for the server's data directory:
+Full file manager for the server's data directory. The file browser is **always available**, even when the server is stopped.
 
 - **Browse** - Navigate folders
 - **Upload** - Drag & drop or click to upload files (max 500MB)
-- **Edit** - Inline text editor for configs
+- **Edit** - Inline text editor for configs (.json, .yaml, .properties, etc.)
 - **Delete** - Remove files and folders
-- **Download** - Download files as .tar
-
-::: warning
-File operations require the server to be running.
-:::
+- **Download** - Download files
+- **Create** - Create new directories
+- **Copy/Rename** - Manage file organization
 
 ### Mods Tab
 
@@ -83,6 +83,7 @@ Manage server mods with Modtale and CurseForge integration:
 - **Updates** - Check for mod updates from both providers
 
 Provider status indicators:
+
 - 🟢 Green = API working
 - 🔴 Red = Invalid key
 - ⚫ Gray = Not configured
@@ -105,30 +106,62 @@ Quick reference and buttons for common server commands:
 
 Server lifecycle management:
 
-| Button | Action |
-|--------|--------|
-| **START** | Start the server container |
-| **RESTART** | Restart the server |
-| **STOP** | Gracefully stop the server |
+| Button        | Action                                         |
+| ------------- | ---------------------------------------------- |
+| **START**     | Start the server container                     |
+| **RESTART**   | Restart the server                             |
+| **STOP**      | Gracefully stop the server                     |
 | **WIPE DATA** | Delete all server data (requires confirmation) |
 
 ### Config Tab
 
 Edit server configuration without touching YAML files:
 
-| Setting | Description |
-|---------|-------------|
-| **Port** | UDP game port (1024-65535) |
-| **Min RAM** | Minimum Java heap (e.g., 2G, 4G) |
-| **Max RAM** | Maximum Java heap (e.g., 4G, 8G) |
-| **Bind Address** | Network interface (default: 0.0.0.0) |
+| Setting             | Description                                     |
+| ------------------- | ----------------------------------------------- |
+| **Port**            | UDP game port (1024-65535)                      |
+| **Min RAM**         | Minimum Java heap (e.g., 2G, 4G)                |
+| **Max RAM**         | Maximum Java heap (e.g., 4G, 8G)                |
+| **Bind Address**    | Network interface (default: 0.0.0.0)            |
 | **Extra Arguments** | Additional server args (e.g., --world-seed 123) |
-| **Auto-download** | Enable automatic game file download |
-| **G1GC** | Use G1 garbage collector (recommended) |
-| **Linux Native** | Mount machine-id volumes (Linux only) |
+| **Auto-download**   | Enable automatic game file download             |
+| **G1GC**            | Use G1 garbage collector (recommended)          |
+| **Linux Native**    | Mount machine-id volumes (Linux only)           |
 
 ::: warning
 Configuration can only be edited when the server is stopped. Restart the server to apply changes.
+:::
+
+### Backups Tab (v1.4.0+)
+
+Manage server backups with automatic scheduling:
+
+**Manual Backups:**
+
+- **Create Backup** - Create an immediate backup (ZIP format)
+- **Restore** - Restore server data from a backup (server must be stopped)
+- **Delete** - Remove old backups
+
+**Automatic Backup Settings:**
+
+| Setting               | Description                                      |
+| --------------------- | ------------------------------------------------ |
+| **Automatic Backups** | Enable/disable scheduled backups                 |
+| **Backup on Start**   | Create backup when server starts                 |
+| **Interval**          | Minutes between backups (0 = disabled)           |
+| **Max Backups**       | Maximum backups to keep (0 = unlimited)          |
+| **Max Age**           | Delete backups older than X days (0 = unlimited) |
+
+Backups include:
+
+- `universe/` - World data
+- `config/` - Configuration files
+- `mods/` - Server mods
+- `logs/` - Server logs
+- Root config files (.json, .yaml, .properties)
+
+::: tip
+Backups are stored in `data/servers/{server-id}/backups/` as ZIP files.
 :::
 
 ## Authentication
@@ -183,9 +216,9 @@ data/panel/
 
 ## Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| `Enter` | Send command |
+| Shortcut  | Action                   |
+| --------- | ------------------------ |
+| `Enter`   | Send command             |
 | `↑` / `↓` | Navigate command history |
 
 ## Security Considerations
@@ -197,7 +230,7 @@ Never expose the panel to the internet without proper security:
 2. Enable **firewall** rules to restrict access
 3. Use **strong passwords**
 4. Consider **VPN** for remote access
-:::
+   :::
 
 ### Example: Nginx Reverse Proxy
 
@@ -232,10 +265,11 @@ This is a known Docker Desktop bug. Fix:
 ### Server won't start
 
 Check the server logs for errors. Common issues:
+
 - Port already in use - change the port in Config tab
 - Missing game files - use Setup tab to download
 - Insufficient RAM - increase Max RAM in Config tab
 
 ### Files tab shows empty
 
-The Files tab requires the server to be running. Start the server first.
+Check that `HOST_DATA_PATH` is correctly configured in your environment. The path must be an absolute path on the host machine.

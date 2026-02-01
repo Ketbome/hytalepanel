@@ -39,8 +39,8 @@ export interface Config {
     apiKey: string | null;
   };
   data: {
-    path: string;
-    hostPath: string | null; // Host path for bind mounts (servers inherit this)
+    path: string; // Internal path inside panel container
+    hostPath: string; // Host path for bind mounts (used in server docker-compose)
   };
 }
 
@@ -136,8 +136,8 @@ const config: Config = {
     apiKey: process.env.CURSEFORGE_API_KEY || null
   },
   data: {
-    path: process.env.DATA_PATH || '/opt/hytale-panel/data',
-    hostPath: process.env.HOST_DATA_PATH || null
+    path: '/opt/hytale-panel/data', // Fixed internal path
+    hostPath: process.env.HOST_DATA_PATH || './data' // Host path for server volumes
   }
 };
 

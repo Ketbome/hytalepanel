@@ -1,4 +1,5 @@
 import type { Server, Socket } from 'socket.io';
+import * as backups from '../services/backups.js';
 import * as curseforge from '../services/curseforge.js';
 import * as docker from '../services/docker.js';
 import * as downloader from '../services/downloader.js';
@@ -138,23 +139,20 @@ export function setupSocketHandlers(io: Server): void {
       const status = await docker.getStatus(ctx.containerName);
       socket.emit('status', status);
 
-      // Only check files/auth/logs if container is running
-      if (status.running) {
-        socket.emit('files', await files.checkServerFiles(ctx.containerName));
-        socket.emit('downloader-auth', await files.checkAuth(ctx.containerName));
+      // Files status from local filesystem
+      socket.emit('files', await files.checkServerFiles(serverId));
+      socket.emit('downloader-auth', await files.checkAuth(serverId));
 
+      // Logs only available when container is running
+      if (status.running) {
         try {
           const history = await docker.getLogsHistory(500, ctx.containerName);
           socket.emit('logs:history', { logs: history, initial: true });
         } catch (e) {
           console.error('Failed to get log history:', (e as Error).message);
         }
-
         await connectLogStream();
       } else {
-        // Server is offline - send empty/default values
-        socket.emit('files', { hasJar: false, hasAssets: false, ready: false });
-        socket.emit('downloader-auth', false);
         socket.emit('logs:history', { logs: [], initial: true });
       }
 
@@ -213,6 +211,12 @@ export function setupSocketHandlers(io: Server): void {
     socket.on('stop', async () => {
       if (!ctx.containerName) return;
       console.log('[Socket] Stop requested');
+
+      // Stop backup scheduler
+      if (ctx.serverId) {
+        backups.stopBackupScheduler(ctx.serverId);
+      }
+
       socket.emit('action-status', { action: 'stop', status: 'starting' });
       const result = await docker.stop(ctx.containerName);
       console.log('[Socket] Stop result:', result);
@@ -229,6 +233,12 @@ export function setupSocketHandlers(io: Server): void {
     socket.on('kill', async () => {
       if (!ctx.containerName) return;
       console.log('[Socket] Kill (force stop) requested');
+
+      // Stop backup scheduler
+      if (ctx.serverId) {
+        backups.stopBackupScheduler(ctx.serverId);
+      }
+
       socket.emit('action-status', { action: 'kill', status: 'starting' });
       const result = await docker.kill(ctx.containerName);
       console.log('[Socket] Kill result:', result);
@@ -245,6 +255,22 @@ export function setupSocketHandlers(io: Server): void {
     socket.on('start', async () => {
       if (!ctx.serverId) return;
       console.log('[Socket] Start requested');
+
+      // Get server config for backup settings
+      const serverResult = await servers.getServer(ctx.serverId);
+      const backupConfig = serverResult.server?.config.backup;
+
+      // Create backup on start if enabled
+      if (backupConfig?.onServerStart) {
+        console.log('[Socket] Creating backup before start');
+        socket.emit('backup:status', { status: 'creating' });
+        const backupResult = await backups.createBackup(ctx.serverId);
+        if (backupResult.success) {
+          console.log(`[Socket] Backup created: ${backupResult.backup?.filename}`);
+          await backups.cleanupOldBackups(ctx.serverId, backupConfig);
+        }
+      }
+
       socket.emit('action-status', { action: 'start', status: 'starting' });
 
       // Use docker-compose up for the server
@@ -252,31 +278,26 @@ export function setupSocketHandlers(io: Server): void {
       console.log('[Socket] Start result:', result);
       socket.emit('action-status', { action: 'start', ...result });
 
-      if (result.success && ctx.containerName) {
+      if (result.success && ctx.containerName && ctx.serverId) {
+        // Start backup scheduler if enabled
+        if (backupConfig?.enabled && backupConfig.intervalMinutes > 0) {
+          backups.startBackupScheduler(ctx.serverId, backupConfig);
+        }
+
         setTimeout(async () => {
           await connectLogStream(50);
           const status = await docker.getStatus(ctx.containerName!);
           socket.emit('status', status);
-
-          // Send files status now that server is running
-          if (status.running) {
-            socket.emit('files', await files.checkServerFiles(ctx.containerName!));
-            socket.emit('downloader-auth', await files.checkAuth(ctx.containerName!));
-          }
+          socket.emit('files', await files.checkServerFiles(ctx.serverId!));
+          socket.emit('downloader-auth', await files.checkAuth(ctx.serverId!));
         }, 2000);
       }
     });
 
     socket.on('check-files', async () => {
-      if (!ctx.containerName || !ctx.serverId) return;
-      const status = await docker.getStatus(ctx.containerName);
-      if (status.running) {
-        socket.emit('files', await files.checkServerFiles(ctx.containerName));
-        socket.emit('downloader-auth', await files.checkAuth(ctx.containerName));
-      } else {
-        socket.emit('files', await files.checkServerFilesLocal(ctx.serverId));
-        socket.emit('downloader-auth', await files.checkAuthLocal(ctx.serverId));
-      }
+      if (!ctx.serverId) return;
+      socket.emit('files', await files.checkServerFiles(ctx.serverId));
+      socket.emit('downloader-auth', await files.checkAuth(ctx.serverId));
     });
 
     socket.on('logs:more', async ({ currentCount = 0, batchSize = 200 }: LogsMoreParams) => {
@@ -301,46 +322,52 @@ export function setupSocketHandlers(io: Server): void {
     });
 
     socket.on('wipe', async () => {
-      if (!ctx.containerName) return;
+      if (!ctx.serverId) return;
       socket.emit('action-status', { action: 'wipe', status: 'starting' });
-      const result = await files.wipeData(ctx.containerName);
+      const result = await files.wipeData(ctx.serverId);
       socket.emit('action-status', { action: 'wipe', ...result });
-      socket.emit('downloader-auth', await files.checkAuth(ctx.containerName));
+      socket.emit('downloader-auth', await files.checkAuth(ctx.serverId));
     });
 
     socket.on('files:list', async (dirPath = '/') => {
-      if (!ctx.containerName) return;
-      socket.emit('files:list-result', await files.listDirectory(dirPath, ctx.containerName));
+      if (!ctx.serverId) return;
+      socket.emit('files:list-result', await files.listDirectory(dirPath, ctx.serverId));
     });
 
     socket.on('files:read', async (filePath: string) => {
-      if (!ctx.containerName) return;
-      socket.emit('files:read-result', await files.readContent(filePath, ctx.containerName));
+      if (!ctx.serverId) return;
+      socket.emit('files:read-result', await files.readContent(filePath, ctx.serverId));
     });
 
     socket.on('files:save', async ({ path: filePath, content, createBackup: shouldBackup }: SaveParams) => {
-      if (!ctx.containerName) return;
+      if (!ctx.serverId) return;
       let backupResult = null;
       if (shouldBackup) {
-        backupResult = await files.createBackup(filePath, ctx.containerName);
+        backupResult = await files.createBackup(filePath, ctx.serverId);
       }
-      const result = await files.writeContent(filePath, content, ctx.containerName);
+      const result = await files.writeContent(filePath, content, ctx.serverId);
       socket.emit('files:save-result', { ...result, backup: backupResult });
     });
 
     socket.on('files:mkdir', async (dirPath: string) => {
-      if (!ctx.containerName) return;
-      socket.emit('files:mkdir-result', await files.createDirectory(dirPath, ctx.containerName));
+      if (!ctx.serverId) return;
+      socket.emit('files:mkdir-result', await files.createDirectory(dirPath, ctx.serverId));
     });
 
     socket.on('files:delete', async (itemPath: string) => {
-      if (!ctx.containerName) return;
-      socket.emit('files:delete-result', await files.deleteItem(itemPath, ctx.containerName));
+      if (!ctx.serverId) return;
+      socket.emit('files:delete-result', await files.deleteItem(itemPath, ctx.serverId));
     });
 
     socket.on('files:rename', async ({ oldPath, newPath }: RenameParams) => {
-      if (!ctx.containerName) return;
-      socket.emit('files:rename-result', await files.renameItem(oldPath, newPath, ctx.containerName));
+      if (!ctx.serverId) return;
+      socket.emit('files:rename-result', await files.renameItem(oldPath, newPath, ctx.serverId));
+    });
+
+    socket.on('files:copy', async ({ srcPath, destPath }: { srcPath: string; destPath: string }) => {
+      if (!ctx.serverId) return;
+      const result = await files.copyItem(srcPath, destPath, ctx.serverId);
+      socket.emit('files:copy-result', result);
     });
 
     socket.on('mods:list', async () => {
@@ -544,8 +571,8 @@ export function setupSocketHandlers(io: Server): void {
 
     // Server update handlers
     socket.on('update:check', async () => {
-      if (!ctx.containerName) return;
-      socket.emit('update:check-result', await updater.checkForUpdate(ctx.containerName));
+      if (!ctx.serverId) return;
+      socket.emit('update:check-result', await updater.checkForUpdate(ctx.serverId, ctx.containerName ?? undefined));
     });
 
     socket.on('update:apply', async () => {
@@ -720,6 +747,92 @@ export function setupSocketHandlers(io: Server): void {
           success: false,
           error: installResult.error
         });
+      }
+    });
+
+    // Backup handlers
+    socket.on('backup:create', async () => {
+      if (!ctx.serverId) return;
+      socket.emit('backup:status', { status: 'creating' });
+      const result = await backups.createBackup(ctx.serverId);
+      socket.emit('backup:create-result', result);
+      if (result.success) {
+        // Cleanup old backups after creating new one
+        const serverResult = await servers.getServer(ctx.serverId);
+        if (serverResult.server?.config.backup) {
+          await backups.cleanupOldBackups(ctx.serverId, serverResult.server.config.backup);
+        }
+      }
+    });
+
+    socket.on('backup:list', async () => {
+      if (!ctx.serverId) return;
+      socket.emit('backup:list-result', await backups.listBackups(ctx.serverId));
+    });
+
+    socket.on('backup:restore', async (backupId: string) => {
+      if (!ctx.serverId || !ctx.containerName) return;
+
+      // Check if server is running
+      const status = await docker.getStatus(ctx.containerName);
+      if (status.running) {
+        socket.emit('backup:restore-result', {
+          success: false,
+          error: 'Server must be stopped before restoring backup'
+        });
+        return;
+      }
+
+      socket.emit('backup:status', { status: 'restoring' });
+      const result = await backups.restoreBackup(ctx.serverId, backupId);
+      socket.emit('backup:restore-result', result);
+    });
+
+    socket.on('backup:delete', async (backupId: string) => {
+      if (!ctx.serverId) return;
+      const result = await backups.deleteBackup(ctx.serverId, backupId);
+      socket.emit('backup:delete-result', result);
+    });
+
+    socket.on('backup:config', async (newConfig?: backups.BackupConfig) => {
+      if (!ctx.serverId) return;
+
+      if (newConfig) {
+        // Update backup config
+        const result = await servers.updateServer(ctx.serverId, {
+          config: { backup: newConfig }
+        });
+        if (result.success && result.server) {
+          // Restart scheduler if needed
+          if (newConfig.enabled && newConfig.intervalMinutes > 0) {
+            backups.startBackupScheduler(ctx.serverId, newConfig);
+          } else {
+            backups.stopBackupScheduler(ctx.serverId);
+          }
+          socket.emit('backup:config-result', {
+            success: true,
+            config: newConfig
+          });
+        } else {
+          socket.emit('backup:config-result', {
+            success: false,
+            error: result.error
+          });
+        }
+      } else {
+        // Get current backup config
+        const serverResult = await servers.getServer(ctx.serverId);
+        if (serverResult.success && serverResult.server) {
+          socket.emit('backup:config-result', {
+            success: true,
+            config: serverResult.server.config.backup
+          });
+        } else {
+          socket.emit('backup:config-result', {
+            success: false,
+            error: 'Server not found'
+          });
+        }
       }
     });
 

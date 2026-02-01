@@ -97,3 +97,26 @@ Common timezones:
 | Australia      | `Australia/Sydney`    |
 
 [Full list of timezones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+
+## Data Storage
+
+By default, all data is stored in `./data/` relative to the docker-compose file.
+
+### HOST_DATA_PATH
+
+This environment variable defines where server data is stored on the host machine.
+
+**Important:** `HOST_DATA_PATH` must be an **absolute path** for server volumes to work correctly.
+
+- Default: `${PWD}/data` (current directory + /data)
+- Example: `HOST_DATA_PATH=/home/user/hytale-data`
+
+The path is used for:
+
+- Panel data storage
+- Server container volumes (each server mounts its data from this location)
+
+```env
+# Data Storage (must be absolute path)
+HOST_DATA_PATH=/home/user/hytale/data
+```

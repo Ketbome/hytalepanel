@@ -29,7 +29,8 @@ import {
 } from '$lib/stores/mods';
 import { currentRoute, navigateToDashboard, navigateToServer } from '$lib/stores/router';
 import { downloadProgress, downloaderAuth, filesReady, serverStatus, updateInfo } from '$lib/stores/server';
-import { activeServerId, updateServerStatus } from '$lib/stores/servers';
+import { activeServerId, servers, updateServerStatus } from '$lib/stores/servers';
+import type { Server } from '$lib/stores/servers';
 import { showToast } from '$lib/stores/ui';
 import type {
   ActionStatus,
@@ -119,8 +120,21 @@ export function connectSocket(): Socket {
   });
 
   // Server join result
-  socketInstance.on('server:joined', ({ serverId }: { serverId: string }) => {
+  socketInstance.on('server:joined', ({ serverId, server }: { serverId: string; server?: Server }) => {
     joinedServerId.set(serverId);
+    // Update servers store with fresh data from backend
+    if (server) {
+      servers.update((list) => {
+        const idx = list.findIndex((s) => s.id === serverId);
+        if (idx >= 0) {
+          list[idx] = { ...list[idx], ...server };
+          return [...list];
+        }
+        return [...list, server];
+      });
+    }
+    // Request file list - always available via local filesystem
+    socketInstance?.emit('files:list', '/');
   });
 
   socketInstance.on('server:join-error', ({ error }: { error: string }) => {

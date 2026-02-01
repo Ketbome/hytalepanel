@@ -115,8 +115,10 @@ export async function downloadServerFiles(socket: Socket, containerName?: string
         });
       }
 
-      socket.emit('files', await files.checkServerFiles(containerName));
-      socket.emit('downloader-auth', await files.checkAuth(containerName));
+      if (serverId) {
+        socket.emit('files', await files.checkServerFiles(serverId));
+        socket.emit('downloader-auth', await files.checkAuth(serverId));
+      }
     });
 
     stream.on('error', (err: Error) => {

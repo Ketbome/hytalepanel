@@ -2,6 +2,9 @@
 # Servers are created dynamically from the Dashboard
 #
 # Usage: docker compose -f docker-compose.casaos.yml up -d
+#
+# NOTE: This uses a Docker volume for CasaOS compatibility.
+# For direct file access, use the regular docker-compose.yml with HOST_DATA_PATH
 
 services:
   panel:
@@ -18,12 +21,11 @@ services:
       JWT_SECRET: ${JWT_SECRET:-}
       MODTALE_API_KEY: ${MODTALE_API_KEY:-}
       CURSEFORGE_API_KEY: ${CURSEFORGE_API_KEY:-}
-      DATA_PATH: /opt/hytale-panel/data
+      DISABLE_AUTH: ${DISABLE_AUTH:-false}
+      BASE_PATH: ${BASE_PATH:-}
+      HOST_DATA_PATH: /DATA/AppData/hytale-panel
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - hytale-panel-data:/opt/hytale-panel/data
+      - /DATA/AppData/hytale-panel:/opt/hytale-panel/data
       # NOTE: /etc/machine-id not mounted for ZimaOS/CasaOS compatibility
       # Each server container will generate its own machine-id
-
-volumes:
-  hytale-panel-data:

@@ -15,17 +15,17 @@ Complete reference of all environment variables.
 
 ## Panel Variables
 
-| Variable             | Default  | Description                        |
-| -------------------- | -------- | ---------------------------------- |
-| `PANEL_USER`         | `admin`  | Login username                     |
-| `PANEL_PASS`         | `admin`  | Login password                     |
-| `PANEL_PORT`         | `3000`   | HTTP server port                   |
-| `JWT_SECRET`         | (random) | Secret key for JWT signing         |
-| `MODTALE_API_KEY`    | -        | API key for Modtale integration    |
-| `CURSEFORGE_API_KEY` | -        | API key for CurseForge integration |
-| `HOST_DATA_PATH`     | -        | Host path for direct file access   |
-| `DISABLE_AUTH`       | `false`  | Disable panel authentication       |
-| `BASE_PATH`          | -        | URL path prefix (e.g., `/panel`)   |
+| Variable             | Default       | Description                        |
+| -------------------- | ------------- | ---------------------------------- |
+| `PANEL_USER`         | `admin`       | Login username                     |
+| `PANEL_PASS`         | `admin`       | Login password                     |
+| `PANEL_PORT`         | `3000`        | HTTP server port                   |
+| `JWT_SECRET`         | (random)      | Secret key for JWT signing         |
+| `MODTALE_API_KEY`    | -             | API key for Modtale integration    |
+| `CURSEFORGE_API_KEY` | -             | API key for CurseForge integration |
+| `HOST_DATA_PATH`     | `${PWD}/data` | **Absolute path** for data storage |
+| `DISABLE_AUTH`       | `false`       | Disable panel authentication       |
+| `BASE_PATH`          | -             | URL path prefix (e.g., `/panel`)   |
 
 ## Docker Variables
 
@@ -144,21 +144,35 @@ Some CurseForge mods don't allow API distribution. These mods will show a warnin
 
 ### HOST_DATA_PATH
 
-Path on the host filesystem where panel data should be stored. When set, servers use absolute bind mounts instead of Docker volumes.
+**Absolute path** on the host filesystem where all data is stored. This is used for panel data and server container volumes.
+
+::: danger Important
+`HOST_DATA_PATH` **must be an absolute path** for Docker volume mounts to work correctly. Relative paths will cause issues with server containers.
+:::
 
 ```env
-HOST_DATA_PATH=/home/user/hytale-data
+# Default: ${PWD}/data (current directory + /data)
+HOST_DATA_PATH=/home/user/hytale/data
 ```
 
 When configured:
 
-- Panel data stored at the host path
-- New servers use absolute paths: `/home/user/hytale-data/servers/{id}/server:/opt/hytale`
-- Files accessible directly from host without using the panel
+- Panel data stored at this path
+- Server containers mount their data from this location
+- File browser works even when server is stopped
+- Files accessible directly from host
 
-::: tip Direct File Access
-This is useful when you want to edit server files, upload mods, or manage worlds directly from your host filesystem instead of through the web panel.
-:::
+Structure:
+
+```
+HOST_DATA_PATH/
+├── servers.json            # Server registry
+└── servers/
+    └── {server-id}/
+        ├── server/         # Server files
+        ├── backups/        # Backup ZIPs (v1.4.0+)
+        └── docker-compose.yml
+```
 
 ### DISABLE_AUTH
 
@@ -220,8 +234,8 @@ MODTALE_API_KEY=your-modtale-api-key
 CURSEFORGE_API_KEY='$2a$10$your-curseforge-key'
 
 # ===================
-# Data Storage
+# Data Storage (must be absolute path)
 # ===================
-# Uncomment to store data on host instead of Docker volume
-# HOST_DATA_PATH=/home/user/hytale-data
+# Default: ${PWD}/data
+# HOST_DATA_PATH=/home/user/hytale/data
 ```

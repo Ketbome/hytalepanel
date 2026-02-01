@@ -5,10 +5,10 @@ Real-time communication uses Socket.IO. All events require authentication.
 ## Connection
 
 ```typescript
-import { io } from 'socket.io-client';
+import { io } from "socket.io-client";
 
-const socket = io('http://localhost:3000', {
-  auth: { token: 'your-jwt-token' }
+const socket = io("http://localhost:3000", {
+  auth: { token: "your-jwt-token" },
 });
 ```
 
@@ -19,13 +19,15 @@ const socket = io('http://localhost:3000', {
 Send a command to the server console.
 
 **Emit:**
+
 ```typescript
-socket.emit('command', '/help');
+socket.emit("command", "/help");
 ```
 
 **Response:** `command-result`
+
 ```typescript
-socket.on('command-result', (result) => {
+socket.on("command-result", (result) => {
   // { cmd: '/help', success: true }
 });
 ```
@@ -35,13 +37,15 @@ socket.on('command-result', (result) => {
 Start the server container.
 
 **Emit:**
+
 ```typescript
-socket.emit('start');
+socket.emit("start");
 ```
 
 **Response:** `action-status`
+
 ```typescript
-socket.on('action-status', (result) => {
+socket.on("action-status", (result) => {
   // { action: 'start', success: true }
 });
 ```
@@ -51,8 +55,9 @@ socket.on('action-status', (result) => {
 Stop the server container.
 
 **Emit:**
+
 ```typescript
-socket.emit('stop');
+socket.emit("stop");
 ```
 
 **Response:** `action-status`
@@ -62,8 +67,9 @@ socket.emit('stop');
 Restart the server container.
 
 **Emit:**
+
 ```typescript
-socket.emit('restart');
+socket.emit("restart");
 ```
 
 **Response:** `action-status`
@@ -73,8 +79,9 @@ socket.emit('restart');
 Trigger server file download (x64 only).
 
 **Emit:**
+
 ```typescript
-socket.emit('download');
+socket.emit("download");
 ```
 
 **Response:** Multiple `download-progress` events, then `download-complete`
@@ -84,8 +91,9 @@ socket.emit('download');
 Delete all server data.
 
 **Emit:**
+
 ```typescript
-socket.emit('wipe');
+socket.emit("wipe");
 ```
 
 **Response:** `action-status`
@@ -97,16 +105,18 @@ socket.emit('wipe');
 Request additional log history.
 
 **Emit:**
+
 ```typescript
-socket.emit('logs:more', {
+socket.emit("logs:more", {
   currentCount: 100,
-  batchSize: 200
+  batchSize: 200,
 });
 ```
 
 **Response:** `logs:history`
+
 ```typescript
-socket.on('logs:history', (data) => {
+socket.on("logs:history", (data) => {
   // { logs: string[], initial: false, hasMore: true }
 });
 ```
@@ -116,8 +126,8 @@ socket.on('logs:history', (data) => {
 Real-time log streaming.
 
 ```typescript
-socket.on('log', (line: string) => {
-  console.log('New log:', line);
+socket.on("log", (line: string) => {
+  console.log("New log:", line);
 });
 ```
 
@@ -128,13 +138,15 @@ socket.on('log', (line: string) => {
 List directory contents.
 
 **Emit:**
+
 ```typescript
-socket.emit('files:list', '/mods');
+socket.emit("files:list", "/mods");
 ```
 
 **Response:** `files:list-result`
+
 ```typescript
-socket.on('files:list-result', (result) => {
+socket.on("files:list-result", (result) => {
   // { success: true, files: [...], path: '/mods' }
 });
 ```
@@ -144,13 +156,15 @@ socket.on('files:list-result', (result) => {
 Read file contents.
 
 **Emit:**
+
 ```typescript
-socket.emit('files:read', '/config.json');
+socket.emit("files:read", "/config.json");
 ```
 
 **Response:** `files:read-result`
+
 ```typescript
-socket.on('files:read-result', (result) => {
+socket.on("files:read-result", (result) => {
   // { success: true, content: '...', path: '/config.json' }
 });
 ```
@@ -160,11 +174,12 @@ socket.on('files:read-result', (result) => {
 Save file contents.
 
 **Emit:**
+
 ```typescript
-socket.emit('files:save', {
-  path: '/config.json',
+socket.emit("files:save", {
+  path: "/config.json",
   content: '{"key": "value"}',
-  createBackup: true
+  createBackup: true,
 });
 ```
 
@@ -175,8 +190,9 @@ socket.emit('files:save', {
 Create a directory.
 
 **Emit:**
+
 ```typescript
-socket.emit('files:mkdir', '/mods/custom');
+socket.emit("files:mkdir", "/mods/custom");
 ```
 
 **Response:** `files:mkdir-result`
@@ -186,8 +202,9 @@ socket.emit('files:mkdir', '/mods/custom');
 Delete a file or directory.
 
 **Emit:**
+
 ```typescript
-socket.emit('files:delete', '/mods/old-mod.jar');
+socket.emit("files:delete", "/mods/old-mod.jar");
 ```
 
 **Response:** `files:delete-result`
@@ -197,10 +214,11 @@ socket.emit('files:delete', '/mods/old-mod.jar');
 Rename a file or directory.
 
 **Emit:**
+
 ```typescript
-socket.emit('files:rename', {
-  oldPath: '/mods/mod.jar',
-  newPath: '/mods/mod-renamed.jar'
+socket.emit("files:rename", {
+  oldPath: "/mods/mod.jar",
+  newPath: "/mods/mod-renamed.jar",
 });
 ```
 
@@ -211,8 +229,9 @@ socket.emit('files:rename', {
 Check if server files exist.
 
 **Emit:**
+
 ```typescript
-socket.emit('check-files');
+socket.emit("check-files");
 ```
 
 **Response:** `files` and `downloader-auth`
@@ -224,13 +243,15 @@ socket.emit('check-files');
 List installed mods.
 
 **Emit:**
+
 ```typescript
-socket.emit('mods:list');
+socket.emit("mods:list");
 ```
 
 **Response:** `mods:list-result`
+
 ```typescript
-socket.on('mods:list-result', (result) => {
+socket.on("mods:list-result", (result) => {
   // { success: true, mods: [...] }
 });
 ```
@@ -240,12 +261,13 @@ socket.on('mods:list-result', (result) => {
 Search Modtale for mods.
 
 **Emit:**
+
 ```typescript
-socket.emit('mods:search', {
-  query: 'example',
-  classification: 'MOD',
+socket.emit("mods:search", {
+  query: "example",
+  classification: "MOD",
   page: 1,
-  pageSize: 20
+  pageSize: 20,
 });
 ```
 
@@ -256,8 +278,9 @@ socket.emit('mods:search', {
 Get mod details from Modtale.
 
 **Emit:**
+
 ```typescript
-socket.emit('mods:get', 'project-id');
+socket.emit("mods:get", "project-id");
 ```
 
 **Response:** `mods:get-result`
@@ -267,15 +290,16 @@ socket.emit('mods:get', 'project-id');
 Install a mod from Modtale.
 
 **Emit:**
+
 ```typescript
-socket.emit('mods:install', {
-  projectId: 'project-id',
-  versionId: 'version-id',
+socket.emit("mods:install", {
+  projectId: "project-id",
+  versionId: "version-id",
   metadata: {
-    versionName: '1.0.0',
-    projectTitle: 'Example Mod',
-    classification: 'MOD'
-  }
+    versionName: "1.0.0",
+    projectTitle: "Example Mod",
+    classification: "MOD",
+  },
 });
 ```
 
@@ -286,8 +310,9 @@ socket.emit('mods:install', {
 Uninstall a mod.
 
 **Emit:**
+
 ```typescript
-socket.emit('mods:uninstall', 'mod-id');
+socket.emit("mods:uninstall", "mod-id");
 ```
 
 **Response:** `mods:uninstall-result`
@@ -297,9 +322,10 @@ socket.emit('mods:uninstall', 'mod-id');
 Enable or disable a mod.
 
 **Emit:**
+
 ```typescript
-socket.emit('mods:enable', 'mod-id');
-socket.emit('mods:disable', 'mod-id');
+socket.emit("mods:enable", "mod-id");
+socket.emit("mods:disable", "mod-id");
 ```
 
 **Response:** `mods:enable-result` / `mods:disable-result`
@@ -309,13 +335,15 @@ socket.emit('mods:disable', 'mod-id');
 Check for mod updates.
 
 **Emit:**
+
 ```typescript
-socket.emit('mods:check-updates');
+socket.emit("mods:check-updates");
 ```
 
 **Response:** `mods:check-updates-result`
+
 ```typescript
-socket.on('mods:check-updates-result', (result) => {
+socket.on("mods:check-updates-result", (result) => {
   // { success: true, updates: [...] }
 });
 ```
@@ -325,13 +353,14 @@ socket.on('mods:check-updates-result', (result) => {
 Update a mod to a new version.
 
 **Emit:**
+
 ```typescript
-socket.emit('mods:update', {
-  modId: 'mod-id',
-  versionId: 'new-version-id',
+socket.emit("mods:update", {
+  modId: "mod-id",
+  versionId: "new-version-id",
   metadata: {
-    versionName: '1.1.0'
-  }
+    versionName: "1.1.0",
+  },
 });
 ```
 
@@ -342,13 +371,15 @@ socket.emit('mods:update', {
 Check if Modtale is configured.
 
 **Emit:**
+
 ```typescript
-socket.emit('mods:check-config');
+socket.emit("mods:check-config");
 ```
 
 **Response:** `mods:config-status`
+
 ```typescript
-socket.on('mods:config-status', (result) => {
+socket.on("mods:config-status", (result) => {
   // { configured: true }
 });
 ```
@@ -358,11 +389,104 @@ socket.on('mods:config-status', (result) => {
 Get available mod classifications.
 
 **Emit:**
+
 ```typescript
-socket.emit('mods:classifications');
+socket.emit("mods:classifications");
 ```
 
 **Response:** `mods:classifications-result`
+
+## Backup Events (v1.4.0+)
+
+### backup:create
+
+Create a manual backup of the server.
+
+**Emit:**
+
+```typescript
+socket.emit("backup:create");
+```
+
+**Response:** `backup:status` (creating), then `backup:create-result`
+
+```typescript
+socket.on("backup:create-result", (result) => {
+  // { success: true, backup: { id, filename, createdAt, size } }
+});
+```
+
+### backup:list
+
+List available backups.
+
+**Emit:**
+
+```typescript
+socket.emit("backup:list");
+```
+
+**Response:** `backup:list-result`
+
+```typescript
+socket.on("backup:list-result", (result) => {
+  // { success: true, backups: [...] }
+});
+```
+
+### backup:restore
+
+Restore server from a backup. Server must be stopped.
+
+**Emit:**
+
+```typescript
+socket.emit("backup:restore", "backup-id");
+```
+
+**Response:** `backup:status` (restoring), then `backup:restore-result`
+
+### backup:delete
+
+Delete a specific backup.
+
+**Emit:**
+
+```typescript
+socket.emit("backup:delete", "backup-id");
+```
+
+**Response:** `backup:delete-result`
+
+### backup:config
+
+Get or update backup configuration.
+
+**Emit (get):**
+
+```typescript
+socket.emit("backup:config");
+```
+
+**Emit (update):**
+
+```typescript
+socket.emit("backup:config", {
+  enabled: true,
+  intervalMinutes: 60,
+  maxBackups: 10,
+  maxAgeDays: 7,
+  onServerStart: true,
+});
+```
+
+**Response:** `backup:config-result`
+
+```typescript
+socket.on("backup:config-result", (result) => {
+  // { success: true, config: {...} }
+});
+```
 
 ## Status Events
 
@@ -371,7 +495,7 @@ socket.emit('mods:classifications');
 Server status updates (sent every 5 seconds).
 
 ```typescript
-socket.on('status', (status) => {
+socket.on("status", (status) => {
   // { running: true, uptime: 3600, ... }
 });
 ```

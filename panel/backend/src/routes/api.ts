@@ -199,14 +199,14 @@ router.post('/servers/:id/compose/regenerate', async (req, res) => {
 
 router.post('/files/upload', upload.single('file'), async (req, res) => {
   try {
-    const { targetDir, containerName } = req.body as {
+    const { targetDir, serverId } = req.body as {
       targetDir?: string;
-      containerName: string;
+      serverId: string;
     };
     const file = req.file;
 
-    if (!containerName) {
-      res.status(400).json({ success: false, error: 'Container name is missing' });
+    if (!serverId) {
+      res.status(400).json({ success: false, error: 'Server ID is required' });
       return;
     }
 
@@ -216,12 +216,11 @@ router.post('/files/upload', upload.single('file'), async (req, res) => {
     }
 
     if (file.size > config.files.maxUploadSize) {
-      res.status(413).json({ success: false, error: 'File too large (max 100MB)' });
+      res.status(413).json({ success: false, error: 'File too large (max 500MB)' });
       return;
     }
 
-    const result = await files.upload(targetDir || '/', file.originalname, file.buffer, containerName);
-
+    const result = await files.upload(targetDir || '/', file.originalname, file.buffer, serverId);
     res.json(result);
   } catch (e) {
     res.status(500).json({ success: false, error: (e as Error).message });
@@ -230,24 +229,34 @@ router.post('/files/upload', upload.single('file'), async (req, res) => {
 
 router.get('/files/download', async (req, res) => {
   try {
-    const { path: filePath } = req.query as { path?: string };
+    const { path: filePath, serverId } = req.query as {
+      path?: string;
+      serverId?: string;
+    };
 
     if (!filePath) {
       res.status(400).json({ success: false, error: 'Path required' });
       return;
     }
 
-    const result = await files.download(filePath);
+    if (!serverId) {
+      res.status(400).json({ success: false, error: 'Server ID required' });
+      return;
+    }
 
-    if (!result.success || !result.stream) {
+    const result = await files.download(filePath, serverId);
+
+    if (!result.success || !result.localPath) {
       res.status(404).json(result);
       return;
     }
 
-    res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}.tar"`);
-    res.setHeader('Content-Type', 'application/x-tar');
+    res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
 
-    result.stream.pipe(res);
+    const { createReadStream } = await import('node:fs');
+    const stream = createReadStream(result.localPath);
+    stream.pipe(res);
   } catch (e) {
     res.status(500).json({ success: false, error: (e as Error).message });
   }
