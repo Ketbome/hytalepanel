@@ -55,7 +55,11 @@ router.post('/servers', async (req, res) => {
       return;
     }
 
-    const result = await servers.createServer({ name: name.trim(), port, config: serverConfig });
+    const result = await servers.createServer({
+      name: name.trim(),
+      port,
+      config: serverConfig
+    });
     res.json(result);
   } catch (e) {
     res.status(500).json({ success: false, error: (e as Error).message });
@@ -70,7 +74,10 @@ router.get('/servers/:id', async (req, res) => {
       const status = await docker.getStatus(result.server.containerName);
       res.json({
         success: true,
-        server: { ...result.server, status: status.running ? 'running' : 'stopped' }
+        server: {
+          ...result.server,
+          status: status.running ? 'running' : 'stopped'
+        }
       });
     } else {
       res.status(404).json(result);
@@ -92,7 +99,11 @@ router.put('/servers/:id', async (req, res) => {
       config?: Partial<servers.ServerConfig>;
     };
 
-    const result = await servers.updateServer(req.params.id, { name, port, config: serverConfig });
+    const result = await servers.updateServer(req.params.id, {
+      name,
+      port,
+      config: serverConfig
+    });
 
     if (!result.success) {
       res.status(404).json(result);
@@ -188,7 +199,10 @@ router.post('/servers/:id/compose/regenerate', async (req, res) => {
 
 router.post('/files/upload', upload.single('file'), async (req, res) => {
   try {
-    const { targetDir, containerName } = req.body as { targetDir?: string; containerName: string };
+    const { targetDir, containerName } = req.body as {
+      targetDir?: string;
+      containerName: string;
+    };
     const file = req.file;
 
     if (!containerName) {

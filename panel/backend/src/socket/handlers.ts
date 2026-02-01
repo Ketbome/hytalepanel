@@ -217,6 +217,13 @@ export function setupSocketHandlers(io: Server): void {
       const result = await docker.stop(ctx.containerName);
       console.log('[Socket] Stop result:', result);
       socket.emit('action-status', { action: 'stop', ...result });
+
+      // Emit updated status so UI knows server is stopped
+      if (result.success) {
+        setTimeout(async () => {
+          socket.emit('status', await docker.getStatus(ctx.containerName!));
+        }, 500);
+      }
     });
 
     socket.on('kill', async () => {
@@ -226,6 +233,13 @@ export function setupSocketHandlers(io: Server): void {
       const result = await docker.kill(ctx.containerName);
       console.log('[Socket] Kill result:', result);
       socket.emit('action-status', { action: 'kill', ...result });
+
+      // Emit updated status so UI knows server is stopped
+      if (result.success) {
+        setTimeout(async () => {
+          socket.emit('status', await docker.getStatus(ctx.containerName!));
+        }, 500);
+      }
     });
 
     socket.on('start', async () => {
@@ -254,9 +268,15 @@ export function setupSocketHandlers(io: Server): void {
     });
 
     socket.on('check-files', async () => {
-      if (!ctx.containerName) return;
-      socket.emit('files', await files.checkServerFiles(ctx.containerName));
-      socket.emit('downloader-auth', await files.checkAuth(ctx.containerName));
+      if (!ctx.containerName || !ctx.serverId) return;
+      const status = await docker.getStatus(ctx.containerName);
+      if (status.running) {
+        socket.emit('files', await files.checkServerFiles(ctx.containerName));
+        socket.emit('downloader-auth', await files.checkAuth(ctx.containerName));
+      } else {
+        socket.emit('files', await files.checkServerFilesLocal(ctx.serverId));
+        socket.emit('downloader-auth', await files.checkAuthLocal(ctx.serverId));
+      }
     });
 
     socket.on('logs:more', async ({ currentCount = 0, batchSize = 200 }: LogsMoreParams) => {
