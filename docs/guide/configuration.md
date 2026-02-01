@@ -108,7 +108,7 @@ This environment variable defines where server data is stored on the host machin
 
 **Important:** `HOST_DATA_PATH` must be an **absolute path** for server volumes to work correctly.
 
-- Default: `${PWD}/data` (current directory + /data)
+- Default: `${PWD}/data` (Linux/Mac only)
 - Example: `HOST_DATA_PATH=/home/user/hytale-data`
 
 The path is used for:
@@ -116,7 +116,21 @@ The path is used for:
 - Panel data storage
 - Server container volumes (each server mounts its data from this location)
 
+::: warning Windows Users
+`${PWD}` does **not work on Windows**! You must set `HOST_DATA_PATH` manually in your `.env` file.
+
+Use forward slashes (`/`) not backslashes (`\`):
+
 ```env
-# Data Storage (must be absolute path)
+HOST_DATA_PATH=C:/Users/YourName/hytale/data
+```
+
+:::
+
+```env
+# Linux/Mac
 HOST_DATA_PATH=/home/user/hytale/data
+
+# Windows (REQUIRED - ${PWD} doesn't work)
+HOST_DATA_PATH=C:/Users/YourName/hytale/data
 ```

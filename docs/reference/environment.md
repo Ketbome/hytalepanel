@@ -150,9 +150,21 @@ Some CurseForge mods don't allow API distribution. These mods will show a warnin
 `HOST_DATA_PATH` **must be an absolute path** for Docker volume mounts to work correctly. Relative paths will cause issues with server containers.
 :::
 
+::: warning Windows Users
+`${PWD}` does **not work on Windows**! You must set this variable manually in your `.env` file using forward slashes:
+
 ```env
-# Default: ${PWD}/data (current directory + /data)
+HOST_DATA_PATH=C:/Users/YourName/hytale/data
+```
+
+:::
+
+```env
+# Linux/Mac (default uses ${PWD}/data)
 HOST_DATA_PATH=/home/user/hytale/data
+
+# Windows (REQUIRED)
+HOST_DATA_PATH=C:/Users/YourName/hytale/data
 ```
 
 When configured:
@@ -236,6 +248,9 @@ CURSEFORGE_API_KEY='$2a$10$your-curseforge-key'
 # ===================
 # Data Storage (must be absolute path)
 # ===================
-# Default: ${PWD}/data
+# Linux/Mac: Default ${PWD}/data works
 # HOST_DATA_PATH=/home/user/hytale/data
+#
+# Windows: REQUIRED! ${PWD} doesn't work
+# HOST_DATA_PATH=C:/Users/YourName/hytale/data
 ```

@@ -1,9 +1,8 @@
 <script lang="ts">
   import { _ } from 'svelte-i18n';
-  import { activeServerId } from '$lib/stores/servers';
   import { serverStatus } from '$lib/stores/server';
   import { showToast } from '$lib/stores/ui';
-  import { emit, socket } from '$lib/services/socketClient';
+  import { emit, socket, joinedServerId } from '$lib/services/socketClient';
   import { formatSize } from '$lib/utils/formatters';
 
   interface BackupInfo {
@@ -35,9 +34,9 @@
   let hasConfigChanges = $state(false);
   let isSavingConfig = $state(false);
 
-  // Load backups when component mounts or server changes
+  // Load backups when socket is joined to server (not just activeServerId)
   $effect(() => {
-    if ($activeServerId) {
+    if ($joinedServerId) {
       loadBackups();
       loadConfig();
     }

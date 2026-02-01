@@ -1,5 +1,9 @@
 # HytalePanel Development - hot reload enabled
 # Servers are created dynamically from the Dashboard
+#
+# WINDOWS USERS: ${PWD} doesn't work on Windows!
+#   Set HOST_DATA_PATH in your .env file with the full path:
+#   HOST_DATA_PATH=C:/Users/YourName/hytale/data
 services:
   panel:
     build:
