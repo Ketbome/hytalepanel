@@ -1,26 +1,43 @@
 #!/bin/sh
 
-cd panel
+echo "🚀 Running pre-push checks..."
 
-# Type checking (catches type errors before push)
-echo "Running type check..."
+# Backend checks
+echo "\n📦 Backend checks:"
+cd panel/backend
+
+echo "  → Type check..."
 pnpm check || {
-  echo "❌ Type check failed"
+  echo "❌ Backend type check failed"
   exit 1
 }
 
-# Lint check (no auto-fix on push, just verify)
-echo "Running lint..."
+echo "  → Lint..."
 pnpm lint || {
-  echo "❌ Lint check failed"
+  echo "❌ Backend lint failed"
   exit 1
 }
 
-# Run tests (critical - must pass before push)
-echo "Running tests..."
+echo "  → Tests..."
 pnpm test || {
-  echo "❌ Tests failed"
+  echo "❌ Backend tests failed"
   exit 1
 }
 
-echo "✅ All checks passed! Ready to push."
+# Frontend checks
+echo "\n🎨 Frontend checks:"
+cd ../frontend
+
+echo "  → Type check..."
+pnpm check || {
+  echo "❌ Frontend type check failed"
+  exit 1
+}
+
+echo "  → Lint..."
+pnpm lint || {
+  echo "❌ Frontend lint failed"
+  exit 1
+}
+
+echo "\n✅ All checks passed! Ready to push."

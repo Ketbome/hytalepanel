@@ -1,18 +1,27 @@
 #!/bin/sh
 
-cd panel
+echo "🔍 Running pre-commit checks..."
 
-# Auto-fix lint issues before commit
+# Backend lint auto-fix
+echo "\n📦 Backend: Auto-fixing lint..."
+cd panel/backend
 pnpm lint:fix
-
-# Stage any auto-fixed files
 git add -u
 
-# Verify lint passes after fixes (fails if there are errors that can't be auto-fixed)
-echo "Verifying lint..."
 pnpm lint || {
-  echo "❌ Lint errors found that cannot be auto-fixed. Please fix manually."
+  echo "❌ Backend lint errors found that cannot be auto-fixed"
   exit 1
 }
 
-echo "✅ Pre-commit checks passed!"
+# Frontend lint auto-fix
+echo "\n🎨 Frontend: Auto-fixing lint..."
+cd ../frontend
+pnpm lint:fix
+git add -u
+
+pnpm lint || {
+  echo "❌ Frontend lint errors found that cannot be auto-fixed"
+  exit 1
+}
+
+echo "\n✅ Pre-commit checks passed!"
