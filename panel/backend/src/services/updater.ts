@@ -1,7 +1,7 @@
-import type { Socket } from 'socket.io';
-import * as docker from './docker.js';
-import * as downloader from './downloader.js';
-import * as files from './files.js';
+import type { Socket } from "socket.io";
+import * as docker from "./docker.js";
+import * as downloader from "./downloader.js";
+import * as files from "./files.js";
 
 export interface UpdateMetadata {
   lastDownloadAt: string | null;
@@ -23,31 +23,46 @@ export interface UpdateApplyResult {
   error?: string;
 }
 
-const METADATA_PATH = '/opt/hytale/.update-metadata.json';
+const METADATA_PATH = "/opt/hytale/.update-metadata.json";
 
-async function getMetadata(containerName?: string): Promise<UpdateMetadata | null> {
+async function getMetadata(
+  containerName?: string,
+): Promise<UpdateMetadata | null> {
   try {
-    const result = await docker.execCommand(`cat ${METADATA_PATH} 2>/dev/null || echo '{}'`, 30000, containerName);
+    const result = await docker.execCommand(
+      `cat ${METADATA_PATH} 2>/dev/null || echo '{}'`,
+      30000,
+      containerName,
+    );
     const trimmed = result.trim();
-    if (!trimmed || trimmed === '{}') return null;
+    if (!trimmed || trimmed === "{}") return null;
     return JSON.parse(trimmed) as UpdateMetadata;
   } catch {
     return null;
   }
 }
 
-async function saveMetadata(metadata: UpdateMetadata, containerName?: string): Promise<void> {
+async function saveMetadata(
+  metadata: UpdateMetadata,
+  containerName?: string,
+): Promise<void> {
   const json = JSON.stringify(metadata, null, 2);
   const escaped = json.replace(/'/g, "'\\''");
-  await docker.execCommand(`echo '${escaped}' > ${METADATA_PATH}`, 30000, containerName);
+  await docker.execCommand(
+    `echo '${escaped}' > ${METADATA_PATH}`,
+    30000,
+    containerName,
+  );
 }
 
-async function getJarInfo(containerName?: string): Promise<{ size: number; hash: string } | null> {
+async function getJarInfo(
+  containerName?: string,
+): Promise<{ size: number; hash: string } | null> {
   try {
     const sizeResult = await docker.execCommand(
       "stat -c '%s' /opt/hytale/HytaleServer.jar 2>/dev/null || echo '0'",
       30000,
-      containerName
+      containerName,
     );
     const size = Number.parseInt(sizeResult.trim(), 10);
     if (size === 0) return null;
@@ -55,7 +70,7 @@ async function getJarInfo(containerName?: string): Promise<{ size: number; hash:
     const hashResult = await docker.execCommand(
       "md5sum /opt/hytale/HytaleServer.jar 2>/dev/null | cut -d' ' -f1",
       30000,
-      containerName
+      containerName,
     );
     const hash = hashResult.trim();
     if (!hash) return null;
@@ -66,7 +81,10 @@ async function getJarInfo(containerName?: string): Promise<{ size: number; hash:
   }
 }
 
-export async function checkForUpdate(serverId: string, containerName?: string): Promise<UpdateCheckResult> {
+export async function checkForUpdate(
+  serverId: string,
+  containerName?: string,
+): Promise<UpdateCheckResult> {
   try {
     const filesStatus = await files.checkServerFiles(serverId);
     const metadata = await getMetadata(containerName);
@@ -75,14 +93,16 @@ export async function checkForUpdate(serverId: string, containerName?: string): 
     if (metadata?.lastDownloadAt) {
       const lastDate = new Date(metadata.lastDownloadAt);
       const now = new Date();
-      daysSinceUpdate = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+      daysSinceUpdate = Math.floor(
+        (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24),
+      );
     }
 
     return {
       success: true,
       lastUpdate: metadata?.lastDownloadAt || null,
       daysSinceUpdate,
-      hasFiles: filesStatus.ready
+      hasFiles: filesStatus.ready,
     };
   } catch (e) {
     return {
@@ -90,7 +110,7 @@ export async function checkForUpdate(serverId: string, containerName?: string): 
       lastUpdate: null,
       daysSinceUpdate: null,
       hasFiles: false,
-      error: (e as Error).message
+      error: (e as Error).message,
     };
   }
 }
@@ -98,29 +118,18 @@ export async function checkForUpdate(serverId: string, containerName?: string): 
 export async function applyUpdate(
   socket: Socket,
   containerName?: string,
-  serverId?: string
+  serverId?: string,
 ): Promise<UpdateApplyResult> {
   try {
-    // Stop the server first if running
+    // Check if server is running before update
     const status = await docker.getStatus(containerName);
     const wasRunning = status.running;
 
-    if (wasRunning) {
-      socket.emit('update:status', {
-        status: 'stopping',
-        message: 'Stopping server...',
-        serverId
-      });
-      await docker.stop(containerName);
-      // Wait for container to fully stop
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-    }
-
-    // Download new files
-    socket.emit('update:status', {
-      status: 'downloading',
-      message: 'Downloading update...',
-      serverId
+    // Download new files FIRST (requires container running, not server)
+    socket.emit("update:status", {
+      status: "downloading",
+      message: "Downloading update...",
+      serverId,
     });
     await downloader.downloadServerFiles(socket, containerName, serverId);
 
@@ -130,31 +139,34 @@ export async function applyUpdate(
       lastDownloadAt: new Date().toISOString(),
       jarSize: jarInfo?.size || null,
       jarHash: jarInfo?.hash || null,
-      assetsSize: null // Could be added later
+      assetsSize: null, // Could be added later
     };
     await saveMetadata(metadata, containerName);
 
-    // Restart if it was running
+    // Restart server to apply changes if it was running
     if (wasRunning) {
-      socket.emit('update:status', {
-        status: 'restarting',
-        message: 'Restarting server...',
-        serverId
+      socket.emit("update:status", {
+        status: "restarting",
+        message: "Restarting server to apply update...",
+        serverId,
       });
       await docker.restart(containerName);
+
+      // Wait for restart to complete
+      await new Promise((resolve) => setTimeout(resolve, 3000));
     }
 
-    socket.emit('update:status', {
-      status: 'complete',
-      message: 'Update complete!',
-      serverId
+    socket.emit("update:status", {
+      status: "complete",
+      message: "Update complete!",
+      serverId,
     });
     return { success: true };
   } catch (e) {
-    socket.emit('update:status', {
-      status: 'error',
+    socket.emit("update:status", {
+      status: "error",
       message: (e as Error).message,
-      serverId
+      serverId,
     });
     return { success: false, error: (e as Error).message };
   }
@@ -168,7 +180,7 @@ export async function recordDownload(containerName?: string): Promise<void> {
       lastDownloadAt: new Date().toISOString(),
       jarSize: jarInfo?.size || null,
       jarHash: jarInfo?.hash || null,
-      assetsSize: null
+      assetsSize: null,
     };
     await saveMetadata(metadata, containerName);
   } catch {
