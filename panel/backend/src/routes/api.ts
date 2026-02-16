@@ -4,6 +4,7 @@ import config from '../config/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import * as docker from '../services/docker.js';
 import * as files from '../services/files.js';
+import * as machineId from '../services/machineId.js';
 import * as servers from '../services/servers.js';
 
 const router: RouterType = Router();
@@ -189,6 +190,36 @@ router.put('/servers/:id/compose', async (req, res) => {
 router.post('/servers/:id/compose/regenerate', async (req, res) => {
   try {
     const result = await servers.regenerateServerCompose(req.params.id);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ success: false, error: (e as Error).message });
+  }
+});
+
+// ==================== MACHINE-ID API ====================
+
+router.get('/servers/:id/machine-id', async (req, res) => {
+  try {
+    const serverResult = await servers.getServer(req.params.id);
+    if (!serverResult.success || !serverResult.server) {
+      res.status(404).json({ success: false, error: 'Server not found' });
+      return;
+    }
+    const result = await machineId.checkMachineId(serverResult.server.containerName);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ success: false, error: (e as Error).message });
+  }
+});
+
+router.post('/servers/:id/machine-id/regenerate', async (req, res) => {
+  try {
+    const serverResult = await servers.getServer(req.params.id);
+    if (!serverResult.success || !serverResult.server) {
+      res.status(404).json({ success: false, error: 'Server not found' });
+      return;
+    }
+    const result = await machineId.regenerateMachineId(serverResult.server.containerName);
     res.json(result);
   } catch (e) {
     res.status(500).json({ success: false, error: (e as Error).message });

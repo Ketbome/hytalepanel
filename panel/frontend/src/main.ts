@@ -1,6 +1,6 @@
 import './app.css';
-import { initI18n } from '$lib/i18n';
 import { mount } from 'svelte';
+import { initI18n } from '$lib/i18n';
 import App from './App.svelte';
 
 async function bootstrap() {

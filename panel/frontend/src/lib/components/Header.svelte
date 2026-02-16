@@ -1,56 +1,52 @@
 <script lang="ts">
-  import { _ } from 'svelte-i18n';
-  import { locale } from '$lib/i18n';
-  import { serverStatus } from '$lib/stores/server';
-  import { activeServer, activeServerId } from '$lib/stores/servers';
-  import { logout } from '$lib/stores/auth';
-  import { disconnectSocket, leaveServer } from '$lib/services/socketClient';
-  import { formatUptime } from '$lib/utils/formatters';
-  import StatusBadge from './ui/StatusBadge.svelte';
-  import { onMount, onDestroy } from 'svelte';
+import { onDestroy, onMount } from 'svelte';
+import { _ } from 'svelte-i18n';
+import { locale } from '$lib/i18n';
+import { disconnectSocket, leaveServer } from '$lib/services/socketClient';
+import { logout } from '$lib/stores/auth';
+import { serverStatus } from '$lib/stores/server';
+import { activeServer, activeServerId } from '$lib/stores/servers';
+import { formatUptime } from '$lib/utils/formatters';
+import StatusBadge from './ui/StatusBadge.svelte';
 
-  let clockTime = $state('--:--:--');
-  let uptime = $state('00:00:00');
-  let clockTimer: ReturnType<typeof setInterval> | undefined;
-  let uptimeTimer: ReturnType<typeof setInterval> | undefined;
+let clockTime = $state('--:--:--');
+let uptime = $state('00:00:00');
+let clockTimer: ReturnType<typeof setInterval> | undefined;
+let uptimeTimer: ReturnType<typeof setInterval> | undefined;
 
-  function updateClock(): void {
-    const now = new Date();
-    clockTime = [
-      now.getHours(),
-      now.getMinutes(),
-      now.getSeconds()
-    ].map(n => String(n).padStart(2, '0')).join(':');
-  }
+function updateClock(): void {
+  const now = new Date();
+  clockTime = [now.getHours(), now.getMinutes(), now.getSeconds()].map((n) => String(n).padStart(2, '0')).join(':');
+}
 
-  function updateUptime(): void {
-    uptime = formatUptime($serverStatus.startedAt);
-  }
+function updateUptime(): void {
+  uptime = formatUptime($serverStatus.startedAt);
+}
 
-  onMount(() => {
-    updateClock();
-    clockTimer = setInterval(updateClock, 1000);
-    uptimeTimer = setInterval(updateUptime, 1000);
-  });
+onMount(() => {
+  updateClock();
+  clockTimer = setInterval(updateClock, 1000);
+  uptimeTimer = setInterval(updateUptime, 1000);
+});
 
-  onDestroy(() => {
-    if (clockTimer) clearInterval(clockTimer);
-    if (uptimeTimer) clearInterval(uptimeTimer);
-  });
+onDestroy(() => {
+  if (clockTimer) clearInterval(clockTimer);
+  if (uptimeTimer) clearInterval(uptimeTimer);
+});
 
-  function handleLogout(): void {
-    disconnectSocket();
-    logout();
-  }
+function handleLogout(): void {
+  disconnectSocket();
+  logout();
+}
 
-  function handleBackToPanel(): void {
-    leaveServer();
-  }
+function handleBackToPanel(): void {
+  leaveServer();
+}
 
-  function handleLangChange(e: Event): void {
-    const target = e.target as HTMLSelectElement;
-    locale.set(target.value);
-  }
+function handleLangChange(e: Event): void {
+  const target = e.target as HTMLSelectElement;
+  locale.set(target.value);
+}
 </script>
 
 <header>

@@ -1,22 +1,22 @@
 <script lang="ts">
-  import { _ } from 'svelte-i18n';
-  import type { Server } from '$lib/stores/servers';
+import { _ } from 'svelte-i18n';
+import type { Server } from '$lib/stores/servers';
 
-  let { 
-    server, 
-    onEnter, 
-    onStart,
-    onStop,
-    onDelete 
-  }: { 
-    server: Server; 
-    onEnter: () => void;
-    onStart: () => void;
-    onStop: () => void;
-    onDelete: () => void;
-  } = $props();
+let {
+  server,
+  onEnter,
+  onStart,
+  onStop,
+  onDelete
+}: {
+  server: Server;
+  onEnter: () => void;
+  onStart: () => void;
+  onStop: () => void;
+  onDelete: () => void;
+} = $props();
 
-  let isRunning = $derived(server.status === 'running');
+let isRunning = $derived(server.status === 'running');
 </script>
 
 <div class="server-card" class:running={isRunning}>

@@ -1,56 +1,56 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import { isAuthenticated, checkStatus, isLoading } from '$lib/stores/auth';
-  import { loadPanelConfig } from '$lib/stores/config';
-  import { sidebarHidden, panelExpanded } from '$lib/stores/ui';
-  import { initRouter, isOnDashboard } from '$lib/stores/router';
-  import { connectSocket, disconnectSocket } from '$lib/services/socketClient';
-  import LoginScreen from '$lib/components/LoginScreen.svelte';
-  import Dashboard from '$lib/components/Dashboard.svelte';
-  import Header from '$lib/components/Header.svelte';
-  import Console from '$lib/components/Console.svelte';
-  import Sidebar from '$lib/components/Sidebar.svelte';
-  import Toast from '$lib/components/ui/Toast.svelte';
+import { onDestroy, onMount } from 'svelte';
+import Console from '$lib/components/Console.svelte';
+import Dashboard from '$lib/components/Dashboard.svelte';
+import Header from '$lib/components/Header.svelte';
+import LoginScreen from '$lib/components/LoginScreen.svelte';
+import Sidebar from '$lib/components/Sidebar.svelte';
+import Toast from '$lib/components/ui/Toast.svelte';
+import { connectSocket, disconnectSocket } from '$lib/services/socketClient';
+import { checkStatus, isAuthenticated, isLoading } from '$lib/stores/auth';
+import { loadPanelConfig } from '$lib/stores/config';
+import { initRouter, isOnDashboard } from '$lib/stores/router';
+import { panelExpanded, sidebarHidden } from '$lib/stores/ui';
 
-  onMount(async () => {
-    // Load panel config first (for BASE_PATH)
-    await loadPanelConfig();
-    // Initialize router after config is loaded
-    initRouter();
-    const authenticated = await checkStatus();
-    isLoading.set(false);
-    if (authenticated) {
-      connectSocket();
-    }
-  });
-
-  onDestroy(() => {
-    disconnectSocket();
-  });
-
-  // Connect after login (when user logs in after page load)
-  let prevAuth = false;
-  isAuthenticated.subscribe(authenticated => {
-    if (authenticated && !prevAuth) {
-      connectSocket();
-    }
-    prevAuth = authenticated;
-  });
-
-  function showSidebar(): void {
-    sidebarHidden.set(false);
+onMount(async () => {
+  // Load panel config first (for BASE_PATH)
+  await loadPanelConfig();
+  // Initialize router after config is loaded
+  initRouter();
+  const authenticated = await checkStatus();
+  isLoading.set(false);
+  if (authenticated) {
+    connectSocket();
   }
+});
 
-  function handleKeydown(e: KeyboardEvent): void {
-    if (e.key === 'Escape') {
-      if ($panelExpanded) {
-        panelExpanded.set(false);
-      }
-      if ($sidebarHidden) {
-        sidebarHidden.set(false);
-      }
+onDestroy(() => {
+  disconnectSocket();
+});
+
+// Connect after login (when user logs in after page load)
+let prevAuth = false;
+isAuthenticated.subscribe((authenticated) => {
+  if (authenticated && !prevAuth) {
+    connectSocket();
+  }
+  prevAuth = authenticated;
+});
+
+function showSidebar(): void {
+  sidebarHidden.set(false);
+}
+
+function handleKeydown(e: KeyboardEvent): void {
+  if (e.key === 'Escape') {
+    if ($panelExpanded) {
+      panelExpanded.set(false);
+    }
+    if ($sidebarHidden) {
+      sidebarHidden.set(false);
     }
   }
+}
 </script>
 
 <svelte:window onkeydown={handleKeydown} />

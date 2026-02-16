@@ -1,37 +1,39 @@
 <script lang="ts">
-  import { _ } from 'svelte-i18n';
-  import { createServer } from '$lib/services/api';
-  import { showToast } from '$lib/stores/ui';
-  import { servers } from '$lib/stores/servers';
-  import { get } from 'svelte/store';
+import { get } from 'svelte/store';
+import { _ } from 'svelte-i18n';
+import { createServer } from '$lib/services/api';
+import { servers } from '$lib/stores/servers';
+import { showToast } from '$lib/stores/ui';
 
-  let { onClose, onCreated }: { onClose: () => void; onCreated: () => void } = $props();
+let { onClose, onCreated }: { onClose: () => void; onCreated: () => void } = $props();
 
-  let name = $state('');
-  let port = $state(5520);
-  let javaXms = $state('4G');
-  let javaXmx = $state('8G');
-  let autoDownload = $state(true);
-  let useG1gc = $state(true);
-  let useMachineId = $state(false); // For Linux native - disable for CasaOS/Windows
-  let isCreating = $state(false);
-  let showAdvanced = $state(false);
+let name = $state('');
+let port = $state(5520);
+let javaXms = $state('4G');
+let javaXmx = $state('8G');
+let autoDownload = $state(true);
+let useG1gc = $state(true);
+let useMachineId = $state(false); // For Linux native - disable for CasaOS/Windows
+let isCreating = $state(false);
+let showAdvanced = $state(false);
 
-  // Auto-increment port based on existing servers
-  $effect(() => {
-    const existingServers = get(servers);
-    if (existingServers.length > 0) {
-      const maxPort = Math.max(...existingServers.map(s => s.port));
-      port = maxPort + 1;
-    }
-  });
+// Auto-increment port based on existing servers
+$effect(() => {
+  const existingServers = get(servers);
+  if (existingServers.length > 0) {
+    const maxPort = Math.max(...existingServers.map((s) => s.port));
+    port = maxPort + 1;
+  }
+});
 
-  let machineIdVolumes = $derived(useMachineId 
+let machineIdVolumes = $derived(
+  useMachineId
     ? `      - /etc/machine-id:/etc/machine-id:ro
-      - /sys/class/dmi/id:/sys/class/dmi/id:ro` 
-    : '');
+      - /sys/class/dmi/id:/sys/class/dmi/id:ro`
+    : ''
+);
 
-  let dockerComposePreview = $derived(`services:
+let dockerComposePreview = $derived(`services:
   hytale-server:
     image: ketbom/hytale-server:latest
     container_name: hytale-xxxxxxxx
@@ -47,43 +49,43 @@
     volumes:
       - ./server:/opt/hytale${machineIdVolumes ? '\n' + machineIdVolumes : ''}`);
 
-  async function handleSubmit(): Promise<void> {
-    if (!name.trim()) {
-      showToast($_('serverNameRequired'), 'error');
-      return;
-    }
-
-    isCreating = true;
-
-    const result = await createServer({
-      name: name.trim(),
-      port,
-      config: {
-        javaXms,
-        javaXmx,
-        bindAddr: '0.0.0.0',
-        autoDownload,
-        useG1gc,
-        extraArgs: '',
-        useMachineId
-      }
-    });
-
-    isCreating = false;
-
-    if (result.success) {
-      showToast($_('serverCreated'));
-      onCreated();
-    } else {
-      showToast(result.error || 'Failed to create server', 'error');
-    }
+async function handleSubmit(): Promise<void> {
+  if (!name.trim()) {
+    showToast($_('serverNameRequired'), 'error');
+    return;
   }
 
-  function handleKeydown(e: KeyboardEvent): void {
-    if (e.key === 'Escape') {
-      onClose();
+  isCreating = true;
+
+  const result = await createServer({
+    name: name.trim(),
+    port,
+    config: {
+      javaXms,
+      javaXmx,
+      bindAddr: '0.0.0.0',
+      autoDownload,
+      useG1gc,
+      extraArgs: '',
+      useMachineId
     }
+  });
+
+  isCreating = false;
+
+  if (result.success) {
+    showToast($_('serverCreated'));
+    onCreated();
+  } else {
+    showToast(result.error || 'Failed to create server', 'error');
   }
+}
+
+function handleKeydown(e: KeyboardEvent): void {
+  if (e.key === 'Escape') {
+    onClose();
+  }
+}
 </script>
 
 <svelte:window onkeydown={handleKeydown} />

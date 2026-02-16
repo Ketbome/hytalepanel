@@ -1,168 +1,168 @@
 <script lang="ts">
-  import { _ } from 'svelte-i18n';
-  import { serverStatus } from '$lib/stores/server';
-  import { showToast } from '$lib/stores/ui';
-  import { emit, socket, joinedServerId } from '$lib/services/socketClient';
-  import { formatSize } from '$lib/utils/formatters';
+import { _ } from 'svelte-i18n';
+import { emit, joinedServerId, socket } from '$lib/services/socketClient';
+import { serverStatus } from '$lib/stores/server';
+import { showToast } from '$lib/stores/ui';
+import { formatSize } from '$lib/utils/formatters';
 
-  interface BackupInfo {
-    id: string;
-    filename: string;
-    createdAt: string;
-    size: number;
+interface BackupInfo {
+  id: string;
+  filename: string;
+  createdAt: string;
+  size: number;
+}
+
+interface BackupConfig {
+  enabled: boolean;
+  intervalMinutes: number;
+  maxBackups: number;
+  maxAgeDays: number;
+  onServerStart: boolean;
+}
+
+let backupsList = $state<BackupInfo[]>([]);
+let isLoading = $state(false);
+let isCreating = $state(false);
+let isRestoring = $state(false);
+
+// Config form state
+let enabled = $state(false);
+let intervalMinutes = $state(60);
+let maxBackups = $state(10);
+let maxAgeDays = $state(7);
+let onServerStart = $state(true);
+let hasConfigChanges = $state(false);
+let isSavingConfig = $state(false);
+
+// Load backups when socket is joined to server (not just activeServerId)
+$effect(() => {
+  if ($joinedServerId) {
+    loadBackups();
+    loadConfig();
   }
+});
 
-  interface BackupConfig {
-    enabled: boolean;
-    intervalMinutes: number;
-    maxBackups: number;
-    maxAgeDays: number;
-    onServerStart: boolean;
-  }
+// Socket event listeners
+$effect(() => {
+  const s = $socket;
+  if (!s) return;
 
-  let backupsList = $state<BackupInfo[]>([]);
-  let isLoading = $state(false);
-  let isCreating = $state(false);
-  let isRestoring = $state(false);
+  const handleListResult = (result: { success: boolean; backups: BackupInfo[]; error?: string }) => {
+    isLoading = false;
+    if (result.success) {
+      backupsList = result.backups;
+    } else {
+      showToast(result.error || 'Error loading backups', 'error');
+    }
+  };
 
-  // Config form state
-  let enabled = $state(false);
-  let intervalMinutes = $state(60);
-  let maxBackups = $state(10);
-  let maxAgeDays = $state(7);
-  let onServerStart = $state(true);
-  let hasConfigChanges = $state(false);
-  let isSavingConfig = $state(false);
-
-  // Load backups when socket is joined to server (not just activeServerId)
-  $effect(() => {
-    if ($joinedServerId) {
+  const handleCreateResult = (result: { success: boolean; backup?: BackupInfo; error?: string }) => {
+    isCreating = false;
+    if (result.success) {
+      showToast($_('backupCreated'));
       loadBackups();
-      loadConfig();
+    } else {
+      showToast(result.error || 'Error creating backup', 'error');
     }
-  });
+  };
 
-  // Socket event listeners
-  $effect(() => {
-    const s = $socket;
-    if (!s) return;
-
-    const handleListResult = (result: { success: boolean; backups: BackupInfo[]; error?: string }) => {
-      isLoading = false;
-      if (result.success) {
-        backupsList = result.backups;
-      } else {
-        showToast(result.error || 'Error loading backups', 'error');
-      }
-    };
-
-    const handleCreateResult = (result: { success: boolean; backup?: BackupInfo; error?: string }) => {
-      isCreating = false;
-      if (result.success) {
-        showToast($_('backupCreated'));
-        loadBackups();
-      } else {
-        showToast(result.error || 'Error creating backup', 'error');
-      }
-    };
-
-    const handleRestoreResult = (result: { success: boolean; error?: string }) => {
-      isRestoring = false;
-      if (result.success) {
-        showToast($_('backupRestored'));
-      } else {
-        showToast(result.error || 'Error restoring backup', 'error');
-      }
-    };
-
-    const handleDeleteResult = (result: { success: boolean; error?: string }) => {
-      if (result.success) {
-        showToast($_('backupDeleted'));
-        loadBackups();
-      } else {
-        showToast(result.error || 'Error deleting backup', 'error');
-      }
-    };
-
-    const handleConfigResult = (result: { success: boolean; config?: BackupConfig; error?: string }) => {
-      isSavingConfig = false;
-      if (result.success && result.config) {
-        enabled = result.config.enabled;
-        intervalMinutes = result.config.intervalMinutes;
-        maxBackups = result.config.maxBackups;
-        maxAgeDays = result.config.maxAgeDays;
-        onServerStart = result.config.onServerStart;
-        hasConfigChanges = false;
-      }
-    };
-
-    s.on('backup:list-result', handleListResult);
-    s.on('backup:create-result', handleCreateResult);
-    s.on('backup:restore-result', handleRestoreResult);
-    s.on('backup:delete-result', handleDeleteResult);
-    s.on('backup:config-result', handleConfigResult);
-
-    return () => {
-      s.off('backup:list-result', handleListResult);
-      s.off('backup:create-result', handleCreateResult);
-      s.off('backup:restore-result', handleRestoreResult);
-      s.off('backup:delete-result', handleDeleteResult);
-      s.off('backup:config-result', handleConfigResult);
-    };
-  });
-
-  function loadBackups(): void {
-    isLoading = true;
-    emit('backup:list');
-  }
-
-  function loadConfig(): void {
-    emit('backup:config');
-  }
-
-  function handleCreateBackup(): void {
-    isCreating = true;
-    emit('backup:create');
-  }
-
-  function handleRestore(backup: BackupInfo): void {
-    if ($serverStatus.running) {
-      showToast($_('serverMustBeStopped'), 'error');
-      return;
+  const handleRestoreResult = (result: { success: boolean; error?: string }) => {
+    isRestoring = false;
+    if (result.success) {
+      showToast($_('backupRestored'));
+    } else {
+      showToast(result.error || 'Error restoring backup', 'error');
     }
+  };
 
-    if (confirm($_('confirmRestore'))) {
-      isRestoring = true;
-      emit('backup:restore', backup.id);
+  const handleDeleteResult = (result: { success: boolean; error?: string }) => {
+    if (result.success) {
+      showToast($_('backupDeleted'));
+      loadBackups();
+    } else {
+      showToast(result.error || 'Error deleting backup', 'error');
     }
-  }
+  };
 
-  function handleDelete(backup: BackupInfo): void {
-    if (confirm($_('confirmDelete') + ` "${backup.filename}"?`)) {
-      emit('backup:delete', backup.id);
+  const handleConfigResult = (result: { success: boolean; config?: BackupConfig; error?: string }) => {
+    isSavingConfig = false;
+    if (result.success && result.config) {
+      enabled = result.config.enabled;
+      intervalMinutes = result.config.intervalMinutes;
+      maxBackups = result.config.maxBackups;
+      maxAgeDays = result.config.maxAgeDays;
+      onServerStart = result.config.onServerStart;
+      hasConfigChanges = false;
     }
+  };
+
+  s.on('backup:list-result', handleListResult);
+  s.on('backup:create-result', handleCreateResult);
+  s.on('backup:restore-result', handleRestoreResult);
+  s.on('backup:delete-result', handleDeleteResult);
+  s.on('backup:config-result', handleConfigResult);
+
+  return () => {
+    s.off('backup:list-result', handleListResult);
+    s.off('backup:create-result', handleCreateResult);
+    s.off('backup:restore-result', handleRestoreResult);
+    s.off('backup:delete-result', handleDeleteResult);
+    s.off('backup:config-result', handleConfigResult);
+  };
+});
+
+function loadBackups(): void {
+  isLoading = true;
+  emit('backup:list');
+}
+
+function loadConfig(): void {
+  emit('backup:config');
+}
+
+function handleCreateBackup(): void {
+  isCreating = true;
+  emit('backup:create');
+}
+
+function handleRestore(backup: BackupInfo): void {
+  if ($serverStatus.running) {
+    showToast($_('serverMustBeStopped'), 'error');
+    return;
   }
 
-  function markConfigChanged(): void {
-    hasConfigChanges = true;
+  if (confirm($_('confirmRestore'))) {
+    isRestoring = true;
+    emit('backup:restore', backup.id);
   }
+}
 
-  function handleSaveConfig(): void {
-    isSavingConfig = true;
-    const config: BackupConfig = {
-      enabled,
-      intervalMinutes,
-      maxBackups,
-      maxAgeDays,
-      onServerStart,
-    };
-    emit('backup:config', config);
+function handleDelete(backup: BackupInfo): void {
+  if (confirm($_('confirmDelete') + ` "${backup.filename}"?`)) {
+    emit('backup:delete', backup.id);
   }
+}
 
-  function formatDate(isoString: string): string {
-    const date = new Date(isoString);
-    return date.toLocaleString();
-  }
+function markConfigChanged(): void {
+  hasConfigChanges = true;
+}
+
+function handleSaveConfig(): void {
+  isSavingConfig = true;
+  const config: BackupConfig = {
+    enabled,
+    intervalMinutes,
+    maxBackups,
+    maxAgeDays,
+    onServerStart
+  };
+  emit('backup:config', config);
+}
+
+function formatDate(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleString();
+}
 </script>
 
 <div class="backups-container">

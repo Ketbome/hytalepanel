@@ -7,50 +7,72 @@ cd "$SERVER_HOME"
 # We persist it in server folder to survive container restarts
 setup_machine_id() {
     local PERSISTENT_ID="$SERVER_HOME/.machine-id"
+    local PERSISTENT_HASH="$SERVER_HOME/.machine-id.hash"
+    
+    # Validate machine-id format (must be 32 hex characters)
+    validate_machine_id() {
+        local id="$1"
+        # Remove any whitespace/newlines and check format
+        id=$(echo "$id" | tr -d '\n\r \t')
+        if echo "$id" | grep -Eq '^[a-f0-9]{32}$'; then
+            return 0
+        fi
+        return 1
+    }
+    
+    # Read and clean machine-id (remove newlines/spaces, take first 32 chars)
+    read_and_clean() {
+        tr -d '\n\r \t' < "$1" 2>/dev/null | head -c 32 | tr '[:upper:]' '[:lower:]'
+    }
     
     # 1. Try to restore from persistent copy first
-    if [ -f "$PERSISTENT_ID" ] && [ -s "$PERSISTENT_ID" ]; then
-        echo "[HYTALE] Restoring machine-id from persistent storage..."
-        cat "$PERSISTENT_ID" > /etc/machine-id
-        chmod 444 /etc/machine-id
-        return 0
+    if [ -f "$PERSISTENT_ID" ]; then
+        RESTORED_ID=$(read_and_clean "$PERSISTENT_ID")
+        if validate_machine_id "$RESTORED_ID"; then
+            echo "[HYTALE] ✓ Restored machine-id from persistent storage"
+            echo -n "$RESTORED_ID" > /etc/machine-id
+            chmod 444 /etc/machine-id
+            echo -n "$RESTORED_ID" | md5sum | cut -d' ' -f1 > "$PERSISTENT_HASH"
+            return 0
+        fi
+        echo "[HYTALE] ⚠ Persistent machine-id invalid (format error), regenerating..."
     fi
     
     # 2. Check if host machine-id is valid (mounted)
-    if [ -s /etc/machine-id ] && [ "$(wc -c < /etc/machine-id)" -ge 32 ]; then
-        echo "[HYTALE] Using host machine-id..."
-        cp /etc/machine-id "$PERSISTENT_ID"
-        chmod 444 /etc/machine-id
+    if [ -s /etc/machine-id ]; then
+        HOST_ID=$(read_and_clean /etc/machine-id)
+        if validate_machine_id "$HOST_ID"; then
+            echo "[HYTALE] ✓ Using host machine-id"
+            echo -n "$HOST_ID" > "$PERSISTENT_ID"
+            echo -n "$HOST_ID" > /etc/machine-id
+            chmod 444 /etc/machine-id "$PERSISTENT_ID"
+            echo -n "$HOST_ID" | md5sum | cut -d' ' -f1 > "$PERSISTENT_HASH"
+            return 0
+        fi
+    fi
+    
+    # 3. Generate new machine-id (consistent format)
+    echo "[HYTALE] ⚠ Generating NEW machine-id (auth data will be fresh)"
+    NEW_ID=$(cat /proc/sys/kernel/random/uuid | tr -d '-\n\r \t' | head -c 32 | tr '[:upper:]' '[:lower:]')
+    
+    if validate_machine_id "$NEW_ID"; then
+        echo "[HYTALE] ✓ Generated machine-id: $NEW_ID"
+        echo -n "$NEW_ID" > /etc/machine-id
+        echo -n "$NEW_ID" > "$PERSISTENT_ID"
+        chmod 444 /etc/machine-id "$PERSISTENT_ID"
+        echo -n "$NEW_ID" | md5sum | cut -d' ' -f1 > "$PERSISTENT_HASH"
         return 0
     fi
     
-    # 3. Generate new machine-id
-    echo "[HYTALE] Generating new machine-id..."
-    
-    # Try dbus-uuidgen first (most reliable)
-    if command -v dbus-uuidgen &> /dev/null; then
-        dbus-uuidgen > /etc/machine-id
-    # Fallback to systemd-machine-id-setup
-    elif command -v systemd-machine-id-setup &> /dev/null; then
-        systemd-machine-id-setup
-    # Last resort: generate from /proc
-    else
-        cat /proc/sys/kernel/random/uuid | tr -d '-' > /etc/machine-id
-    fi
-    
-    # Verify and persist
-    if [ -s /etc/machine-id ] && [ "$(wc -c < /etc/machine-id)" -ge 32 ]; then
-        cp /etc/machine-id "$PERSISTENT_ID"
-        chmod 444 /etc/machine-id
-        echo "[HYTALE] Machine-id: $(cat /etc/machine-id)"
-        return 0
-    else
-        echo "[HYTALE] WARNING: Failed to setup machine-id. Encrypted auth may not work."
-        return 1
-    fi
+    echo "[HYTALE] ✗ CRITICAL: Failed to setup machine-id!"
+    echo "[HYTALE] ✗ Encrypted auth persistence will NOT work"
+    return 1
 }
 
-setup_machine_id
+if ! setup_machine_id; then
+    echo "[HYTALE] WARNING: Continuing without valid machine-id"
+    echo "[HYTALE] Auth tokens will not persist across container restarts"
+fi
 
 # Fix permissions on mounted volumes (runs as root)
 chown -R hytale:hytale "$SERVER_HOME"

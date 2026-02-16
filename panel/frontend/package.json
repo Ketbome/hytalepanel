@@ -9,14 +9,15 @@
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "knip": "knip",
-    "lint": "biome check src/",
-    "lint:fix": "biome check --write src/"
+    "lint": "pnpm exec biome check src/",
+    "lint:fix": "pnpm exec biome check --write src/"
   },
   "dependencies": {
     "socket.io-client": "^4.7.2",
     "svelte-i18n": "^4.0.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.1",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@tsconfig/svelte": "^5.0.0",
     "knip": "^5.0.0",

@@ -1,21 +1,21 @@
 <script lang="ts">
-  import { login, authError, isUsingDefaults, checkDefaults } from '$lib/stores/auth';
-  import { onMount } from 'svelte';
+import { onMount } from 'svelte';
+import { authError, checkDefaults, isUsingDefaults, login } from '$lib/stores/auth';
 
-  let username = $state('');
-  let password = $state('');
-  let isLoggingIn = $state(false);
+let username = $state('');
+let password = $state('');
+let isLoggingIn = $state(false);
 
-  onMount(() => {
-    checkDefaults();
-  });
+onMount(() => {
+  checkDefaults();
+});
 
-  async function handleSubmit(e: SubmitEvent): Promise<void> {
-    e.preventDefault();
-    isLoggingIn = true;
-    await login(username, password);
-    isLoggingIn = false;
-  }
+async function handleSubmit(e: SubmitEvent): Promise<void> {
+  e.preventDefault();
+  isLoggingIn = true;
+  await login(username, password);
+  isLoggingIn = false;
+}
 </script>
 
 <div class="login-screen">

@@ -2,6 +2,6 @@
   "root": false,
   "extends": ["../biome.json"],
   "files": {
-    "includes": ["**", "!**/node_modules", "!**/dist", "!**/../public-dist", "!**/*.svelte"]
+    
   }
 }

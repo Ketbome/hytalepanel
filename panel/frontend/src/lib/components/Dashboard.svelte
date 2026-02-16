@@ -1,70 +1,70 @@
 <script lang="ts">
-  import { _ } from 'svelte-i18n';
-  import { servers, serversLoading, type Server } from '$lib/stores/servers';
-  import { fetchServers, deleteServer as apiDeleteServer, startServer, stopServer } from '$lib/services/api';
-  import { joinServer } from '$lib/services/socketClient';
-  import { showToast } from '$lib/stores/ui';
-  import ServerCard from './ServerCard.svelte';
-  import CreateServerModal from './CreateServerModal.svelte';
+import { _ } from 'svelte-i18n';
+import { deleteServer as apiDeleteServer, fetchServers, startServer, stopServer } from '$lib/services/api';
+import { joinServer } from '$lib/services/socketClient';
+import { type Server, servers, serversLoading } from '$lib/stores/servers';
+import { showToast } from '$lib/stores/ui';
+import CreateServerModal from './CreateServerModal.svelte';
+import ServerCard from './ServerCard.svelte';
 
-  let showCreateModal = $state(false);
+let showCreateModal = $state(false);
 
-  async function loadServers(): Promise<void> {
-    serversLoading.set(true);
-    const result = await fetchServers();
-    serversLoading.set(false);
-    
-    if (result.success && result.servers) {
-      servers.set(result.servers);
-    } else {
-      showToast(result.error || 'Failed to load servers', 'error');
-    }
+async function loadServers(): Promise<void> {
+  serversLoading.set(true);
+  const result = await fetchServers();
+  serversLoading.set(false);
+
+  if (result.success && result.servers) {
+    servers.set(result.servers);
+  } else {
+    showToast(result.error || 'Failed to load servers', 'error');
   }
+}
 
-  function handleEnterServer(server: Server): void {
-    joinServer(server.id);
+function handleEnterServer(server: Server): void {
+  joinServer(server.id);
+}
+
+async function handleStartServer(server: Server): Promise<void> {
+  const result = await startServer(server.id);
+  if (result.success) {
+    showToast($_('started'));
+    await loadServers();
+  } else {
+    showToast(result.error || 'Failed to start', 'error');
   }
+}
 
-  async function handleStartServer(server: Server): Promise<void> {
-    const result = await startServer(server.id);
-    if (result.success) {
-      showToast($_('started'));
-      await loadServers();
-    } else {
-      showToast(result.error || 'Failed to start', 'error');
-    }
+async function handleStopServer(server: Server): Promise<void> {
+  const result = await stopServer(server.id);
+  if (result.success) {
+    showToast($_('stopped'));
+    await loadServers();
+  } else {
+    showToast(result.error || 'Failed to stop', 'error');
   }
+}
 
-  async function handleStopServer(server: Server): Promise<void> {
-    const result = await stopServer(server.id);
-    if (result.success) {
-      showToast($_('stopped'));
-      await loadServers();
-    } else {
-      showToast(result.error || 'Failed to stop', 'error');
-    }
+async function handleDeleteServer(server: Server): Promise<void> {
+  if (!confirm($_('confirmDeleteServer'))) return;
+
+  const result = await apiDeleteServer(server.id);
+  if (result.success) {
+    showToast($_('serverDeleted'));
+    await loadServers();
+  } else {
+    showToast(result.error || 'Failed to delete', 'error');
   }
+}
 
-  async function handleDeleteServer(server: Server): Promise<void> {
-    if (!confirm($_('confirmDeleteServer'))) return;
-    
-    const result = await apiDeleteServer(server.id);
-    if (result.success) {
-      showToast($_('serverDeleted'));
-      await loadServers();
-    } else {
-      showToast(result.error || 'Failed to delete', 'error');
-    }
-  }
+function handleServerCreated(): void {
+  showCreateModal = false;
+  loadServers();
+}
 
-  function handleServerCreated(): void {
-    showCreateModal = false;
-    loadServers();
-  }
-
-  $effect(() => {
-    loadServers();
-  });
+$effect(() => {
+  loadServers();
+});
 </script>
 
 <div class="dashboard">

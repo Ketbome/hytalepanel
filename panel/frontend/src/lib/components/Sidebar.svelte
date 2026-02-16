@@ -1,27 +1,27 @@
 <script lang="ts">
-  import { _ } from 'svelte-i18n';
-  import { activeTab, sidebarHidden, panelExpanded } from '$lib/stores/ui';
-  import type { TabId } from '$lib/types';
-  import SetupTab from './tabs/SetupTab.svelte';
-  import FilesTab from './tabs/FilesTab.svelte';
-  import ModsTab from './tabs/ModsTab.svelte';
-  import ControlTab from './tabs/ControlTab.svelte';
-  import ConfigTab from './tabs/ConfigTab.svelte';
-  import BackupsTab from './tabs/BackupsTab.svelte';
+import { _ } from 'svelte-i18n';
+import { activeTab, panelExpanded, sidebarHidden } from '$lib/stores/ui';
+import type { TabId } from '$lib/types';
+import BackupsTab from './tabs/BackupsTab.svelte';
+import ConfigTab from './tabs/ConfigTab.svelte';
+import ControlTab from './tabs/ControlTab.svelte';
+import FilesTab from './tabs/FilesTab.svelte';
+import ModsTab from './tabs/ModsTab.svelte';
+import SetupTab from './tabs/SetupTab.svelte';
 
-  const tabs: TabId[] = ['control', 'setup', 'files', 'mods', 'backups', 'config'];
+const tabs: TabId[] = ['control', 'setup', 'files', 'mods', 'backups', 'config'];
 
-  function setTab(tab: TabId): void {
-    activeTab.set(tab);
-  }
+function setTab(tab: TabId): void {
+  activeTab.set(tab);
+}
 
-  function toggleExpand(): void {
-    panelExpanded.update(v => !v);
-  }
+function toggleExpand(): void {
+  panelExpanded.update((v) => !v);
+}
 
-  function hideSidebar(): void {
-    sidebarHidden.set(true);
-  }
+function hideSidebar(): void {
+  sidebarHidden.set(true);
+}
 </script>
 
 <div class="sidebar">

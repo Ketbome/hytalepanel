@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { _ } from 'svelte-i18n';
+import { _ } from 'svelte-i18n';
 
-  interface Props {
-    running: boolean;
-  }
+interface Props {
+  running: boolean;
+}
 
-  let { running }: Props = $props();
+let { running }: Props = $props();
 </script>
 
 <div class="status-badge">

@@ -1,161 +1,169 @@
 <script lang="ts">
-  import { _ } from 'svelte-i18n';
-  import { currentPath, fileList, editorState, openEditor, closeEditor, uploadState, FILE_ICONS, setEditorStatus } from '$lib/stores/files';
-  import { activeServer } from '$lib/stores/servers';
-  import { emit } from '$lib/services/socketClient';
-  import { uploadFile } from '$lib/services/api';
-  import { showToast } from '$lib/stores/ui';
-  import { formatSize } from '$lib/utils/formatters';
-  import type { FileEntry } from '$lib/types';
+import { _ } from 'svelte-i18n';
+import { uploadFile } from '$lib/services/api';
+import { emit } from '$lib/services/socketClient';
+import {
+  closeEditor,
+  currentPath,
+  editorState,
+  FILE_ICONS,
+  fileList,
+  openEditor,
+  setEditorStatus,
+  uploadState
+} from '$lib/stores/files';
+import { activeServer } from '$lib/stores/servers';
+import { showToast } from '$lib/stores/ui';
+import type { FileEntry } from '$lib/types';
+import { formatSize } from '$lib/utils/formatters';
 
-  let fileInput: HTMLInputElement | undefined = $state();
-  let editorContent = $state('');
-  let createBackup = $state(true);
+let fileInput: HTMLInputElement | undefined = $state();
+let editorContent = $state('');
+let createBackup = $state(true);
 
-  interface BreadcrumbPart {
-    path: string;
-    label: string;
+interface BreadcrumbPart {
+  path: string;
+  label: string;
+}
+
+function getBreadcrumbParts(path: string): BreadcrumbPart[] {
+  const parts = path.split('/').filter((p) => p);
+  let accumulated = '';
+  const result: BreadcrumbPart[] = [{ path: '/', label: 'server' }];
+  for (const part of parts) {
+    accumulated += '/' + part;
+    result.push({ path: accumulated, label: part });
   }
+  return result;
+}
 
-  function getBreadcrumbParts(path: string): BreadcrumbPart[] {
-    const parts = path.split('/').filter(p => p);
-    let accumulated = '';
-    const result: BreadcrumbPart[] = [{ path: '/', label: 'server' }];
-    for (const part of parts) {
-      accumulated += '/' + part;
-      result.push({ path: accumulated, label: part });
-    }
-    return result;
+let breadcrumbParts = $derived(getBreadcrumbParts($currentPath));
+
+$effect(() => {
+  editorContent = $editorState.content;
+});
+
+function navigateTo(path: string): void {
+  emit('files:list', path);
+}
+
+function goBack(): void {
+  const parts = $currentPath.split('/').filter((p) => p);
+  parts.pop();
+  navigateTo(parts.length ? '/' + parts.join('/') : '/');
+}
+
+function handleFileClick(file: FileEntry): void {
+  if (file.isDirectory) {
+    const newPath = $currentPath === '/' ? '/' + file.name : $currentPath + '/' + file.name;
+    navigateTo(newPath);
   }
+}
 
-  let breadcrumbParts = $derived(getBreadcrumbParts($currentPath));
-
-  $effect(() => {
-    editorContent = $editorState.content;
-  });
-
-  function navigateTo(path: string): void {
-    emit('files:list', path);
-  }
-
-  function goBack(): void {
-    const parts = $currentPath.split('/').filter(p => p);
-    parts.pop();
-    navigateTo(parts.length ? '/' + parts.join('/') : '/');
-  }
-
-  function handleFileClick(file: FileEntry): void {
-    if (file.isDirectory) {
-      const newPath = $currentPath === '/' ? '/' + file.name : $currentPath + '/' + file.name;
-      navigateTo(newPath);
-    }
-  }
-
-  function handleFileDoubleClick(file: FileEntry): void {
-    if (!file.isDirectory) {
-      const filePath = $currentPath === '/' ? '/' + file.name : $currentPath + '/' + file.name;
-      openEditor(filePath);
-      emit('files:read', filePath);
-    }
-  }
-
-  function handleEdit(file: FileEntry): void {
+function handleFileDoubleClick(file: FileEntry): void {
+  if (!file.isDirectory) {
     const filePath = $currentPath === '/' ? '/' + file.name : $currentPath + '/' + file.name;
     openEditor(filePath);
     emit('files:read', filePath);
   }
+}
 
-  function handleDelete(file: FileEntry): void {
-    if (confirm($_('confirmDelete') + ` "${file.name}"?`)) {
-      const filePath = $currentPath === '/' ? '/' + file.name : $currentPath + '/' + file.name;
-      emit('files:delete', filePath);
-    }
+function handleEdit(file: FileEntry): void {
+  const filePath = $currentPath === '/' ? '/' + file.name : $currentPath + '/' + file.name;
+  openEditor(filePath);
+  emit('files:read', filePath);
+}
+
+function handleDelete(file: FileEntry): void {
+  if (confirm($_('confirmDelete') + ` "${file.name}"?`)) {
+    const filePath = $currentPath === '/' ? '/' + file.name : $currentPath + '/' + file.name;
+    emit('files:delete', filePath);
   }
+}
 
-  function handleNewFolder(): void {
-    const name = prompt($_('folderName'));
-    if (name) {
-      const folderPath = $currentPath === '/' ? '/' + name : $currentPath + '/' + name;
-      emit('files:mkdir', folderPath);
-    }
+function handleNewFolder(): void {
+  const name = prompt($_('folderName'));
+  if (name) {
+    const folderPath = $currentPath === '/' ? '/' + name : $currentPath + '/' + name;
+    emit('files:mkdir', folderPath);
   }
+}
 
-  function toggleUploadZone(): void {
-    uploadState.update(s => ({ ...s, isVisible: !s.isVisible }));
+function toggleUploadZone(): void {
+  uploadState.update((s) => ({ ...s, isVisible: !s.isVisible }));
+}
+
+function handleDragOver(e: DragEvent): void {
+  e.preventDefault();
+}
+
+function handleDrop(e: DragEvent): void {
+  e.preventDefault();
+  if (e.dataTransfer?.files) {
+    handleUploadFiles(e.dataTransfer.files);
   }
+}
 
-  function handleDragOver(e: DragEvent): void {
-    e.preventDefault();
+function handleFileSelect(e: Event): void {
+  const target = e.target as HTMLInputElement;
+  if (target.files) {
+    handleUploadFiles(target.files);
+    target.value = '';
   }
+}
 
-  function handleDrop(e: DragEvent): void {
-    e.preventDefault();
-    if (e.dataTransfer?.files) {
-      handleUploadFiles(e.dataTransfer.files);
-    }
-  }
+async function handleUploadFiles(files: FileList): Promise<void> {
+  uploadState.set({ isVisible: true, isUploading: true, progress: 10, text: $_('uploading') + '...' });
 
-  function handleFileSelect(e: Event): void {
-    const target = e.target as HTMLInputElement;
-    if (target.files) {
-      handleUploadFiles(target.files);
-      target.value = '';
-    }
-  }
-
-  async function handleUploadFiles(files: FileList): Promise<void> {
-    uploadState.set({ isVisible: true, isUploading: true, progress: 10, text: $_('uploading') + '...' });
-
-    for (const file of files) {
-      uploadState.update(s => ({ ...s, text: $_('uploading') + ` ${file.name}...` }));
-      try {
-        const result = await uploadFile(file, $currentPath, $activeServer!.id);
-        if (result.success) {
-          uploadState.update(s => ({ ...s, progress: 100 }));
-          showToast($_('uploaded') + `: ${file.name}`);
-        } else {
-          showToast($_('uploadFailed') + `: ${result.error}`, 'error');
-        }
-      } catch (e) {
-        const error = e as Error;
-        showToast($_('uploadError') + `: ${error.message}`, 'error');
+  for (const file of files) {
+    uploadState.update((s) => ({ ...s, text: $_('uploading') + ` ${file.name}...` }));
+    try {
+      const result = await uploadFile(file, $currentPath, $activeServer!.id);
+      if (result.success) {
+        uploadState.update((s) => ({ ...s, progress: 100 }));
+        showToast($_('uploaded') + `: ${file.name}`);
+      } else {
+        showToast($_('uploadFailed') + `: ${result.error}`, 'error');
       }
-    }
-
-    setTimeout(() => {
-      uploadState.set({ isVisible: false, isUploading: false, progress: 0, text: '' });
-      navigateTo($currentPath);
-    }, 500);
-  }
-
-  function handleSaveFile(): void {
-    if (!$editorState.filePath) return;
-    setEditorStatus($_('saving'), 'saving');
-    emit('files:save', {
-      path: $editorState.filePath,
-      content: editorContent,
-      createBackup
-    });
-  }
-
-  function handleCloseEditor(): void {
-    closeEditor();
-  }
-
-  function handleEditorKeydown(e: KeyboardEvent): void {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-      e.preventDefault();
-      handleSaveFile();
-    }
-    if (e.key === 'Escape') {
-      handleCloseEditor();
+    } catch (e) {
+      const error = e as Error;
+      showToast($_('uploadError') + `: ${error.message}`, 'error');
     }
   }
 
-  function isEditable(file: FileEntry): boolean {
-    return file.editable;
-  }
+  setTimeout(() => {
+    uploadState.set({ isVisible: false, isUploading: false, progress: 0, text: '' });
+    navigateTo($currentPath);
+  }, 500);
+}
 
+function handleSaveFile(): void {
+  if (!$editorState.filePath) return;
+  setEditorStatus($_('saving'), 'saving');
+  emit('files:save', {
+    path: $editorState.filePath,
+    content: editorContent,
+    createBackup
+  });
+}
+
+function handleCloseEditor(): void {
+  closeEditor();
+}
+
+function handleEditorKeydown(e: KeyboardEvent): void {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    handleSaveFile();
+  }
+  if (e.key === 'Escape') {
+    handleCloseEditor();
+  }
+}
+
+function isEditable(file: FileEntry): boolean {
+  return file.editable;
+}
 </script>
 
 <div class="file-breadcrumb">

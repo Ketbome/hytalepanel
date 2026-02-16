@@ -1,5 +1,5 @@
-import type { EditorState, FileEntry, FileType, UploadState } from '$lib/types';
 import { writable } from 'svelte/store';
+import type { EditorState, FileEntry, FileType, UploadState } from '$lib/types';
 
 export const currentPath = writable<string>('/');
 export const fileList = writable<FileEntry[]>([]);

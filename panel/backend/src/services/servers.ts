@@ -26,6 +26,8 @@ export interface Server {
   containerName: string;
   config: ServerConfig;
   createdAt: string;
+  machineIdHash?: string; // MD5 hash of machine-id for change detection
+  lastMachineIdCheck?: number; // Timestamp of last check
 }
 
 export interface ServersData {

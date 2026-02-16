@@ -1,5 +1,5 @@
-import type { AuthStatus, DefaultsCheck, LoginResponse } from '$lib/types';
 import { writable } from 'svelte/store';
+import type { AuthStatus, DefaultsCheck, LoginResponse } from '$lib/types';
 import { apiUrl } from './config';
 
 export const isAuthenticated = writable<boolean>(false);

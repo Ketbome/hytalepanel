@@ -1,3 +1,6 @@
+import { io, type Socket } from 'socket.io-client';
+import { get, writable } from 'svelte/store';
+import { _ } from 'svelte-i18n';
 import { isAuthenticated } from '$lib/stores/auth';
 import { panelConfig } from '$lib/stores/config';
 import {
@@ -28,9 +31,9 @@ import {
   total
 } from '$lib/stores/mods';
 import { currentRoute, navigateToDashboard, navigateToServer } from '$lib/stores/router';
-import { downloadProgress, downloaderAuth, filesReady, serverStatus, updateInfo } from '$lib/stores/server';
-import { activeServerId, servers, updateServerStatus } from '$lib/stores/servers';
+import { downloaderAuth, downloadProgress, filesReady, serverStatus, updateInfo } from '$lib/stores/server';
 import type { Server } from '$lib/stores/servers';
+import { activeServerId, servers, updateServerStatus } from '$lib/stores/servers';
 import { showToast } from '$lib/stores/ui';
 import type {
   ActionStatus,
@@ -50,9 +53,6 @@ import type {
   ModUpdatesResult,
   ServerStatus
 } from '$lib/types';
-import { type Socket, io } from 'socket.io-client';
-import { _ } from 'svelte-i18n';
-import { get, writable } from 'svelte/store';
 
 export const socket = writable<Socket | null>(null);
 export const isConnected = writable<boolean>(false);
@@ -470,12 +470,7 @@ export function connectSocket(): Socket {
   // Server update events
   socketInstance.on(
     'update:check-result',
-    (result: {
-      success: boolean;
-      lastUpdate: string | null;
-      daysSinceUpdate: number | null;
-      error?: string;
-    }) => {
+    (result: { success: boolean; lastUpdate: string | null; daysSinceUpdate: number | null; error?: string }) => {
       updateInfo.update((u) => ({
         ...u,
         isChecking: false,

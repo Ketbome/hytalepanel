@@ -1,57 +1,57 @@
 <script lang="ts">
-  import { _ } from 'svelte-i18n';
-  import { filesReady, downloaderAuth, downloadProgress, updateInfo } from '$lib/stores/server';
-  import { emit } from '$lib/services/socketClient';
-  import type { DownloadStep } from '$lib/types';
+import { _ } from 'svelte-i18n';
+import { emit } from '$lib/services/socketClient';
+import { downloaderAuth, downloadProgress, filesReady, updateInfo } from '$lib/stores/server';
+import type { DownloadStep } from '$lib/types';
 
-  function handleDownload(): void {
-    downloadProgress.update(p => ({ ...p, authUrl: null, authCode: null }));
-    emit('download');
+function handleDownload(): void {
+  downloadProgress.update((p) => ({ ...p, authUrl: null, authCode: null }));
+  emit('download');
+}
+
+function checkForUpdate(): void {
+  updateInfo.update((u) => ({ ...u, isChecking: true }));
+  emit('update:check');
+}
+
+function applyUpdate(): void {
+  if (confirm($_('confirmUpdate'))) {
+    updateInfo.update((u) => ({ ...u, isUpdating: true, updateStatus: $_('starting') }));
+    emit('update:apply');
   }
+}
 
-  function checkForUpdate(): void {
-    updateInfo.update(u => ({ ...u, isChecking: true }));
-    emit('update:check');
+function getStepState(step: DownloadStep, currentStep: DownloadStep): 'active' | 'done' | '' {
+  const steps: DownloadStep[] = ['auth', 'download', 'extract', 'complete'];
+  const stepIndex = steps.indexOf(step);
+  const currentIndex = steps.indexOf(currentStep);
+
+  if (stepIndex === currentIndex) return 'active';
+  if (stepIndex < currentIndex) return 'done';
+  return '';
+}
+
+let stepStates = $derived({
+  auth: getStepState('auth', $downloadProgress.step),
+  download: getStepState('download', $downloadProgress.step),
+  extract: getStepState('extract', $downloadProgress.step),
+  complete: $downloadProgress.step === 'complete' ? 'done' : ''
+});
+
+function formatLastUpdate(lastUpdate: string | null, daysSince: number | null): string {
+  if (!lastUpdate) return $_('never');
+  if (daysSince === 0) return $_('today');
+  if (daysSince === 1) return $_('yesterday');
+  if (daysSince !== null) return $_('daysAgo', { values: { days: daysSince } });
+  return new Date(lastUpdate).toLocaleDateString();
+}
+
+// Check for update info on mount
+$effect(() => {
+  if ($filesReady.ready && !$updateInfo.lastUpdate && !$updateInfo.isChecking) {
+    checkForUpdate();
   }
-
-  function applyUpdate(): void {
-    if (confirm($_('confirmUpdate'))) {
-      updateInfo.update(u => ({ ...u, isUpdating: true, updateStatus: $_('starting') }));
-      emit('update:apply');
-    }
-  }
-
-  function getStepState(step: DownloadStep, currentStep: DownloadStep): 'active' | 'done' | '' {
-    const steps: DownloadStep[] = ['auth', 'download', 'extract', 'complete'];
-    const stepIndex = steps.indexOf(step);
-    const currentIndex = steps.indexOf(currentStep);
-
-    if (stepIndex === currentIndex) return 'active';
-    if (stepIndex < currentIndex) return 'done';
-    return '';
-  }
-
-  let stepStates = $derived({
-    auth: getStepState('auth', $downloadProgress.step),
-    download: getStepState('download', $downloadProgress.step),
-    extract: getStepState('extract', $downloadProgress.step),
-    complete: $downloadProgress.step === 'complete' ? 'done' : ''
-  });
-
-  function formatLastUpdate(lastUpdate: string | null, daysSince: number | null): string {
-    if (!lastUpdate) return $_('never');
-    if (daysSince === 0) return $_('today');
-    if (daysSince === 1) return $_('yesterday');
-    if (daysSince !== null) return $_('daysAgo', { values: { days: daysSince } });
-    return new Date(lastUpdate).toLocaleDateString();
-  }
-
-  // Check for update info on mount
-  $effect(() => {
-    if ($filesReady.ready && !$updateInfo.lastUpdate && !$updateInfo.isChecking) {
-      checkForUpdate();
-    }
-  });
+});
 </script>
 
 <div class="file-status" class:ready={$filesReady.ready} class:missing={!$filesReady.ready}>

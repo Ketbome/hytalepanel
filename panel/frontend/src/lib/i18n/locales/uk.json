@@ -204,5 +204,15 @@
   "serverMustBeStopped": "Сервер повинен бути зупинений для відновлення",
   "creating": "Створення...",
   "disabled": "вимкнено",
-  "unlimited": "необмежено"
+  "unlimited": "необмежено",
+  "machineIdTitle": "Machine ID (Постійна Auth)",
+  "machineIdValid": "Дійсний",
+  "machineIdInvalid": "Недійсний",
+  "machineIdValue": "Machine ID:",
+  "machineIdChanged": "Machine ID змінився!",
+  "machineIdAuthDataLost": "Попередні зашифровані дані auth недоступні. Потрібна повторна авторизація сервера.",
+  "machineIdRegenerate": "Регенерувати ID",
+  "machineIdRegenerateConfirm": "Це видалить зашифровані дані auth і потребує повторної авторизації. Продовжити?",
+  "machineIdRegenerated": "Machine ID регенеровано. Будь ласка, авторизуйте сервер знову.",
+  "machineIdInfo": "Machine ID використовується для шифрування токенів автентифікації сервера. Якщо він зміниться, попередні дані auth стають недоступними і потрібно повторно авторизуватися."
 }

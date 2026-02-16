@@ -1,5 +1,5 @@
-import type { DownloadProgress, FilesReady, ServerStatus } from '$lib/types';
 import { writable } from 'svelte/store';
+import type { DownloadProgress, FilesReady, ServerStatus } from '$lib/types';
 
 export const serverStatus = writable<ServerStatus>({
   running: false,

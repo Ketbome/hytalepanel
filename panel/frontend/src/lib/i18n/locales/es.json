@@ -204,5 +204,15 @@
   "serverMustBeStopped": "El servidor debe estar detenido para restaurar backup",
   "creating": "Creando...",
   "disabled": "deshabilitado",
-  "unlimited": "ilimitado"
+  "unlimited": "ilimitado",
+  "machineIdTitle": "Machine ID (Persistencia Auth)",
+  "machineIdValid": "Válido",
+  "machineIdInvalid": "Inválido",
+  "machineIdValue": "Machine ID:",
+  "machineIdChanged": "¡Machine ID cambió!",
+  "machineIdAuthDataLost": "Los datos de auth encriptados anteriores son inaccesibles. Se requiere reautorización del servidor.",
+  "machineIdRegenerate": "Regenerar ID",
+  "machineIdRegenerateConfirm": "Esto eliminará los datos de auth encriptados y requerirá reautorización. ¿Continuar?",
+  "machineIdRegenerated": "Machine ID regenerado. Por favor reautoriza el servidor.",
+  "machineIdInfo": "El Machine ID se usa para encriptar los tokens de autenticación del servidor. Si cambia, los datos de auth previos se vuelven inaccesibles y debes reautorizar."
 }
