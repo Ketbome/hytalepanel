@@ -83,7 +83,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Contributors
 
-- **[@Vadko](https://github.com/Vadko)** - Frontend refactoring and mods system
+<a href="https://github.com/Ketbome/hytalepanel/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Ketbome/hytalepanel" />
+</a>
 
 ## License
 
