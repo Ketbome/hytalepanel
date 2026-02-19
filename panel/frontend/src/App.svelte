@@ -1,5 +1,4 @@
 <script lang="ts">
-import { onDestroy, onMount } from 'svelte';
 import Console from '$lib/components/Console.svelte';
 import Dashboard from '$lib/components/Dashboard.svelte';
 import Header from '$lib/components/Header.svelte';
@@ -12,25 +11,29 @@ import { loadPanelConfig } from '$lib/stores/config';
 import { initRouter, isOnDashboard } from '$lib/stores/router';
 import { panelExpanded, sidebarHidden } from '$lib/stores/ui';
 
-onMount(async () => {
-  // Load panel config first (for BASE_PATH)
-  await loadPanelConfig();
-  // Initialize router after config is loaded
-  initRouter();
-  const authenticated = await checkStatus();
-  isLoading.set(false);
-  if (authenticated) {
-    connectSocket();
-  }
-});
+// Initialize on mount
+$effect(() => {
+  (async () => {
+    // Load panel config first (for BASE_PATH)
+    await loadPanelConfig();
+    // Initialize router after config is loaded
+    initRouter();
+    const authenticated = await checkStatus();
+    isLoading.set(false);
+    if (authenticated) {
+      connectSocket();
+    }
+  })();
 
-onDestroy(() => {
-  disconnectSocket();
+  return () => {
+    disconnectSocket();
+  };
 });
 
 // Connect after login (when user logs in after page load)
 let prevAuth = false;
-isAuthenticated.subscribe((authenticated) => {
+$effect(() => {
+  const authenticated = $isAuthenticated;
   if (authenticated && !prevAuth) {
     connectSocket();
   }
@@ -66,7 +69,7 @@ function handleKeydown(e: KeyboardEvent): void {
   <Dashboard />
 {:else}
   <!-- Server view - managing a specific server -->
-  <div class="container" class:sidebar-hidden={$sidebarHidden} class:panel-expanded={$panelExpanded}>
+  <div class="container animate-fade-in" class:sidebar-hidden={$sidebarHidden} class:panel-expanded={$panelExpanded}>
     <Header />
     <div class="grid">
       <div class="main">

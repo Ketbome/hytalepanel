@@ -6,6 +6,8 @@ import { type Server, servers, serversLoading } from '$lib/stores/servers';
 import { showToast } from '$lib/stores/ui';
 import CreateServerModal from './CreateServerModal.svelte';
 import ServerCard from './ServerCard.svelte';
+import Button from './ui/Button.svelte';
+import Skeleton from './ui/Skeleton.svelte';
 
 let showCreateModal = $state(false);
 
@@ -67,7 +69,7 @@ $effect(() => {
 });
 </script>
 
-<div class="dashboard">
+<div class="dashboard animate-fade-in">
   <div class="dashboard-header">
     <div class="dashboard-logo">
       <img src="/images/logo.png" alt="HytalePanel" class="logo-img" />
@@ -89,17 +91,20 @@ $effect(() => {
   <div class="dashboard-content">
     {#if $serversLoading}
       <div class="dashboard-empty">
-        <div class="loading-spinner"></div>
-        <p>{$_('loading')}</p>
+        <div class="servers-grid">
+          <Skeleton type="card" />
+          <Skeleton type="card" />
+          <Skeleton type="card" />
+        </div>
       </div>
     {:else if $servers.length === 0}
       <div class="dashboard-empty">
         <img src="/images/hytale.png" alt="Hytale" class="empty-icon" />
         <h2>{$_('noServers')}</h2>
         <p>{$_('createServerHint')}</p>
-        <button class="mc-btn primary" onclick={() => showCreateModal = true}>
+        <Button variant="primary" onclick={() => showCreateModal = true}>
           + {$_('createServer')}
-        </button>
+        </Button>
       </div>
     {:else}
       <div class="servers-grid">

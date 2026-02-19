@@ -16,7 +16,7 @@ import {
   logs,
   prependLogs
 } from '$lib/stores/console';
-import { currentPath, fileList, setEditorContent, setEditorStatus } from '$lib/stores/files';
+import { currentPath, fileList, isFilesLoading, setEditorContent, setEditorStatus } from '$lib/stores/files';
 import {
   apiConfigured,
   availableUpdates,
@@ -232,6 +232,7 @@ export function connectSocket(): Socket {
 
   // File manager events
   socketInstance.on('files:list-result', (result: FileListResult) => {
+    isFilesLoading.set(false);
     if (result.success) {
       currentPath.set(result.path);
       fileList.set(result.files);

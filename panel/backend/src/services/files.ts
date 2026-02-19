@@ -307,7 +307,7 @@ export async function checkServerFiles(serverId: string, containerName?: string)
     const hasJar = entries.some((f) => f === 'HytaleServer.jar');
     const hasAssets = entries.some((f) => f === 'Assets.zip');
     return { hasJar, hasAssets, ready: hasJar && hasAssets };
-  } catch (directError) {
+  } catch (_directError) {
     // Fallback: Check inside container using Docker exec (for TrueNAS, etc.)
     if (!containerName) {
       return { hasJar: false, hasAssets: false, ready: false };

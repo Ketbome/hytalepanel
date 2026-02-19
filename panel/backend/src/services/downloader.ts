@@ -14,7 +14,7 @@ export async function downloadServerFiles(
   socket: Socket,
   containerName?: string,
   serverId?: string,
-  channel?: ReleaseChannel
+  _channel?: ReleaseChannel
 ): Promise<void> {
   try {
     const c = await docker.getContainer(containerName);

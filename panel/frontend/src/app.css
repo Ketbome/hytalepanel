@@ -1,3 +1,77 @@
+/* Tailwind v3 imports */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Animation Utilities */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+/* Accessibility Improvements */
+@layer base {
+  /* Focus visible for keyboard navigation */
+  *:focus-visible {
+    outline: 2px solid theme("colors.hytale-orange");
+    outline-offset: 2px;
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
+      transition-duration: 0.01ms;
+    }
+  }
+
+  /* Skip link for keyboard users */
+  .skip-to-content {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    z-index: 100;
+    padding: 8px 16px;
+    background: theme("colors.hytale-orange");
+    color: theme("colors.mc-dark");
+    text-decoration: none;
+    font-weight: bold;
+  }
+
+  .skip-to-content:focus {
+    top: 0;
+  }
+}
+
+/* Custom Font for Ukrainian locale */
 @font-face {
   font-family: "8bit Operator";
   src: url("./assets/fonts/8bitoperator_jve.ttf") format("truetype");
@@ -6,22 +80,23 @@
   font-display: swap;
 }
 
+/* Design Tokens - Hytale/Minecraft Retro Theme */
 :root {
-  --hytale-orange: #f5a623;
-  --hytale-yellow: #ffd93d;
-  --hytale-cyan: #4ecdc4;
-  --mc-green: #5d8731;
-  --mc-green-light: #7cb342;
-  --mc-dark: #1a1a1a;
-  --mc-darker: #0f0f0f;
-  --mc-panel: #2d2d2d;
-  --mc-panel-light: #3d3d3d;
-  --mc-border-light: #4a4a4a;
-  --text: #ffffff;
-  --text-dim: #a0a0a0;
-  --success: #55ff55;
-  --warning: #ffaa00;
-  --error: #ff5555;
+  --hytale-orange: oklch(71% 0.13 55);
+  --hytale-yellow: oklch(89% 0.14 95);
+  --hytale-cyan: oklch(76% 0.1 195);
+  --mc-green: oklch(53% 0.095 130);
+  --mc-green-light: oklch(62% 0.11 130);
+  --mc-dark: oklch(16% 0 0);
+  --mc-darker: oklch(12% 0 0);
+  --mc-panel: oklch(22% 0 0);
+  --mc-panel-light: oklch(28% 0 0);
+  --mc-border-light: oklch(34% 0 0);
+  --text: oklch(100% 0 0);
+  --text-dim: oklch(68% 0 0);
+  --success: oklch(88% 0.25 145);
+  --warning: oklch(74% 0.18 65);
+  --error: oklch(62% 0.24 20);
   --font-ui: "VT323", monospace;
 }
 
@@ -276,9 +351,39 @@ header {
   align-items: stretch;
 }
 
-@media (max-width: 1000px) {
+/* Responsive: Mobile - stack vertically, sidebar hidden by default */
+@media (max-width: 768px) {
   .grid {
     grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 350px;
+    z-index: 50;
+    transform: translateX(0);
+    transition: transform 0.3s;
+  }
+
+  .sidebar-hidden .sidebar {
+    transform: translateX(100%);
+  }
+
+  .main {
+    grid-column: 1;
+  }
+}
+
+/* Responsive: Tablet - narrower sidebar */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .grid {
+    grid-template-columns: 1fr 450px;
+    gap: 16px;
   }
 }
 
@@ -2055,6 +2160,36 @@ header {
   border-color: var(--hytale-yellow);
 }
 
+/* Responsive dashboard header */
+@media (max-width: 768px) {
+  .dashboard-header {
+    padding: 20px 10px;
+  }
+
+  .dashboard-header .header-links {
+    position: static;
+    transform: none;
+    justify-content: center;
+    margin-top: 16px;
+    gap: 8px;
+  }
+
+  .dashboard-header .docs-link {
+    font-size: 14px;
+    padding: 6px 12px;
+  }
+
+  .dashboard-logo {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .dashboard-logo .logo-img {
+    width: 60px;
+    height: 60px;
+  }
+}
+
 .dashboard-logo {
   display: flex;
   align-items: center;
@@ -2124,6 +2259,22 @@ header {
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 20px;
   padding: 20px 0;
+}
+
+/* Responsive breakpoints for servers grid */
+@media (max-width: 768px) {
+  .servers-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px 0;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .servers-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 18px;
+  }
 }
 
 .create-fab {

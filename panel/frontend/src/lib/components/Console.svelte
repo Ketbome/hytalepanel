@@ -149,6 +149,12 @@ let lastCmdTime = 0;
 let suggestions = $state<typeof COMMANDS>([]);
 let selectedIndex = $state(-1);
 let showSuggestions = $state(false);
+let filterType = $state<'all' | 'info' | 'warning' | 'error' | 'cmd'>('all');
+
+let filteredLogs = $derived(() => {
+  if (filterType === 'all') return $logs;
+  return $logs.filter((log) => log.type === filterType);
+});
 
 function getSuggestions(input: string): typeof COMMANDS {
   if (!input || input.length < 1) return [];
@@ -198,7 +204,7 @@ function sendCommand(): void {
   if (Date.now() - lastCmdTime < 300) return;
   lastCmdTime = Date.now();
 
-  addLog('> ' + cmd, 'cmd');
+  addLog(`> ${cmd}`, 'cmd');
   emit('command', cmd);
   cmdInput = '';
   showSuggestions = false;
@@ -258,10 +264,52 @@ $effect(() => {
 <div class="card">
   <div class="card-header">
     <span>{$_('console')}</span>
+    <div class="console-filters">
+      <button 
+        class="filter-btn" 
+        class:active={filterType === 'all'} 
+        onclick={() => filterType = 'all'}
+        title="All logs"
+      >
+        All
+      </button>
+      <button 
+        class="filter-btn" 
+        class:active={filterType === 'info'} 
+        onclick={() => filterType = 'info'}
+        title="Info logs"
+      >
+        Info
+      </button>
+      <button 
+        class="filter-btn" 
+        class:active={filterType === 'warning'} 
+        onclick={() => filterType = 'warning'}
+        title="Warning logs"
+      >
+        Warn
+      </button>
+      <button 
+        class="filter-btn" 
+        class:active={filterType === 'error'} 
+        onclick={() => filterType = 'error'}
+        title="Error logs"
+      >
+        Error
+      </button>
+      <button 
+        class="filter-btn" 
+        class:active={filterType === 'cmd'} 
+        onclick={() => filterType = 'cmd'}
+        title="Command logs"
+      >
+        Cmd
+      </button>
+    </div>
     <button class="console-clear-btn" title={$_('clearConsole')} onclick={handleClear}>✕</button>
   </div>
   <div class="console" bind:this={consoleEl} onscroll={handleScroll}>
-    {#each $logs as log}
+    {#each filteredLogs() as log}
       <div class="log-line {log.type}">
         <span class="log-time">{log.timestamp} </span>{log.text}
       </div>
@@ -300,6 +348,39 @@ $effect(() => {
 </div>
 
 <style>
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .console-filters {
+    display: flex;
+    gap: 0.25rem;
+    margin-left: auto;
+  }
+
+  .filter-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    background: var(--mc-panel);
+    border: 1px solid var(--mc-border-light);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .filter-btn:hover {
+    background: var(--mc-panel-light);
+    color: var(--hytale-yellow);
+  }
+
+  .filter-btn.active {
+    background: var(--mc-panel-light);
+    color: var(--hytale-orange);
+    border-color: var(--hytale-orange);
+  }
+
   .command-bar {
     display: flex;
     gap: 0.5rem;

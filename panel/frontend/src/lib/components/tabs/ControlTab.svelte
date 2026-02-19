@@ -4,6 +4,7 @@ import { emit } from '$lib/services/socketClient';
 import { addLog } from '$lib/stores/console';
 import { serverStatus } from '$lib/stores/server';
 import { activeServer } from '$lib/stores/servers';
+import Button from '../ui/Button.svelte';
 
 function handleStart(): void {
   emit('start');
@@ -42,12 +43,12 @@ function handleWipe(): void {
 </script>
 
 <div class="control-grid">
-  <button class="mc-btn primary small" onclick={handleStart} disabled={$serverStatus.running}>{$_('start')}</button>
-  <button class="mc-btn small" onclick={handleRestart} disabled={!$serverStatus.running}>{$_('restart')}</button>
+  <Button variant="primary" size="small" onclick={handleStart} disabled={$serverStatus.running}>{$_('start')}</Button>
+  <Button size="small" onclick={handleRestart} disabled={!$serverStatus.running}>{$_('restart')}</Button>
 </div>
-<button class="mc-btn danger small" onclick={handleStop} disabled={!$serverStatus.running}>{$_('stopServer')}</button>
-<button class="mc-btn danger small" style="margin-top: 4px; opacity: 0.8;" onclick={handleForceStop} disabled={!$serverStatus.running} title={$_('forceStopTooltip')}>{$_('forceStop')}</button>
-<button class="mc-btn warning small" style="margin-top: 8px;" onclick={handleWipe} disabled={$serverStatus.running}>{$_('wipeData')}</button>
+<Button variant="danger" size="small" onclick={handleStop} disabled={!$serverStatus.running}>{$_('stopServer')}</Button>
+<Button variant="danger" size="small" onclick={handleForceStop} disabled={!$serverStatus.running} title={$_('forceStopTooltip')}>{$_('forceStop')}</Button>
+<Button variant="warning" size="small" onclick={handleWipe} disabled={$serverStatus.running}>{$_('wipeData')}</Button>
 
 <div class="info-compact">
   <div class="info-row">

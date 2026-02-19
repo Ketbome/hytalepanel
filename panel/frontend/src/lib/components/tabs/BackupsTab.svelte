@@ -138,7 +138,7 @@ function handleRestore(backup: BackupInfo): void {
 }
 
 function handleDelete(backup: BackupInfo): void {
-  if (confirm($_('confirmDelete') + ` "${backup.filename}"?`)) {
+  if (confirm(`${$_('confirmDelete')} "${backup.filename}"?`)) {
     emit('backup:delete', backup.id);
   }
 }

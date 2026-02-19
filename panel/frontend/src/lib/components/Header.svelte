@@ -1,5 +1,4 @@
 <script lang="ts">
-import { onDestroy, onMount } from 'svelte';
 import { _ } from 'svelte-i18n';
 import { locale } from '$lib/i18n';
 import { disconnectSocket, leaveServer } from '$lib/services/socketClient';
@@ -7,12 +6,11 @@ import { logout } from '$lib/stores/auth';
 import { serverStatus } from '$lib/stores/server';
 import { activeServer, activeServerId } from '$lib/stores/servers';
 import { formatUptime } from '$lib/utils/formatters';
+import Button from './ui/Button.svelte';
 import StatusBadge from './ui/StatusBadge.svelte';
 
 let clockTime = $state('--:--:--');
 let uptime = $state('00:00:00');
-let clockTimer: ReturnType<typeof setInterval> | undefined;
-let uptimeTimer: ReturnType<typeof setInterval> | undefined;
 
 function updateClock(): void {
   const now = new Date();
@@ -23,15 +21,16 @@ function updateUptime(): void {
   uptime = formatUptime($serverStatus.startedAt);
 }
 
-onMount(() => {
+// Clock and uptime timers with $effect
+$effect(() => {
   updateClock();
-  clockTimer = setInterval(updateClock, 1000);
-  uptimeTimer = setInterval(updateUptime, 1000);
-});
+  const clockTimer = setInterval(updateClock, 1000);
+  const uptimeTimer = setInterval(updateUptime, 1000);
 
-onDestroy(() => {
-  if (clockTimer) clearInterval(clockTimer);
-  if (uptimeTimer) clearInterval(uptimeTimer);
+  return () => {
+    clearInterval(clockTimer);
+    clearInterval(uptimeTimer);
+  };
 });
 
 function handleLogout(): void {
@@ -87,6 +86,6 @@ function handleLangChange(e: Event): void {
     </div>
     <span class="uptime-display">{uptime}</span>
     <StatusBadge running={$serverStatus.running} />
-    <button class="logout-btn" onclick={handleLogout}>{$_('logout')}</button>
+    <Button size="small" variant="danger" onclick={handleLogout}>{$_('logout')}</Button>
   </div>
 </header>

@@ -47,7 +47,7 @@ let dockerComposePreview = $derived(`services:
       AUTO_DOWNLOAD: ${autoDownload}
       USE_G1GC: ${useG1gc}
     volumes:
-      - ./server:/opt/hytale${machineIdVolumes ? '\n' + machineIdVolumes : ''}`);
+      - ./server:/opt/hytale${machineIdVolumes ? `\n${machineIdVolumes}` : ''}`);
 
 async function handleSubmit(): Promise<void> {
   if (!name.trim()) {
@@ -90,11 +90,11 @@ function handleKeydown(e: KeyboardEvent): void {
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="modal-overlay" onclick={onClose} onkeydown={(e) => e.key === 'Escape' && onClose()} role="presentation">
-  <div class="modal-content create-server-modal" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" tabindex="-1">
+<div class="modal-overlay animate-fade-in" onclick={onClose} onkeydown={(e) => e.key === 'Escape' && onClose()} role="presentation">
+  <div class="modal-content create-server-modal animate-scale-in" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" tabindex="-1">
     <div class="modal-header">
       <h2>{$_('createServer')}</h2>
-      <button class="modal-close" onclick={onClose}>×</button>
+      <button class="modal-close transition-transform hover:scale-110" onclick={onClose}>×</button>
     </div>
 
     <form class="modal-body" onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>

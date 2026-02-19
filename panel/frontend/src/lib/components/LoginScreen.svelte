@@ -1,12 +1,13 @@
 <script lang="ts">
-import { onMount } from 'svelte';
 import { authError, checkDefaults, isUsingDefaults, login } from '$lib/stores/auth';
+import Button from './ui/Button.svelte';
+import Input from './ui/Input.svelte';
 
 let username = $state('');
 let password = $state('');
 let isLoggingIn = $state(false);
 
-onMount(() => {
+$effect(() => {
   checkDefaults();
 });
 
@@ -38,10 +39,9 @@ async function handleSubmit(e: SubmitEvent): Promise<void> {
       {/if}
       <div class="login-field">
         <label class="login-label" for="username">Username</label>
-        <input
+        <Input
           id="username"
           type="text"
-          class="login-input"
           placeholder="admin"
           autocomplete="username"
           bind:value={username}
@@ -49,18 +49,17 @@ async function handleSubmit(e: SubmitEvent): Promise<void> {
       </div>
       <div class="login-field">
         <label class="login-label" for="password">Password</label>
-        <input
+        <Input
           id="password"
           type="password"
-          class="login-input"
           placeholder="********"
           autocomplete="current-password"
           bind:value={password}
         />
       </div>
-      <button type="submit" class="login-btn" disabled={isLoggingIn}>
+      <Button type="submit" variant="primary" disabled={isLoggingIn}>
         {isLoggingIn ? '...' : 'LOGIN'}
-      </button>
+      </Button>
     </form>
   </div>
 </div>

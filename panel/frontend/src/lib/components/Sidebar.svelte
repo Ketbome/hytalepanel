@@ -8,6 +8,7 @@ import ControlTab from './tabs/ControlTab.svelte';
 import FilesTab from './tabs/FilesTab.svelte';
 import ModsTab from './tabs/ModsTab.svelte';
 import SetupTab from './tabs/SetupTab.svelte';
+import Button from './ui/Button.svelte';
 
 const tabs: TabId[] = ['control', 'setup', 'files', 'mods', 'backups', 'config'];
 
@@ -28,37 +29,37 @@ function hideSidebar(): void {
   <div class="card">
     <div class="tabs-header">
       {#each tabs as tab}
-        <button
-          class="tab-btn"
-          class:active={$activeTab === tab}
+        <Button
+          variant="tab"
+          active={$activeTab === tab}
           onclick={() => setTab(tab)}
         >
           {$_(tab)}
-        </button>
+        </Button>
       {/each}
     </div>
 
-    <div id="tab-setup" class="tab-content" class:active={$activeTab === 'setup'}>
+    <div id="tab-setup" class="tab-content animate-fade-in" class:active={$activeTab === 'setup'}>
       <SetupTab />
     </div>
 
-    <div id="tab-files" class="tab-content" class:active={$activeTab === 'files'}>
+    <div id="tab-files" class="tab-content animate-fade-in" class:active={$activeTab === 'files'}>
       <FilesTab />
     </div>
 
-    <div id="tab-mods" class="tab-content" class:active={$activeTab === 'mods'}>
+    <div id="tab-mods" class="tab-content animate-fade-in" class:active={$activeTab === 'mods'}>
       <ModsTab />
     </div>
 
-    <div id="tab-control" class="tab-content" class:active={$activeTab === 'control'}>
+    <div id="tab-control" class="tab-content animate-fade-in" class:active={$activeTab === 'control'}>
       <ControlTab />
     </div>
 
-    <div id="tab-config" class="tab-content" class:active={$activeTab === 'config'}>
+    <div id="tab-config" class="tab-content animate-fade-in" class:active={$activeTab === 'config'}>
       <ConfigTab />
     </div>
 
-    <div id="tab-backups" class="tab-content" class:active={$activeTab === 'backups'}>
+    <div id="tab-backups" class="tab-content animate-fade-in" class:active={$activeTab === 'backups'}>
       <BackupsTab />
     </div>
 

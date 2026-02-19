@@ -1,5 +1,6 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
+import Skeleton from '$lib/components/ui/Skeleton.svelte';
 import { uploadFile } from '$lib/services/api';
 import { emit } from '$lib/services/socketClient';
 import {
@@ -8,6 +9,7 @@ import {
   editorState,
   FILE_ICONS,
   fileList,
+  isFilesLoading,
   openEditor,
   setEditorStatus,
   uploadState
@@ -20,6 +22,7 @@ import { formatSize } from '$lib/utils/formatters';
 let fileInput: HTMLInputElement | undefined = $state();
 let editorContent = $state('');
 let createBackup = $state(true);
+let searchQuery = $state('');
 
 interface BreadcrumbPart {
   path: string;
@@ -31,7 +34,7 @@ function getBreadcrumbParts(path: string): BreadcrumbPart[] {
   let accumulated = '';
   const result: BreadcrumbPart[] = [{ path: '/', label: 'server' }];
   for (const part of parts) {
-    accumulated += '/' + part;
+    accumulated += `/${part}`;
     result.push({ path: accumulated, label: part });
   }
   return result;
@@ -39,44 +42,51 @@ function getBreadcrumbParts(path: string): BreadcrumbPart[] {
 
 let breadcrumbParts = $derived(getBreadcrumbParts($currentPath));
 
+let filteredFiles = $derived(() => {
+  if (!searchQuery.trim()) return $fileList;
+  const lower = searchQuery.toLowerCase();
+  return $fileList.filter((file) => file.name.toLowerCase().includes(lower));
+});
+
 $effect(() => {
   editorContent = $editorState.content;
 });
 
 function navigateTo(path: string): void {
+  isFilesLoading.set(true);
   emit('files:list', path);
 }
 
 function goBack(): void {
   const parts = $currentPath.split('/').filter((p) => p);
   parts.pop();
-  navigateTo(parts.length ? '/' + parts.join('/') : '/');
+  navigateTo(parts.length ? `/${parts.join('/')}` : '/');
 }
 
 function handleFileClick(file: FileEntry): void {
   if (file.isDirectory) {
-    const newPath = $currentPath === '/' ? '/' + file.name : $currentPath + '/' + file.name;
+    const newPath = $currentPath === '/' ? `/${file.name}` : `${$currentPath}/${file.name}`;
     navigateTo(newPath);
   }
 }
 
 function handleFileDoubleClick(file: FileEntry): void {
   if (!file.isDirectory) {
-    const filePath = $currentPath === '/' ? '/' + file.name : $currentPath + '/' + file.name;
+    const filePath = $currentPath === '/' ? `/${file.name}` : `${$currentPath}/${file.name}`;
     openEditor(filePath);
     emit('files:read', filePath);
   }
 }
 
 function handleEdit(file: FileEntry): void {
-  const filePath = $currentPath === '/' ? '/' + file.name : $currentPath + '/' + file.name;
+  const filePath = $currentPath === '/' ? `/${file.name}` : `${$currentPath}/${file.name}`;
   openEditor(filePath);
   emit('files:read', filePath);
 }
 
 function handleDelete(file: FileEntry): void {
-  if (confirm($_('confirmDelete') + ` "${file.name}"?`)) {
-    const filePath = $currentPath === '/' ? '/' + file.name : $currentPath + '/' + file.name;
+  if (confirm(`${$_('confirmDelete')} "${file.name}"?`)) {
+    const filePath = $currentPath === '/' ? `/${file.name}` : `${$currentPath}/${file.name}`;
     emit('files:delete', filePath);
   }
 }
@@ -84,7 +94,7 @@ function handleDelete(file: FileEntry): void {
 function handleNewFolder(): void {
   const name = prompt($_('folderName'));
   if (name) {
-    const folderPath = $currentPath === '/' ? '/' + name : $currentPath + '/' + name;
+    const folderPath = $currentPath === '/' ? `/${name}` : `${$currentPath}/${name}`;
     emit('files:mkdir', folderPath);
   }
 }
@@ -113,21 +123,21 @@ function handleFileSelect(e: Event): void {
 }
 
 async function handleUploadFiles(files: FileList): Promise<void> {
-  uploadState.set({ isVisible: true, isUploading: true, progress: 10, text: $_('uploading') + '...' });
+  uploadState.set({ isVisible: true, isUploading: true, progress: 10, text: `${$_('uploading')}...` });
 
   for (const file of files) {
-    uploadState.update((s) => ({ ...s, text: $_('uploading') + ` ${file.name}...` }));
+    uploadState.update((s) => ({ ...s, text: `${$_('uploading')} ${file.name}...` }));
     try {
       const result = await uploadFile(file, $currentPath, $activeServer!.id);
       if (result.success) {
         uploadState.update((s) => ({ ...s, progress: 100 }));
-        showToast($_('uploaded') + `: ${file.name}`);
+        showToast(`${$_('uploaded')}: ${file.name}`);
       } else {
-        showToast($_('uploadFailed') + `: ${result.error}`, 'error');
+        showToast(`${$_('uploadFailed')}: ${result.error}`, 'error');
       }
     } catch (e) {
       const error = e as Error;
-      showToast($_('uploadError') + `: ${error.message}`, 'error');
+      showToast(`${$_('uploadError')}: ${error.message}`, 'error');
     }
   }
 
@@ -176,6 +186,12 @@ function isEditable(file: FileEntry): boolean {
   <button class="mc-btn small" title={$_('refresh')} onclick={() => navigateTo($currentPath)}>↻</button>
   <button class="mc-btn small" onclick={handleNewFolder}>{$_('newFolder')}</button>
   <button class="mc-btn small" onclick={toggleUploadZone}>{$_('upload')}</button>
+  <input
+    type="text"
+    class="file-search"
+    placeholder="Search files..."
+    bind:value={searchQuery}
+  />
 </div>
 
 {#if $uploadState.isVisible}
@@ -215,10 +231,18 @@ function isEditable(file: FileEntry): boolean {
       </div>
     {/if}
 
-    {#if $fileList.length === 0 && $currentPath === '/'}
+    {#if $isFilesLoading}
+      {#each Array(5) as _}
+        <div style="padding: 0.5rem;">
+          <Skeleton type="text" />
+        </div>
+      {/each}
+    {:else if filteredFiles().length === 0 && $currentPath === '/' && !searchQuery}
       <div class="file-empty">{$_('emptyDir')}</div>
+    {:else if filteredFiles().length === 0 && searchQuery}
+      <div class="file-empty">No files match "{searchQuery}"</div>
     {:else}
-      {#each $fileList as file}
+      {#each filteredFiles() as file}
         <div
           class="file-item"
           role="button"

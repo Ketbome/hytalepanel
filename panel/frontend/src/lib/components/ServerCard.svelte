@@ -1,6 +1,7 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
 import type { Server } from '$lib/stores/servers';
+import Button from './ui/Button.svelte';
 
 let {
   server,
@@ -19,7 +20,7 @@ let {
 let isRunning = $derived(server.status === 'running');
 </script>
 
-<div class="server-card" class:running={isRunning}>
+<div class="server-card transition-all duration-300 hover:scale-105 hover:shadow-lg" class:running={isRunning}>
   <div class="server-card-header">
     <div class="server-icon">
       <img src="/images/favicon.ico" alt="Server" />
@@ -32,7 +33,7 @@ let isRunning = $derived(server.status === 'running');
       </div>
     </div>
     <div class="server-status">
-      <span class="status-dot" class:online={isRunning}></span>
+      <span class="status-dot transition-all duration-300" class:online={isRunning}></span>
       <span class="status-text">{isRunning ? $_('online') : $_('offline')}</span>
     </div>
   </div>
@@ -49,20 +50,20 @@ let isRunning = $derived(server.status === 'running');
   </div>
 
   <div class="server-card-actions">
-    <button class="mc-btn small primary" onclick={onEnter}>
+    <Button size="small" variant="primary" onclick={onEnter}>
       {$_('enter')}
-    </button>
+    </Button>
     {#if isRunning}
-      <button class="mc-btn small warning" onclick={onStop}>
+      <Button size="small" variant="warning" onclick={onStop}>
         {$_('stop')}
-      </button>
+      </Button>
     {:else}
-      <button class="mc-btn small" onclick={onStart}>
+      <Button size="small" onclick={onStart}>
         {$_('start')}
-      </button>
+      </Button>
     {/if}
-    <button class="mc-btn small danger" onclick={onDelete}>
+    <Button size="small" variant="danger" onclick={onDelete}>
       {$_('delete')}
-    </button>
+    </Button>
   </div>
 </div>

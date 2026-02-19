@@ -1,6 +1,7 @@
 <script lang="ts">
 import { get } from 'svelte/store';
 import { _ } from 'svelte-i18n';
+import Skeleton from '$lib/components/ui/Skeleton.svelte';
 import { emit } from '$lib/services/socketClient';
 import {
   apiConfigured,
@@ -322,7 +323,9 @@ function getModUrl(mod: InstalledMod | ModProject): string | null {
 {#if $currentView === 'installed'}
   <div class="mods-list">
     {#if $isModsLoading}
-      <div class="mods-empty mods-loader">{$_('loading')}</div>
+      {#each Array(3) as _}
+        <Skeleton type="card" />
+      {/each}
     {:else if $installedMods.length === 0}
       <div class="mods-empty">{$_('noModsInstalled')}</div>
     {:else}
@@ -377,7 +380,9 @@ function getModUrl(mod: InstalledMod | ModProject): string | null {
 {:else}
   <div class="mods-list">
     {#if $isModsLoading}
-      <div class="mods-empty mods-loader">{$_('loading')}</div>
+      {#each Array(4) as _}
+        <Skeleton type="card" />
+      {/each}
     {:else if $searchResults.length === 0}
       <div class="mods-empty">{$_('noModsFound')}</div>
     {:else}

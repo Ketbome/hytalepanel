@@ -3,6 +3,7 @@ import { _ } from 'svelte-i18n';
 import { emit } from '$lib/services/socketClient';
 import { downloaderAuth, downloadProgress, filesReady, isCheckingFiles, updateInfo } from '$lib/stores/server';
 import type { DownloadStep } from '$lib/types';
+import Button from '../ui/Button.svelte';
 
 function handleDownload(): void {
   downloadProgress.update((p) => ({ ...p, authUrl: null, authCode: null }));
@@ -69,9 +70,9 @@ $effect(() => {
       <span>{$filesReady.ready ? $_('filesReady') : $_('missingFiles')}</span>
     {/if}
   </span>
-  <button class="mc-btn small" onclick={recheckFiles} disabled={$isCheckingFiles || $downloadProgress.active} title={$_('recheckFiles')}>
+  <Button size="small" onclick={recheckFiles} disabled={$isCheckingFiles || $downloadProgress.active} title={$_('recheckFiles')}>
     ↻
-  </button>
+  </Button>
 </div>
 
 <div class="file-checks">
@@ -119,11 +120,11 @@ $effect(() => {
       <span class="progress-time">{$downloadProgress.time}</span>
     </div>
     <div class="progress-bar">
-      <div class="progress-fill" style="width: {$downloadProgress.percentage}%"></div>
+      <div class="progress-fill animate-pulse" style="width: {$downloadProgress.percentage}%"></div>
     </div>
     <div class="progress-steps">
       <div class="progress-step {stepStates.auth}">
-        <span>{stepStates.auth === 'done' ? '✓' : stepStates.auth === 'active' ? '●' : '○'}</span>
+        <span class="transition-all duration-300">{stepStates.auth === 'done' ? '✓' : stepStates.auth === 'active' ? '●' : '○'}</span>
         <span>{$_('auth')}</span>
       </div>
       <div class="progress-step {stepStates.download}">
@@ -142,8 +143,8 @@ $effect(() => {
   </div>
 {/if}
 
-<button
-  class="mc-btn primary"
+<Button
+  variant="primary"
   onclick={handleDownload}
   disabled={$downloadProgress.active && $downloadProgress.status !== 'waitingAuth'}
 >
@@ -152,7 +153,7 @@ $effect(() => {
   {:else}
     {$filesReady.ready ? $_('redownload') : $_('downloadFiles')}
   {/if}
-</button>
+</Button>
 <p class="hint">{$_('downloadHint')}</p>
 
 {#if $filesReady.ready}
@@ -168,12 +169,12 @@ $effect(() => {
       <div class="update-status">{$updateInfo.updateStatus}</div>
     {/if}
     <div class="update-actions">
-      <button class="mc-btn small" onclick={checkForUpdate} disabled={$updateInfo.isChecking || $updateInfo.isUpdating}>
+      <Button size="small" onclick={checkForUpdate} disabled={$updateInfo.isChecking || $updateInfo.isUpdating}>
         {$_('checkUpdate')}
-      </button>
-      <button class="mc-btn small primary" onclick={applyUpdate} disabled={$updateInfo.isUpdating || $downloadProgress.active}>
+      </Button>
+      <Button size="small" variant="primary" onclick={applyUpdate} disabled={$updateInfo.isUpdating || $downloadProgress.active}>
         {$_('forceUpdate')}
-      </button>
+      </Button>
     </div>
     <p class="hint">{$_('updateHint')}</p>
   </div>
