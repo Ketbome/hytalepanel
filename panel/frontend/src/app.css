@@ -678,6 +678,20 @@ header {
   font-size: 18px;
 }
 
+.file-status > span:first-child {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.file-status .mc-btn {
+  width: auto;
+  font-size: 14px;
+  padding: 4px 10px;
+  margin-left: auto;
+}
+
 .file-status.ready {
   border-color: #33aa33 #1a4a1a #1a4a1a #33aa33;
   background: rgba(85, 255, 85, 0.08);
@@ -685,6 +699,10 @@ header {
 .file-status.missing {
   border-color: #aa3333 #4a1a1a #4a1a1a #aa3333;
   background: rgba(255, 85, 85, 0.08);
+}
+.file-status.checking {
+  border-color: var(--hytale-orange) #b57a1a #b57a1a var(--hytale-orange);
+  background: rgba(245, 166, 35, 0.08);
 }
 
 .file-checks {
@@ -718,6 +736,9 @@ header {
   padding: 8px;
   background: var(--mc-dark);
   border: 2px solid var(--mc-border-light);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .auth-status.ok {
@@ -727,6 +748,10 @@ header {
 .auth-status.missing {
   color: var(--warning);
   border-color: var(--warning);
+}
+.auth-status.checking {
+  color: var(--hytale-orange);
+  border-color: var(--hytale-orange);
 }
 
 /* Commands Tab */
@@ -939,6 +964,13 @@ header {
   border-top-color: white;
   animation: spin 0.5s steps(8) infinite;
   display: inline-block;
+  border-radius: 50%;
+}
+
+.spinner.small {
+  width: 12px;
+  height: 12px;
+  border-width: 2px;
 }
 
 @keyframes spin {

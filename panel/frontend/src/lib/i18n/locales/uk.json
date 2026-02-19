@@ -10,6 +10,7 @@
   "commands": "Команди",
   "control": "Керування",
   "checking": "Перевiрка...",
+  "recheckFiles": "Перевірити файли та облікові дані",
   "filesReady": "Файли готовi",
   "missingFiles": "Вiдсутнi файли",
   "downloadFiles": "Завантажити файли",

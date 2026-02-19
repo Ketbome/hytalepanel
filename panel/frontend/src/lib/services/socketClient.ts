@@ -31,7 +31,14 @@ import {
   total
 } from '$lib/stores/mods';
 import { currentRoute, navigateToDashboard, navigateToServer } from '$lib/stores/router';
-import { downloaderAuth, downloadProgress, filesReady, serverStatus, updateInfo } from '$lib/stores/server';
+import {
+  downloaderAuth,
+  downloadProgress,
+  filesReady,
+  isCheckingFiles,
+  serverStatus,
+  updateInfo
+} from '$lib/stores/server';
 import type { Server } from '$lib/stores/servers';
 import { activeServerId, servers, updateServerStatus } from '$lib/stores/servers';
 import { showToast } from '$lib/stores/ui';
@@ -83,6 +90,7 @@ export function connectSocket(): Socket {
     const route = get(currentRoute);
     if (route.serverId) {
       lastJoinedServerId = route.serverId;
+      isCheckingFiles.set(true);
       socketInstance?.emit('server:join', route.serverId);
     }
   });
@@ -100,6 +108,7 @@ export function connectSocket(): Socket {
         joinedServerId.set(null);
       } else if (route.serverId) {
         // Joined new server
+        isCheckingFiles.set(true);
         socketInstance.emit('server:join', route.serverId);
       }
       lastJoinedServerId = route.serverId;
@@ -169,6 +178,7 @@ export function connectSocket(): Socket {
       hasAssets: f.hasAssets,
       ready: f.ready
     });
+    isCheckingFiles.set(false);
     socketInstance?.emit('mods:check-config');
     socketInstance?.emit('cf:check-config');
   });
@@ -176,6 +186,7 @@ export function connectSocket(): Socket {
   // Downloader auth status
   socketInstance.on('downloader-auth', (a: boolean) => {
     downloaderAuth.set(a);
+    isCheckingFiles.set(false);
   });
 
   // Download status
@@ -534,6 +545,7 @@ export function joinServer(serverId: string): void {
     fileList.set([]);
     currentPath.set('/');
     downloaderAuth.set(false);
+    isCheckingFiles.set(true); // Mark as checking until we get response
 
     // Reset download progress completely
     stopDlTimer();

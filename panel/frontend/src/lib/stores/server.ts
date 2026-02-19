@@ -15,6 +15,8 @@ export const filesReady = writable<FilesReady>({
 
 export const downloaderAuth = writable<boolean>(false);
 
+export const isCheckingFiles = writable<boolean>(false);
+
 export const downloadProgress = writable<DownloadProgress>({
   active: false,
   status: '',

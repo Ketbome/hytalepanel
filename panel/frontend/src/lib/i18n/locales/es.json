@@ -10,6 +10,7 @@
   "commands": "Comandos",
   "control": "Control",
   "checking": "Verificando...",
+  "recheckFiles": "Reverificar archivos y credenciales",
   "filesReady": "Archivos listos",
   "missingFiles": "Archivos faltantes",
   "downloadFiles": "Descargar Archivos",

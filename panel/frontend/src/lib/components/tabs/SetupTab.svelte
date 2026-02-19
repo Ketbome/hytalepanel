@@ -1,7 +1,7 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
 import { emit } from '$lib/services/socketClient';
-import { downloaderAuth, downloadProgress, filesReady, updateInfo } from '$lib/stores/server';
+import { downloaderAuth, downloadProgress, filesReady, isCheckingFiles, updateInfo } from '$lib/stores/server';
 import type { DownloadStep } from '$lib/types';
 
 function handleDownload(): void {
@@ -19,6 +19,11 @@ function applyUpdate(): void {
     updateInfo.update((u) => ({ ...u, isUpdating: true, updateStatus: $_('starting') }));
     emit('update:apply');
   }
+}
+
+function recheckFiles(): void {
+  isCheckingFiles.set(true);
+  emit('check-files');
 }
 
 function getStepState(step: DownloadStep, currentStep: DownloadStep): 'active' | 'done' | '' {
@@ -54,9 +59,19 @@ $effect(() => {
 });
 </script>
 
-<div class="file-status" class:ready={$filesReady.ready} class:missing={!$filesReady.ready}>
-  <span>{$filesReady.ready ? '✓' : '⚠'}</span>
-  <span>{$filesReady.ready ? $_('filesReady') : $_('missingFiles')}</span>
+<div class="file-status" class:ready={$filesReady.ready} class:missing={!$filesReady.ready && !$isCheckingFiles} class:checking={$isCheckingFiles}>
+  <span>
+    {#if $isCheckingFiles}
+      <span class="spinner small"></span>
+      <span>{$_('checking')}</span>
+    {:else}
+      <span>{$filesReady.ready ? '✓' : '⚠'}</span>
+      <span>{$filesReady.ready ? $_('filesReady') : $_('missingFiles')}</span>
+    {/if}
+  </span>
+  <button class="mc-btn small" onclick={recheckFiles} disabled={$isCheckingFiles || $downloadProgress.active} title={$_('recheckFiles')}>
+    ↻
+  </button>
 </div>
 
 <div class="file-checks">
@@ -74,8 +89,13 @@ $effect(() => {
   </div>
 </div>
 
-<div class="auth-status" class:ok={$downloaderAuth} class:missing={!$downloaderAuth}>
-  {$downloaderAuth ? $_('credentialsSaved') : $_('noCredentials')}
+<div class="auth-status" class:ok={$downloaderAuth} class:missing={!$downloaderAuth && !$isCheckingFiles} class:checking={$isCheckingFiles}>
+  {#if $isCheckingFiles}
+    <span class="spinner small"></span>
+    <span>{$_('checking')}</span>
+  {:else}
+    {$downloaderAuth ? $_('credentialsSaved') : $_('noCredentials')}
+  {/if}
 </div>
 
 {#if $downloadProgress.authUrl || $downloadProgress.authCode}
