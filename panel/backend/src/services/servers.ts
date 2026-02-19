@@ -8,11 +8,14 @@ import { type BackupConfig, DEFAULT_BACKUP_CONFIG } from './backups.js';
 
 const execAsync = promisify(exec);
 
+export type ReleaseChannel = 'stable' | 'pre-release';
+
 export interface ServerConfig {
   javaXms: string;
   javaXmx: string;
   bindAddr: string;
   autoDownload: boolean;
+  releaseChannel: ReleaseChannel;
   useG1gc: boolean;
   extraArgs: string;
   useMachineId: boolean; // Linux only - for CasaOS/Windows set to false
@@ -26,6 +29,8 @@ export interface Server {
   containerName: string;
   config: ServerConfig;
   createdAt: string;
+  machineIdHash?: string; // MD5 hash of machine-id for change detection
+  lastMachineIdCheck?: number; // Timestamp of last check
 }
 
 export interface ServersData {
@@ -56,6 +61,7 @@ const DEFAULT_CONFIG: ServerConfig = {
   javaXmx: '8G',
   bindAddr: '0.0.0.0',
   autoDownload: true,
+  releaseChannel: 'stable',
   useG1gc: true,
   extraArgs: '',
   useMachineId: false, // Default false for compatibility (CasaOS/Windows)

@@ -1,5 +1,5 @@
-import type { TabId, Toast, ToastType } from '$lib/types';
 import { writable } from 'svelte/store';
+import type { TabId, Toast, ToastType } from '$lib/types';
 
 export const activeTab = writable<TabId>('control');
 export const sidebarHidden = writable<boolean>(false);

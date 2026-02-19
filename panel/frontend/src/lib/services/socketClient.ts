@@ -1,3 +1,6 @@
+import { io, type Socket } from 'socket.io-client';
+import { get, writable } from 'svelte/store';
+import { _ } from 'svelte-i18n';
 import { isAuthenticated } from '$lib/stores/auth';
 import { panelConfig } from '$lib/stores/config';
 import {
@@ -13,7 +16,7 @@ import {
   logs,
   prependLogs
 } from '$lib/stores/console';
-import { currentPath, fileList, setEditorContent, setEditorStatus } from '$lib/stores/files';
+import { currentPath, fileList, isFilesLoading, setEditorContent, setEditorStatus } from '$lib/stores/files';
 import {
   apiConfigured,
   availableUpdates,
@@ -28,9 +31,16 @@ import {
   total
 } from '$lib/stores/mods';
 import { currentRoute, navigateToDashboard, navigateToServer } from '$lib/stores/router';
-import { downloadProgress, downloaderAuth, filesReady, serverStatus, updateInfo } from '$lib/stores/server';
-import { activeServerId, servers, updateServerStatus } from '$lib/stores/servers';
+import {
+  downloaderAuth,
+  downloadProgress,
+  filesReady,
+  isCheckingFiles,
+  serverStatus,
+  updateInfo
+} from '$lib/stores/server';
 import type { Server } from '$lib/stores/servers';
+import { activeServerId, servers, updateServerStatus } from '$lib/stores/servers';
 import { showToast } from '$lib/stores/ui';
 import type {
   ActionStatus,
@@ -50,9 +60,6 @@ import type {
   ModUpdatesResult,
   ServerStatus
 } from '$lib/types';
-import { type Socket, io } from 'socket.io-client';
-import { _ } from 'svelte-i18n';
-import { get, writable } from 'svelte/store';
 
 export const socket = writable<Socket | null>(null);
 export const isConnected = writable<boolean>(false);
@@ -83,6 +90,7 @@ export function connectSocket(): Socket {
     const route = get(currentRoute);
     if (route.serverId) {
       lastJoinedServerId = route.serverId;
+      isCheckingFiles.set(true);
       socketInstance?.emit('server:join', route.serverId);
     }
   });
@@ -100,6 +108,7 @@ export function connectSocket(): Socket {
         joinedServerId.set(null);
       } else if (route.serverId) {
         // Joined new server
+        isCheckingFiles.set(true);
         socketInstance.emit('server:join', route.serverId);
       }
       lastJoinedServerId = route.serverId;
@@ -169,6 +178,7 @@ export function connectSocket(): Socket {
       hasAssets: f.hasAssets,
       ready: f.ready
     });
+    isCheckingFiles.set(false);
     socketInstance?.emit('mods:check-config');
     socketInstance?.emit('cf:check-config');
   });
@@ -176,6 +186,7 @@ export function connectSocket(): Socket {
   // Downloader auth status
   socketInstance.on('downloader-auth', (a: boolean) => {
     downloaderAuth.set(a);
+    isCheckingFiles.set(false);
   });
 
   // Download status
@@ -221,6 +232,7 @@ export function connectSocket(): Socket {
 
   // File manager events
   socketInstance.on('files:list-result', (result: FileListResult) => {
+    isFilesLoading.set(false);
     if (result.success) {
       currentPath.set(result.path);
       fileList.set(result.files);
@@ -470,12 +482,7 @@ export function connectSocket(): Socket {
   // Server update events
   socketInstance.on(
     'update:check-result',
-    (result: {
-      success: boolean;
-      lastUpdate: string | null;
-      daysSinceUpdate: number | null;
-      error?: string;
-    }) => {
+    (result: { success: boolean; lastUpdate: string | null; daysSinceUpdate: number | null; error?: string }) => {
       updateInfo.update((u) => ({
         ...u,
         isChecking: false,
@@ -539,6 +546,7 @@ export function joinServer(serverId: string): void {
     fileList.set([]);
     currentPath.set('/');
     downloaderAuth.set(false);
+    isCheckingFiles.set(true); // Mark as checking until we get response
 
     // Reset download progress completely
     stopDlTimer();
@@ -596,8 +604,10 @@ function handleDownloadStatus(d: DownloadStatusEvent & { serverId?: string }): v
     case 'auth-required':
       if (d.message) {
         addLog(d.message, 'auth');
-        const url = d.message.match(/https:\/\/oauth\.accounts\.hytale\.com\S+/);
-        const code = d.message.match(/(?:user_code[=:]\s*|code:\s*)([A-Za-z0-9]+)/i);
+        const urlRegex = /https:\/\/oauth\.accounts\.hytale\.com\S+/;
+        const codeRegex = /(?:user_code[=:]\s*|code:\s*)([\w]+)/i;
+        const url = urlRegex.exec(d.message);
+        const code = codeRegex.exec(d.message);
         downloadProgress.update((p) => ({
           ...p,
           status: get(_)('waitingAuth'),

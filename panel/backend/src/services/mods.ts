@@ -105,7 +105,10 @@ async function loadMods(containerName?: string): Promise<{ success: boolean; dat
           const data = JSON.parse(content) as ModsData;
           resolve({ success: true, data });
         } catch {
-          resolve({ success: true, data: { version: 1, apiKey: null, mods: [] } });
+          resolve({
+            success: true,
+            data: { version: 1, apiKey: null, mods: [] }
+          });
         }
       });
 
@@ -113,7 +116,11 @@ async function loadMods(containerName?: string): Promise<{ success: boolean; dat
       stream.pipe(extract);
     });
   } catch (e) {
-    return { success: false, error: (e as Error).message, data: { version: 1, apiKey: null, mods: [] } };
+    return {
+      success: false,
+      error: (e as Error).message,
+      data: { version: 1, apiKey: null, mods: [] }
+    };
   }
 }
 
@@ -246,7 +253,7 @@ export async function installMod(
     const modsData = result.data;
 
     const existingIndex = modsData.mods.findIndex(
-      (m) => m.projectId === metadata.projectId && m.versionId === metadata.versionId
+      (m) => m.providerId === metadata.providerId && m.projectId === metadata.projectId
     );
 
     const modEntry: InstalledMod = {

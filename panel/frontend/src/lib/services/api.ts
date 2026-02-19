@@ -117,3 +117,29 @@ export async function stopServer(id: string): Promise<OperationResponse> {
     return { success: false, error: (e as Error).message };
   }
 }
+
+// ==================== RELEASE CHANNELS API ====================
+
+export interface Channel {
+  id: 'stable' | 'pre-release';
+  name: string;
+  description: string;
+  recommended: boolean;
+  available: boolean;
+}
+
+export interface ChannelsResponse {
+  success: boolean;
+  channels?: Channel[];
+  current?: 'stable' | 'pre-release';
+  error?: string;
+}
+
+export async function fetchChannels(serverId: string): Promise<ChannelsResponse> {
+  try {
+    const response = await fetch(apiUrl(`/api/servers/${serverId}/channels`));
+    return await response.json();
+  } catch (e) {
+    return { success: false, error: (e as Error).message };
+  }
+}

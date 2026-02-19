@@ -1,8 +1,9 @@
-import type { EditorState, FileEntry, FileType, UploadState } from '$lib/types';
 import { writable } from 'svelte/store';
+import type { EditorState, FileEntry, FileType, UploadState } from '$lib/types';
 
 export const currentPath = writable<string>('/');
 export const fileList = writable<FileEntry[]>([]);
+export const isFilesLoading = writable<boolean>(false);
 
 export const editorState = writable<EditorState>({
   isOpen: false,
@@ -56,7 +57,12 @@ export function closeEditor(): void {
 }
 
 export function setEditorContent(content: string): void {
-  editorState.update((s) => ({ ...s, content, status: 'ready', statusClass: '' }));
+  editorState.update((s) => ({
+    ...s,
+    content,
+    status: 'ready',
+    statusClass: ''
+  }));
 }
 
 export function setEditorStatus(status: string, statusClass = ''): void {

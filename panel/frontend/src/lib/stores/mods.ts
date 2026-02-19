@@ -1,5 +1,5 @@
-import type { InstalledMod, ModProject, ModUpdate } from '$lib/types';
 import { writable } from 'svelte/store';
+import type { InstalledMod, ModProject, ModUpdate } from '$lib/types';
 
 export type ModView = 'installed' | 'browse' | 'updates';
 export type ModProvider = 'modtale' | 'curseforge';

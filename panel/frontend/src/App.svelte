@@ -1,18 +1,19 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import { isAuthenticated, checkStatus, isLoading } from '$lib/stores/auth';
-  import { loadPanelConfig } from '$lib/stores/config';
-  import { sidebarHidden, panelExpanded } from '$lib/stores/ui';
-  import { initRouter, isOnDashboard } from '$lib/stores/router';
-  import { connectSocket, disconnectSocket } from '$lib/services/socketClient';
-  import LoginScreen from '$lib/components/LoginScreen.svelte';
-  import Dashboard from '$lib/components/Dashboard.svelte';
-  import Header from '$lib/components/Header.svelte';
-  import Console from '$lib/components/Console.svelte';
-  import Sidebar from '$lib/components/Sidebar.svelte';
-  import Toast from '$lib/components/ui/Toast.svelte';
+import Console from '$lib/components/Console.svelte';
+import Dashboard from '$lib/components/Dashboard.svelte';
+import Header from '$lib/components/Header.svelte';
+import LoginScreen from '$lib/components/LoginScreen.svelte';
+import Sidebar from '$lib/components/Sidebar.svelte';
+import Toast from '$lib/components/ui/Toast.svelte';
+import { connectSocket, disconnectSocket } from '$lib/services/socketClient';
+import { checkStatus, isAuthenticated, isLoading } from '$lib/stores/auth';
+import { loadPanelConfig } from '$lib/stores/config';
+import { initRouter, isOnDashboard } from '$lib/stores/router';
+import { panelExpanded, sidebarHidden } from '$lib/stores/ui';
 
-  onMount(async () => {
+// Initialize on mount
+$effect(() => {
+  (async () => {
     // Load panel config first (for BASE_PATH)
     await loadPanelConfig();
     // Initialize router after config is loaded
@@ -22,42 +23,47 @@
     if (authenticated) {
       connectSocket();
     }
-  });
+  })();
 
-  onDestroy(() => {
+  return () => {
     disconnectSocket();
-  });
+  };
+});
 
-  // Connect after login (when user logs in after page load)
-  let prevAuth = false;
-  isAuthenticated.subscribe(authenticated => {
-    if (authenticated && !prevAuth) {
-      connectSocket();
-    }
-    prevAuth = authenticated;
-  });
-
-  function showSidebar(): void {
-    sidebarHidden.set(false);
+// Connect after login (when user logs in after page load)
+let prevAuth = false;
+$effect(() => {
+  const authenticated = $isAuthenticated;
+  if (authenticated && !prevAuth) {
+    connectSocket();
   }
+  prevAuth = authenticated;
+});
 
-  function handleKeydown(e: KeyboardEvent): void {
-    if (e.key === 'Escape') {
-      if ($panelExpanded) {
-        panelExpanded.set(false);
-      }
-      if ($sidebarHidden) {
-        sidebarHidden.set(false);
-      }
+function showSidebar(): void {
+  sidebarHidden.set(false);
+}
+
+function handleKeydown(e: KeyboardEvent): void {
+  if (e.key === 'Escape') {
+    if ($panelExpanded) {
+      panelExpanded.set(false);
+    }
+    if ($sidebarHidden) {
+      sidebarHidden.set(false);
     }
   }
+}
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 {#if $isLoading}
-  <div class="loading-screen">
-    <div class="loading-spinner"></div>
+  <div class="fixed inset-0 flex items-center justify-center bg-panel-bg">
+    <div class="flex flex-col items-center gap-4 animate-fade-in">
+      <div class="mc-spinner"></div>
+      <span class="font-mono text-text-muted">Loading...</span>
+    </div>
   </div>
 {:else if !$isAuthenticated}
   <LoginScreen />
@@ -66,14 +72,49 @@
   <Dashboard />
 {:else}
   <!-- Server view - managing a specific server -->
-  <div class="container" class:sidebar-hidden={$sidebarHidden} class:panel-expanded={$panelExpanded}>
+  <div 
+    class="max-w-[1600px] mx-auto p-5 h-screen flex flex-col animate-fade-in"
+    class:sidebar-collapsed={$sidebarHidden}
+  >
     <Header />
-    <div class="grid">
-      <div class="main">
+    
+    <div 
+      class="flex-1 grid gap-5 min-h-0"
+      class:grid-cols-1={$panelExpanded}
+      class:lg:grid-cols-[1fr_550px]={!$panelExpanded && !$sidebarHidden}
+    >
+      <!-- Main console area -->
+      <main class="min-h-0 flex flex-col relative" class:hidden={$panelExpanded}>
         <Console />
-        <button class="btn-show-sidebar" title="Show Panel" onclick={showSidebar}>☰</button>
-      </div>
-      <Sidebar />
+        
+        {#if $sidebarHidden}
+          <button 
+            class="absolute top-4 right-4 mc-btn mc-btn-sm mc-btn-wood"
+            title="Show Panel" 
+            onclick={showSidebar}
+          >
+            ☰
+          </button>
+        {/if}
+      </main>
+      
+      <!-- Sidebar -->
+      {#if !$sidebarHidden || $panelExpanded}
+        <div 
+          class="min-h-0"
+          class:fixed={$sidebarHidden && !$panelExpanded}
+          class:inset-y-0={$sidebarHidden && !$panelExpanded}
+          class:right-0={$sidebarHidden && !$panelExpanded}
+          class:w-full={$sidebarHidden && !$panelExpanded}
+          class:max-w-md={$sidebarHidden && !$panelExpanded}
+          class:z-40={$sidebarHidden && !$panelExpanded}
+          class:p-5={$sidebarHidden && !$panelExpanded}
+          class:bg-opacity-95={$sidebarHidden && !$panelExpanded}
+          class:bg-panel-bg={$sidebarHidden && !$panelExpanded}
+        >
+          <Sidebar />
+        </div>
+      {/if}
     </div>
   </div>
 {/if}

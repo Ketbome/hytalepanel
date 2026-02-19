@@ -1,72 +1,100 @@
 <script lang="ts">
-  import { _ } from 'svelte-i18n';
-  import { activeTab, sidebarHidden, panelExpanded } from '$lib/stores/ui';
-  import type { TabId } from '$lib/types';
-  import SetupTab from './tabs/SetupTab.svelte';
-  import FilesTab from './tabs/FilesTab.svelte';
-  import ModsTab from './tabs/ModsTab.svelte';
-  import ControlTab from './tabs/ControlTab.svelte';
-  import ConfigTab from './tabs/ConfigTab.svelte';
-  import BackupsTab from './tabs/BackupsTab.svelte';
+import { _ } from 'svelte-i18n';
+import { activeTab, panelExpanded, sidebarHidden } from '$lib/stores/ui';
+import type { TabId } from '$lib/types';
+import BackupsTab from './tabs/BackupsTab.svelte';
+import ConfigTab from './tabs/ConfigTab.svelte';
+import ControlTab from './tabs/ControlTab.svelte';
+import FilesTab from './tabs/FilesTab.svelte';
+import ModsTab from './tabs/ModsTab.svelte';
+import SetupTab from './tabs/SetupTab.svelte';
+import Button from './ui/Button.svelte';
 
-  const tabs: TabId[] = ['control', 'setup', 'files', 'mods', 'backups', 'config'];
+const tabs: TabId[] = ['control', 'setup', 'files', 'mods', 'backups', 'config'];
 
-  function setTab(tab: TabId): void {
-    activeTab.set(tab);
-  }
+function setTab(tab: TabId): void {
+  activeTab.set(tab);
+}
 
-  function toggleExpand(): void {
-    panelExpanded.update(v => !v);
-  }
+function toggleExpand(): void {
+  panelExpanded.update((v) => !v);
+}
 
-  function hideSidebar(): void {
-    sidebarHidden.set(true);
-  }
+function hideSidebar(): void {
+  sidebarHidden.set(true);
+}
 </script>
 
-<div class="sidebar">
-  <div class="card">
-    <div class="tabs-header">
+<aside class="h-full flex flex-col">
+  <div class="mc-panel h-full flex flex-col">
+    <!-- Tabs navigation -->
+    <div class="flex flex-wrap border-b-2 border-panel-bg">
       {#each tabs as tab}
-        <button
-          class="tab-btn"
-          class:active={$activeTab === tab}
+        <Button
+          variant="tab"
+          active={$activeTab === tab}
           onclick={() => setTab(tab)}
         >
           {$_(tab)}
-        </button>
+        </Button>
       {/each}
     </div>
 
-    <div id="tab-setup" class="tab-content" class:active={$activeTab === 'setup'}>
-      <SetupTab />
+    <!-- Tab content -->
+    <div class="flex-1 overflow-hidden">
+      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'setup'}>
+        <div class="p-5 animate-fade-in">
+          <SetupTab />
+        </div>
+      </div>
+
+      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'files'}>
+        <div class="p-5 animate-fade-in">
+          <FilesTab />
+        </div>
+      </div>
+
+      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'mods'}>
+        <div class="p-5 animate-fade-in">
+          <ModsTab />
+        </div>
+      </div>
+
+      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'control'}>
+        <div class="p-5 animate-fade-in">
+          <ControlTab />
+        </div>
+      </div>
+
+      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'config'}>
+        <div class="p-5 animate-fade-in">
+          <ConfigTab />
+        </div>
+      </div>
+
+      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'backups'}>
+        <div class="p-5 animate-fade-in">
+          <BackupsTab />
+        </div>
+      </div>
     </div>
 
-    <div id="tab-files" class="tab-content" class:active={$activeTab === 'files'}>
-      <FilesTab />
-    </div>
-
-    <div id="tab-mods" class="tab-content" class:active={$activeTab === 'mods'}>
-      <ModsTab />
-    </div>
-
-    <div id="tab-control" class="tab-content" class:active={$activeTab === 'control'}>
-      <ControlTab />
-    </div>
-
-    <div id="tab-config" class="tab-content" class:active={$activeTab === 'config'}>
-      <ConfigTab />
-    </div>
-
-    <div id="tab-backups" class="tab-content" class:active={$activeTab === 'backups'}>
-      <BackupsTab />
-    </div>
-
-    <div class="sidebar-toolbar">
-      <button id="btn-expand-panel" class="sidebar-btn" title="Expand" onclick={toggleExpand}>
+    <!-- Toolbar -->
+    <div class="flex justify-end gap-2 p-3 border-t-2 border-panel-border bg-panel-light">
+      <button 
+        class="mc-btn mc-btn-sm !px-3"
+        title="Expand" 
+        onclick={toggleExpand}
+      >
         {$panelExpanded ? '✕' : '⤢'}
       </button>
-      <button id="btn-hide-sidebar" class="sidebar-btn" title="Hide" onclick={hideSidebar}>✕</button>
+      <button 
+        class="mc-btn mc-btn-sm mc-btn-danger !px-3"
+        title="Hide" 
+        onclick={hideSidebar}
+      >
+        ✕
+      </button>
     </div>
   </div>
-</div>
+</aside>

@@ -1,14 +1,19 @@
 <script lang="ts">
-  import { _ } from 'svelte-i18n';
+import { _ } from 'svelte-i18n';
 
-  interface Props {
-    running: boolean;
-  }
+interface Props {
+  running: boolean;
+}
 
-  let { running }: Props = $props();
+const { running }: Props = $props();
 </script>
 
-<div class="status-badge">
-  <div class="status-dot" class:online={running}></div>
-  <span class="status-text">{running ? $_('online') : $_('offline')}</span>
+<div class="mc-badge inline-flex items-center gap-2 px-3 py-2" class:mc-badge-success={running} class:mc-badge-error={!running}>
+  <span 
+    class="w-2.5 h-2.5 rounded-sm" 
+    class:bg-grass-light={running}
+    class:animate-pulse={running}
+    class:bg-error={!running}
+  ></span>
+  <span class="font-mono text-sm uppercase tracking-wide">{running ? $_('online') : $_('offline')}</span>
 </div>

@@ -10,8 +10,8 @@
     "build:frontend": "pnpm --dir frontend build",
     "start": "pnpm --dir backend start",
     "check": "pnpm --dir backend check && pnpm --dir frontend check",
-    "lint": "biome check ./frontend/src ./backend/src && eslint frontend/src backend/src",
-    "lint:fix": "biome check --write ./frontend/src ./backend/src && eslint --fix frontend/src backend/src",
+    "lint": "pnpm --dir backend lint && pnpm --dir frontend lint",
+    "lint:fix": "pnpm --dir backend lint:fix && pnpm --dir frontend lint:fix",
     "test": "pnpm --dir backend test",
     "knip": "pnpm --dir frontend knip"
   },

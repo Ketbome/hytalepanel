@@ -1,6 +1,7 @@
 import type { Socket } from 'socket.io';
 import * as docker from './docker.js';
 import * as files from './files.js';
+import type { ReleaseChannel } from './servers.js';
 import * as updater from './updater.js';
 
 export interface DownloadStatus {
@@ -9,7 +10,12 @@ export interface DownloadStatus {
   serverId?: string;
 }
 
-export async function downloadServerFiles(socket: Socket, containerName?: string, serverId?: string): Promise<void> {
+export async function downloadServerFiles(
+  socket: Socket,
+  containerName?: string,
+  serverId?: string,
+  _channel?: ReleaseChannel
+): Promise<void> {
   try {
     const c = await docker.getContainer(containerName);
     if (!c) throw new Error('Container not found');
@@ -30,8 +36,13 @@ export async function downloadServerFiles(socket: Socket, containerName?: string
 
     await docker.execCommand(`mkdir -p ${downloadPath}`, 30000, containerName);
 
+    // Prepare channel flag for future use
+    // When hytale-downloader supports channels, uncomment this:
+    // const channelFlag = channel === 'pre-release' ? '--channel=pre-release' : '';
+    const channelFlag = ''; // TODO: Enable when downloader supports it
+
     const exec = await c.exec({
-      Cmd: ['sh', '-c', `cd /opt/hytale && hytale-downloader -download-path ${zipPath} 2>&1`],
+      Cmd: ['sh', '-c', `cd /opt/hytale && hytale-downloader ${channelFlag} -download-path ${zipPath} 2>&1`],
       AttachStdout: true,
       AttachStderr: true,
       Tty: true
@@ -116,8 +127,8 @@ export async function downloadServerFiles(socket: Socket, containerName?: string
       }
 
       if (serverId) {
-        socket.emit('files', await files.checkServerFiles(serverId));
-        socket.emit('downloader-auth', await files.checkAuth(serverId));
+        socket.emit('files', await files.checkServerFiles(serverId, containerName));
+        socket.emit('downloader-auth', await files.checkAuth(serverId, containerName));
       }
     });
 

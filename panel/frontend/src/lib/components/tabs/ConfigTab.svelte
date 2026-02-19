@@ -1,71 +1,81 @@
 <script lang="ts">
-  import { _ } from 'svelte-i18n';
-  import { activeServerId, activeServer, updateServer as updateServerStore, type ServerConfig } from '$lib/stores/servers';
-  import { serverStatus } from '$lib/stores/server';
-  import { showToast } from '$lib/stores/ui';
-  import { updateServer } from '$lib/services/api';
+import { _ } from 'svelte-i18n';
+import { updateServer } from '$lib/services/api';
+import { serverStatus } from '$lib/stores/server';
+import {
+  activeServer,
+  activeServerId,
+  type ServerConfig,
+  updateServer as updateServerStore
+} from '$lib/stores/servers';
+import { showToast } from '$lib/stores/ui';
+import MachineIdCard from '../MachineIdCard.svelte';
+import ReleaseChannelSelector from '../ReleaseChannelSelector.svelte';
 
-  // Form state - initialized from activeServer
-  let javaXms = $state('2G');
-  let javaXmx = $state('4G');
-  let port = $state(5520);
-  let bindAddr = $state('0.0.0.0');
-  let autoDownload = $state(true);
-  let useG1gc = $state(true);
-  let extraArgs = $state('');
-  let useMachineId = $state(false);
+// Form state - initialized from activeServer
+let javaXms = $state('2G');
+let javaXmx = $state('4G');
+let port = $state(5520);
+let bindAddr = $state('0.0.0.0');
+let autoDownload = $state(true);
+let releaseChannel = $state<'stable' | 'pre-release'>('stable');
+let useG1gc = $state(true);
+let extraArgs = $state('');
+let useMachineId = $state(false);
 
-  let isSaving = $state(false);
-  let hasChanges = $state(false);
-  let lastLoadedServerId = $state<string | null>(null);
+let isSaving = $state(false);
+let hasChanges = $state(false);
+let lastLoadedServerId = $state<string | null>(null);
 
-  // Load config only when server ID changes (not on every status poll)
-  $effect(() => {
-    if ($activeServer && $activeServer.id !== lastLoadedServerId) {
-      lastLoadedServerId = $activeServer.id;
-      javaXms = $activeServer.config.javaXms;
-      javaXmx = $activeServer.config.javaXmx;
-      port = $activeServer.port;
-      bindAddr = $activeServer.config.bindAddr;
-      autoDownload = $activeServer.config.autoDownload;
-      useG1gc = $activeServer.config.useG1gc;
-      extraArgs = $activeServer.config.extraArgs;
-      useMachineId = $activeServer.config.useMachineId;
-      hasChanges = false;
-    }
-  });
-
-  function markChanged(): void {
-    hasChanges = true;
+// Load config only when server ID changes (not on every status poll)
+$effect(() => {
+  if ($activeServer && $activeServer.id !== lastLoadedServerId) {
+    lastLoadedServerId = $activeServer.id;
+    javaXms = $activeServer.config.javaXms;
+    javaXmx = $activeServer.config.javaXmx;
+    port = $activeServer.port;
+    bindAddr = $activeServer.config.bindAddr;
+    autoDownload = $activeServer.config.autoDownload;
+    releaseChannel = $activeServer.config.releaseChannel || 'stable';
+    useG1gc = $activeServer.config.useG1gc;
+    extraArgs = $activeServer.config.extraArgs;
+    useMachineId = $activeServer.config.useMachineId;
+    hasChanges = false;
   }
+});
 
-  async function handleSave(): Promise<void> {
-    if (!$activeServerId || $serverStatus.running) return;
+function markChanged(): void {
+  hasChanges = true;
+}
 
-    isSaving = true;
-    
-    const config: ServerConfig = {
-      javaXms,
-      javaXmx,
-      bindAddr,
-      autoDownload,
-      useG1gc,
-      extraArgs,
-      useMachineId
-    };
+async function handleSave(): Promise<void> {
+  if (!$activeServerId || $serverStatus.running) return;
 
-    const result = await updateServer($activeServerId, { port, config });
-    
-    isSaving = false;
+  isSaving = true;
 
-    if (result.success && result.server) {
-      updateServerStore($activeServerId, result.server);
-      showToast($_('configSaved'));
-      hasChanges = false;
-    } else {
-      showToast(result.error || 'Error', 'error');
-    }
+  const config: ServerConfig = {
+    javaXms,
+    javaXmx,
+    bindAddr,
+    autoDownload,
+    releaseChannel,
+    useG1gc,
+    extraArgs,
+    useMachineId
+  };
+
+  const result = await updateServer($activeServerId, { port, config });
+
+  isSaving = false;
+
+  if (result.success && result.server) {
+    updateServerStore($activeServerId, result.server);
+    showToast($_('configSaved'));
+    hasChanges = false;
+  } else {
+    showToast(result.error || 'Error', 'error');
   }
+}
 </script>
 
 <div class="config-section">
@@ -155,6 +165,18 @@
       </label>
     </div>
 
+    {#if $activeServerId}
+      <ReleaseChannelSelector
+        serverId={$activeServerId}
+        selectedChannel={releaseChannel}
+        disabled={$serverStatus.running}
+        onChannelChange={(channel) => {
+          releaseChannel = channel;
+          markChanged();
+        }}
+      />
+    {/if}
+
     <div class="form-group checkbox-group">
       <label>
         <input 
@@ -180,6 +202,10 @@
       <span class="hint">{$_('machineIdHint')}</span>
     </div>
   </div>
+
+  {#if $activeServerId}
+    <MachineIdCard serverId={$activeServerId} />
+  {/if}
 
   <div class="config-footer">
     <span class="config-hint">{$_('configHint')}</span>

@@ -1,5 +1,5 @@
-import type { LogEntry, LogType } from '$lib/types';
 import { writable } from 'svelte/store';
+import type { LogEntry, LogType } from '$lib/types';
 
 export const logs = writable<LogEntry[]>([]);
 export const autoScroll = writable<boolean>(true);

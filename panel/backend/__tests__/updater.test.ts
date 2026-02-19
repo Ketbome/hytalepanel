@@ -10,7 +10,7 @@ const mockExecCommand =
   >();
 const mockDownloadServerFiles =
   jest.fn<
-    (socket: Socket, containerName: string, serverId: string) => Promise<void>
+    (socket: Socket, containerName: string, serverId: string, channel?: 'stable' | 'pre-release') => Promise<void>
   >();
 const mockCheckServerFiles =
   jest.fn<
@@ -71,6 +71,7 @@ describe("Updater Service", () => {
         mockSocket as any,
         "test-container",
         "test-server",
+        "stable",
       );
 
       // Should restart since server was running

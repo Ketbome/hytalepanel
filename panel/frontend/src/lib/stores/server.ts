@@ -1,5 +1,5 @@
-import type { DownloadProgress, FilesReady, ServerStatus } from '$lib/types';
 import { writable } from 'svelte/store';
+import type { DownloadProgress, FilesReady, ServerStatus } from '$lib/types';
 
 export const serverStatus = writable<ServerStatus>({
   running: false,
@@ -14,6 +14,8 @@ export const filesReady = writable<FilesReady>({
 });
 
 export const downloaderAuth = writable<boolean>(false);
+
+export const isCheckingFiles = writable<boolean>(false);
 
 export const downloadProgress = writable<DownloadProgress>({
   active: false,

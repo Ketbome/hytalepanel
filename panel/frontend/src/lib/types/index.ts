@@ -199,7 +199,7 @@ export interface ModUpdatesResult {
 }
 
 // UI types
-export type ToastType = 'error' | 'success' | 'info' | '';
+export type ToastType = 'error' | 'success' | 'info' | 'warning' | '';
 
 export interface Toast {
   id: number;

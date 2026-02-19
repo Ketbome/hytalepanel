@@ -69,10 +69,14 @@ function generateBackupFilename(): string {
 function parseBackupFilename(filename: string): { id: string; createdAt: string } | null {
   const match = filename.match(/^backup-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})\.zip$/);
   if (!match) return null;
-  const timestamp = match[1].replaceAll('-', (_m, i) => (i > 9 ? ':' : '-')).replace('T', 'T');
+
+  // Convert filename timestamp format (2026-02-18T12-30-45) to ISO (2026-02-18T12:30:45)
+  const timestampId = match[1];
+  const isoTimestamp = timestampId.replace(/T(\d{2})-(\d{2})-(\d{2})$/, 'T$1:$2:$3');
+
   return {
-    id: match[1],
-    createdAt: new Date(timestamp.replaceAll('-', (_m, i) => (i > 9 ? ':' : _m))).toISOString()
+    id: timestampId,
+    createdAt: new Date(isoTimestamp).toISOString()
   };
 }
 
@@ -213,23 +217,31 @@ export async function restoreBackup(serverId: string, backupId: string): Promise
 }
 
 export async function deleteBackup(serverId: string, backupId: string): Promise<OperationResult> {
+  const filename = `backup-${backupId}.zip`;
+
   try {
     const backupsDir = getBackupsDir(serverId);
-    const filename = `backup-${backupId}.zip`;
     const backupPath = path.join(backupsDir, filename);
 
+    console.log(`[Backups] Deleting backup: ${filename} for server ${serverId}`);
     await fs.unlink(backupPath);
+    console.log(`[Backups] Successfully deleted: ${filename}`);
 
     return { success: true };
   } catch (e) {
-    return { success: false, error: (e as Error).message };
+    const error = (e as Error).message;
+    console.error(`[Backups] Failed to delete ${filename}: ${error}`);
+    return { success: false, error };
   }
 }
 
 export async function cleanupOldBackups(serverId: string, backupConfig: BackupConfig): Promise<void> {
   try {
     const result = await listBackups(serverId);
-    if (!result.success || result.backups.length === 0) return;
+    if (!result.success || result.backups.length === 0) {
+      console.log(`[Backups] No backups found for cleanup on ${serverId}`);
+      return;
+    }
 
     const backups = result.backups;
     const now = Date.now();
@@ -243,6 +255,12 @@ export async function cleanupOldBackups(serverId: string, backupConfig: BackupCo
         const age = now - new Date(b.createdAt).getTime();
         return age > maxAgeMs;
       });
+
+      if (toDelete.length > 0) {
+        console.log(
+          `[Backups] Found ${toDelete.length} backup(s) older than ${backupConfig.maxAgeDays} days for ${serverId}`
+        );
+      }
     }
 
     // Delete by count (keep maxBackups newest)
@@ -251,13 +269,35 @@ export async function cleanupOldBackups(serverId: string, backupConfig: BackupCo
       if (remaining.length > backupConfig.maxBackups) {
         const excess = remaining.slice(backupConfig.maxBackups);
         toDelete.push(...excess);
+        console.log(
+          `[Backups] Found ${excess.length} excess backup(s) over limit of ${backupConfig.maxBackups} for ${serverId}`
+        );
       }
     }
 
-    // Delete the backups
-    for (const backup of toDelete) {
-      await deleteBackup(serverId, backup.id);
+    if (toDelete.length === 0) {
+      console.log(`[Backups] No old backups to delete for ${serverId}`);
+      return;
     }
+
+    // Delete the backups and track results
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const backup of toDelete) {
+      const ageInDays = Math.floor((now - new Date(backup.createdAt).getTime()) / (24 * 60 * 60 * 1000));
+      console.log(`[Backups] Attempting to delete old backup: ${backup.filename} (age: ${ageInDays} days)`);
+
+      const deleteResult = await deleteBackup(serverId, backup.id);
+      if (deleteResult.success) {
+        successCount++;
+      } else {
+        failCount++;
+        console.error(`[Backups] Failed to delete ${backup.filename}: ${deleteResult.error}`);
+      }
+    }
+
+    console.log(`[Backups] Cleanup completed for ${serverId}: ${successCount} deleted, ${failCount} failed`);
   } catch (e) {
     console.error(`[Backups] Cleanup error for ${serverId}:`, (e as Error).message);
   }

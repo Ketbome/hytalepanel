@@ -1,96 +1,130 @@
 <script lang="ts">
-  import { _ } from 'svelte-i18n';
-  import { locale } from '$lib/i18n';
-  import { serverStatus } from '$lib/stores/server';
-  import { activeServer, activeServerId } from '$lib/stores/servers';
-  import { logout } from '$lib/stores/auth';
-  import { disconnectSocket, leaveServer } from '$lib/services/socketClient';
-  import { formatUptime } from '$lib/utils/formatters';
-  import StatusBadge from './ui/StatusBadge.svelte';
-  import { onMount, onDestroy } from 'svelte';
+import { _ } from 'svelte-i18n';
+import { locale } from '$lib/i18n';
+import { disconnectSocket, leaveServer } from '$lib/services/socketClient';
+import { logout } from '$lib/stores/auth';
+import { serverStatus } from '$lib/stores/server';
+import { activeServer, activeServerId } from '$lib/stores/servers';
+import { formatUptime } from '$lib/utils/formatters';
+import Button from './ui/Button.svelte';
+import StatusBadge from './ui/StatusBadge.svelte';
 
-  let clockTime = $state('--:--:--');
-  let uptime = $state('00:00:00');
-  let clockTimer: ReturnType<typeof setInterval> | undefined;
-  let uptimeTimer: ReturnType<typeof setInterval> | undefined;
+let clockTime = $state('--:--:--');
+let uptime = $state('00:00:00');
 
-  function updateClock(): void {
-    const now = new Date();
-    clockTime = [
-      now.getHours(),
-      now.getMinutes(),
-      now.getSeconds()
-    ].map(n => String(n).padStart(2, '0')).join(':');
-  }
+function updateClock(): void {
+  const now = new Date();
+  clockTime = [now.getHours(), now.getMinutes(), now.getSeconds()].map((n) => String(n).padStart(2, '0')).join(':');
+}
 
-  function updateUptime(): void {
-    uptime = formatUptime($serverStatus.startedAt);
-  }
+function updateUptime(): void {
+  uptime = formatUptime($serverStatus.startedAt);
+}
 
-  onMount(() => {
-    updateClock();
-    clockTimer = setInterval(updateClock, 1000);
-    uptimeTimer = setInterval(updateUptime, 1000);
-  });
+// Clock and uptime timers with $effect
+$effect(() => {
+  updateClock();
+  const clockTimer = setInterval(updateClock, 1000);
+  const uptimeTimer = setInterval(updateUptime, 1000);
 
-  onDestroy(() => {
-    if (clockTimer) clearInterval(clockTimer);
-    if (uptimeTimer) clearInterval(uptimeTimer);
-  });
+  return () => {
+    clearInterval(clockTimer);
+    clearInterval(uptimeTimer);
+  };
+});
 
-  function handleLogout(): void {
-    disconnectSocket();
-    logout();
-  }
+function handleLogout(): void {
+  disconnectSocket();
+  logout();
+}
 
-  function handleBackToPanel(): void {
-    leaveServer();
-  }
+function handleBackToPanel(): void {
+  leaveServer();
+}
 
-  function handleLangChange(e: Event): void {
-    const target = e.target as HTMLSelectElement;
-    locale.set(target.value);
-  }
+function handleLangChange(e: Event): void {
+  const target = e.target as HTMLSelectElement;
+  locale.set(target.value);
+}
 </script>
 
-<header>
-  <div class="logo">
-    {#if $activeServerId}
-      <button class="back-btn" onclick={handleBackToPanel} title={$_('backToPanel')}>
-        ←
-      </button>
-    {/if}
-    <div class="logo-block">H</div>
-    <div>
-      {#if $activeServer}
-        <h1>{$activeServer.name}</h1>
-        <div class="logo-subtitle">:{$activeServer.port}/UDP</div>
-      {:else}
-        <h1>HYTALEPANEL</h1>
-        <div class="logo-subtitle">{$_('serverPanel')}</div>
+<header class="mc-panel mb-5">
+  <div class="flex items-center justify-between px-5 py-3 flex-wrap gap-4">
+    <!-- Left section: Logo -->
+    <div class="flex items-center gap-4">
+      {#if $activeServerId}
+        <button 
+          class="mc-btn mc-btn-sm mc-btn-wood !px-3"
+          onclick={handleBackToPanel} 
+          title={$_('backToPanel')}
+        >
+          ←
+        </button>
       {/if}
+      
+      <div class="w-12 h-12 bg-gradient-to-br from-grass-light via-grass to-grass-dark border-3 border-grass-light border-r-grass-dark border-b-grass-dark flex items-center justify-center">
+        <span class="font-display text-base text-white text-shadow-pixel">H</span>
+      </div>
+      
+      <div>
+        {#if $activeServer}
+          <h1 class="font-display text-sm text-hytale-gold text-shadow-pixel tracking-wide">{$activeServer.name}</h1>
+          <p class="font-mono text-sm text-text-dim">:{$activeServer.port}/UDP</p>
+        {:else}
+          <h1 class="font-display text-sm text-hytale-gold text-shadow-pixel tracking-wide">HYTALEPANEL</h1>
+          <p class="font-mono text-sm text-text-dim">{$_('serverPanel')}</p>
+        {/if}
+      </div>
     </div>
-  </div>
-  <div class="header-right">
-    <a href="https://hytalepanel.ketbome.com/" target="_blank" class="docs-link" title={$_('documentation')}>
-      📚 {$_('docs')}
-    </a>
-    <a href="https://github.com/ketbome/hytalepanel/issues" target="_blank" class="docs-link" title={$_('reportIssue')}>
-      🐛 {$_('issues')}
-    </a>
-    <div class="lang-selector">
-      <select class="lang-dropdown" value={$locale} onchange={handleLangChange}>
-        <option value="en">English</option>
-        <option value="es">Español</option>
-        <option value="uk">Українська</option>
+
+    <!-- Right section: Controls -->
+    <div class="flex items-center gap-3 flex-wrap">
+      <!-- Links -->
+      <a 
+        href="https://hytalepanel.ketbome.com/" 
+        target="_blank" 
+        class="mc-btn mc-btn-sm mc-btn-wood !hidden sm:!inline-flex"
+        title={$_('documentation')}
+      >
+        📚 {$_('docs')}
+      </a>
+      <a 
+        href="https://github.com/ketbome/hytalepanel/issues" 
+        target="_blank" 
+        class="mc-btn mc-btn-sm !hidden sm:!inline-flex"
+        title={$_('reportIssue')}
+      >
+        🐛 {$_('issues')}
+      </a>
+
+      <!-- Language selector -->
+      <select 
+        class="mc-select !py-2 !px-3 !text-sm !w-auto !pr-8"
+        value={$locale} 
+        onchange={handleLangChange}
+      >
+        <option value="en">EN</option>
+        <option value="es">ES</option>
+        <option value="uk">UK</option>
       </select>
+
+      <!-- Time displays -->
+      <div class="mc-badge !hidden md:!flex gap-2">
+        <span class="text-text-dim">🕐</span>
+        <span class="font-code text-sm text-hytale-gold">{clockTime}</span>
+      </div>
+
+      <div class="mc-badge !hidden md:!flex">
+        <span class="font-code text-sm text-grass-light">{uptime}</span>
+      </div>
+
+      <!-- Status -->
+      <StatusBadge running={$serverStatus.running} />
+
+      <!-- Logout -->
+      <Button size="small" variant="danger" onclick={handleLogout}>
+        {$_('logout')}
+      </Button>
     </div>
-    <div class="server-clock" title={$_('serverTime')}>
-      <span class="clock-label">🕐</span>
-      <span class="clock-time">{clockTime}</span>
-    </div>
-    <span class="uptime-display">{uptime}</span>
-    <StatusBadge running={$serverStatus.running} />
-    <button class="logout-btn" onclick={handleLogout}>{$_('logout')}</button>
   </div>
 </header>

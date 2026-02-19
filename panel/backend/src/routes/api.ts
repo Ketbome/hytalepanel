@@ -4,6 +4,7 @@ import config from '../config/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import * as docker from '../services/docker.js';
 import * as files from '../services/files.js';
+import * as machineId from '../services/machineId.js';
 import * as servers from '../services/servers.js';
 
 const router: RouterType = Router();
@@ -190,6 +191,87 @@ router.post('/servers/:id/compose/regenerate', async (req, res) => {
   try {
     const result = await servers.regenerateServerCompose(req.params.id);
     res.json(result);
+  } catch (e) {
+    res.status(500).json({ success: false, error: (e as Error).message });
+  }
+});
+
+// ==================== MACHINE-ID API ====================
+
+router.get('/servers/:id/machine-id', async (req, res) => {
+  try {
+    const serverResult = await servers.getServer(req.params.id);
+    if (!serverResult.success || !serverResult.server) {
+      res.status(404).json({ success: false, error: 'Server not found' });
+      return;
+    }
+    const result = await machineId.checkMachineId(serverResult.server.containerName);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ success: false, error: (e as Error).message });
+  }
+});
+
+router.post('/servers/:id/machine-id/regenerate', async (req, res) => {
+  try {
+    const serverResult = await servers.getServer(req.params.id);
+    if (!serverResult.success || !serverResult.server) {
+      res.status(404).json({ success: false, error: 'Server not found' });
+      return;
+    }
+    const result = await machineId.regenerateMachineId(serverResult.server.containerName);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ success: false, error: (e as Error).message });
+  }
+});
+
+// ==================== RELEASE CHANNELS API ====================
+
+interface ReleaseChannelInfo {
+  id: 'stable' | 'pre-release';
+  name: string;
+  description: string;
+  recommended: boolean;
+  available: boolean;
+}
+
+router.get('/servers/:id/channels', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const serverResult = await servers.getServer(id);
+
+    if (!serverResult.success || !serverResult.server) {
+      res.status(404).json({ success: false, error: 'Server not found' });
+      return;
+    }
+
+    // Define available release channels
+    // Future: Query Hytale API for real-time availability
+    const channels: ReleaseChannelInfo[] = [
+      {
+        id: 'stable',
+        name: 'Release (Stable)',
+        description: 'Production-ready builds, tested and stable',
+        recommended: true,
+        available: true
+      },
+      {
+        id: 'pre-release',
+        name: 'Pre-Release (Beta)',
+        description: 'Latest features and updates, may contain bugs',
+        recommended: false,
+        available: true
+      }
+    ];
+
+    const currentChannel = serverResult.server.config.releaseChannel || 'stable';
+
+    res.json({
+      success: true,
+      channels,
+      current: currentChannel
+    });
   } catch (e) {
     res.status(500).json({ success: false, error: (e as Error).message });
   }
