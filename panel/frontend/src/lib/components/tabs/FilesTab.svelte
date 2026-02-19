@@ -40,9 +40,9 @@ function getBreadcrumbParts(path: string): BreadcrumbPart[] {
   return result;
 }
 
-let breadcrumbParts = $derived(getBreadcrumbParts($currentPath));
+const breadcrumbParts = $derived(getBreadcrumbParts($currentPath));
 
-let filteredFiles = $derived(() => {
+const filteredFiles = $derived(() => {
   if (!searchQuery.trim()) return $fileList;
   const lower = searchQuery.toLowerCase();
   return $fileList.filter((file) => file.name.toLowerCase().includes(lower));
@@ -123,10 +123,18 @@ function handleFileSelect(e: Event): void {
 }
 
 async function handleUploadFiles(files: FileList): Promise<void> {
-  uploadState.set({ isVisible: true, isUploading: true, progress: 10, text: `${$_('uploading')}...` });
+  uploadState.set({
+    isVisible: true,
+    isUploading: true,
+    progress: 10,
+    text: `${$_('uploading')}...`
+  });
 
   for (const file of files) {
-    uploadState.update((s) => ({ ...s, text: `${$_('uploading')} ${file.name}...` }));
+    uploadState.update((s) => ({
+      ...s,
+      text: `${$_('uploading')} ${file.name}...`
+    }));
     try {
       const result = await uploadFile(file, $currentPath, $activeServer!.id);
       if (result.success) {
@@ -142,7 +150,12 @@ async function handleUploadFiles(files: FileList): Promise<void> {
   }
 
   setTimeout(() => {
-    uploadState.set({ isVisible: false, isUploading: false, progress: 0, text: '' });
+    uploadState.set({
+      isVisible: false,
+      isUploading: false,
+      progress: 0,
+      text: ''
+    });
     navigateTo($currentPath);
   }, 500);
 }

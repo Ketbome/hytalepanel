@@ -16,7 +16,11 @@ function checkForUpdate(): void {
 
 function applyUpdate(): void {
   if (confirm($_('confirmUpdate'))) {
-    updateInfo.update((u) => ({ ...u, isUpdating: true, updateStatus: $_('starting') }));
+    updateInfo.update((u) => ({
+      ...u,
+      isUpdating: true,
+      updateStatus: $_('starting')
+    }));
     emit('update:apply');
   }
 }
@@ -36,7 +40,7 @@ function getStepState(step: DownloadStep, currentStep: DownloadStep): 'active' |
   return '';
 }
 
-let stepStates = $derived({
+const stepStates = $derived({
   auth: getStepState('auth', $downloadProgress.step),
   download: getStepState('download', $downloadProgress.step),
   extract: getStepState('extract', $downloadProgress.step),

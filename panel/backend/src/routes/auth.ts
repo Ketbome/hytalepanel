@@ -21,7 +21,10 @@ function isSecureConnection(req: AuthenticatedRequest): boolean {
 
 router.post('/login', async (req: AuthenticatedRequest, res) => {
   try {
-    const { username, password } = req.body as { username?: string; password?: string };
+    const { username, password } = req.body as {
+      username?: string;
+      password?: string;
+    };
 
     if (!username || !password) {
       res.status(400).json({ error: 'Username and password required' });

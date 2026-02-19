@@ -102,7 +102,9 @@ function getApiErrorMessage(): string {
   const providerName = provider === 'curseforge' ? 'CurseForge' : 'Modtale';
 
   if (!status.configured) {
-    return get(_)('apiKeyNotConfigured', { values: { provider: providerName } });
+    return get(_)('apiKeyNotConfigured', {
+      values: { provider: providerName }
+    });
   }
   if (!status.valid) {
     return get(_)('apiKeyInvalid', { values: { provider: providerName } });

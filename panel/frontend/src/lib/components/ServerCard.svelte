@@ -3,7 +3,7 @@ import { _ } from 'svelte-i18n';
 import type { Server } from '$lib/stores/servers';
 import Button from './ui/Button.svelte';
 
-let {
+const {
   server,
   onEnter,
   onStart,
@@ -17,7 +17,7 @@ let {
   onDelete: () => void;
 } = $props();
 
-let isRunning = $derived(server.status === 'running');
+const isRunning = $derived(server.status === 'running');
 </script>
 
 <div class="mc-panel transition-transform duration-200 hover:-translate-y-1" class:glow-grass={isRunning}>

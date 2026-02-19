@@ -10,7 +10,7 @@ interface ButtonProps {
   children?: import('svelte').Snippet;
 }
 
-let {
+const {
   variant = 'default',
   size = 'default',
   disabled = false,

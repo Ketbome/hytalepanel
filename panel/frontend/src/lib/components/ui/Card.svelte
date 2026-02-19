@@ -6,7 +6,7 @@ interface CardProps {
   noPadding?: boolean;
 }
 
-let { children, header, headerText, noPadding = false }: CardProps = $props();
+const { children, header, headerText, noPadding = false }: CardProps = $props();
 </script>
 
 <div class="mc-panel">

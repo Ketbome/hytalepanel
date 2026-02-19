@@ -3,7 +3,7 @@ import { _ } from 'svelte-i18n';
 import { apiUrl } from '$lib/stores/config';
 import { showToast } from '$lib/stores/ui';
 
-let { serverId }: { serverId: string } = $props();
+const { serverId }: { serverId: string } = $props();
 
 interface MachineIdStatus {
   exists: boolean;

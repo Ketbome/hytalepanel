@@ -6,7 +6,7 @@ interface SkeletonProps {
   className?: string;
 }
 
-let { type = 'text', height, width, className = '' }: SkeletonProps = $props();
+const { type = 'text', height, width, className = '' }: SkeletonProps = $props();
 
 const typeClasses = {
   text: 'h-4',

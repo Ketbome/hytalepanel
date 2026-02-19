@@ -5,7 +5,7 @@ import { createServer } from '$lib/services/api';
 import { servers } from '$lib/stores/servers';
 import { showToast } from '$lib/stores/ui';
 
-let { onClose, onCreated }: { onClose: () => void; onCreated: () => void } = $props();
+const { onClose, onCreated }: { onClose: () => void; onCreated: () => void } = $props();
 
 let name = $state('');
 let port = $state(5520);
@@ -26,14 +26,14 @@ $effect(() => {
   }
 });
 
-let machineIdVolumes = $derived(
+const machineIdVolumes = $derived(
   useMachineId
     ? `      - /etc/machine-id:/etc/machine-id:ro
       - /sys/class/dmi/id:/sys/class/dmi/id:ro`
     : ''
 );
 
-let dockerComposePreview = $derived(`services:
+const dockerComposePreview = $derived(`services:
   hytale-server:
     image: ketbom/hytale-server:latest
     container_name: hytale-xxxxxxxx

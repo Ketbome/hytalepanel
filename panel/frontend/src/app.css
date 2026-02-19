@@ -1,440 +1,466 @@
+/* ===== FONTS ===== */
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
 /* Tailwind v3 imports */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ===== FONTS ===== */
-@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=JetBrains+Mono:wght@400;500;600&display=swap");
-
 @font-face {
-  font-family: "8bit Operator";
-  src: url("./assets/fonts/8bitoperator_jve.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
+	font-family: "8bit Operator";
+	src: url("./assets/fonts/8bitoperator_jve.ttf") format("truetype");
+	font-weight: normal;
+	font-style: normal;
+	font-display: swap;
 }
 
 /* ===== BASE LAYER ===== */
 @layer base {
-  *,
-  *::before,
-  *::after {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+	*,
+	*::before,
+	*::after {
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+	}
 
-  html {
-    font-size: 16px;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+	html {
+		font-size: 16px;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
 
-  body {
-    font-family: "VT323", monospace;
-    font-size: 1.125rem;
-    line-height: 1.5;
-    background: linear-gradient(180deg, #1a150f 0%, #2a2018 100%);
-    color: theme("colors.text.DEFAULT");
-    min-height: 100vh;
-  }
+	body {
+		font-family: "VT323", monospace;
+		font-size: 1.125rem;
+		line-height: 1.5;
+		background: linear-gradient(180deg, #1a150f 0%, #2a2018 100%);
+		color: theme("colors.text.DEFAULT");
+		min-height: 100vh;
+	}
 
-  /* Dirt/stone texture overlay */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='16' height='16' fill='transparent'/%3E%3Crect x='0' y='0' width='4' height='4' fill='%23000' opacity='0.05'/%3E%3Crect x='8' y='4' width='4' height='4' fill='%23fff' opacity='0.02'/%3E%3Crect x='4' y='8' width='4' height='4' fill='%23000' opacity='0.03'/%3E%3Crect x='12' y='12' width='4' height='4' fill='%23fff' opacity='0.02'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: -1;
-  }
+	/* Dirt/stone texture overlay */
+	body::before {
+		content: "";
+		position: fixed;
+		inset: 0;
+		background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='16' height='16' fill='transparent'/%3E%3Crect x='0' y='0' width='4' height='4' fill='%23000' opacity='0.05'/%3E%3Crect x='8' y='4' width='4' height='4' fill='%23fff' opacity='0.02'/%3E%3Crect x='4' y='8' width='4' height='4' fill='%23000' opacity='0.03'/%3E%3Crect x='12' y='12' width='4' height='4' fill='%23fff' opacity='0.02'/%3E%3C/svg%3E");
+		pointer-events: none;
+		z-index: -1;
+	}
 
-  /* Ukrainian locale font override */
-  html[data-lang="uk"],
-  body[data-lang="uk"] {
-    font-family: "8bit Operator", monospace;
-  }
+	/* Ukrainian locale font override */
+	html[data-lang="uk"],
+	body[data-lang="uk"] {
+		font-family: "8bit Operator", monospace;
+	}
 
-  /* Focus states */
-  *:focus-visible {
-    outline: 3px solid theme("colors.hytale.gold");
-    outline-offset: 2px;
-  }
+	/* Focus states */
+	*:focus-visible {
+		outline: 3px solid theme("colors.hytale.gold");
+		outline-offset: 2px;
+	}
 
-  /* Reduced motion */
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
-  }
+	/* Reduced motion */
+	@media (prefers-reduced-motion: reduce) {
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+		}
+	}
 
-  /* Scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 12px;
-    height: 12px;
-  }
+	/* Scrollbar styling */
+	::-webkit-scrollbar {
+		width: 12px;
+		height: 12px;
+	}
 
-  ::-webkit-scrollbar-track {
-    background: theme("colors.panel.bg");
-    border: 2px solid theme("colors.panel.border");
-  }
+	::-webkit-scrollbar-track {
+		background: theme("colors.panel.bg");
+		border: 2px solid theme("colors.panel.border");
+	}
 
-  ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, theme("colors.dirt.light") 0%, theme("colors.dirt.dark") 100%);
-    border: 2px solid theme("colors.dirt.dark");
-  }
+	::-webkit-scrollbar-thumb {
+		background: linear-gradient(
+			180deg,
+			theme("colors.dirt.light") 0%,
+			theme("colors.dirt.dark") 100%
+		);
+		border: 2px solid theme("colors.dirt.dark");
+	}
 
-  ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, theme("colors.dirt.DEFAULT") 0%, theme("colors.dirt.dark") 100%);
-  }
+	::-webkit-scrollbar-thumb:hover {
+		background: linear-gradient(
+			180deg,
+			theme("colors.dirt.DEFAULT") 0%,
+			theme("colors.dirt.dark") 100%
+		);
+	}
 
-  /* Selection */
-  ::selection {
-    background: theme("colors.grass.DEFAULT");
-    color: white;
-  }
+	/* Selection */
+	::selection {
+		background: theme("colors.grass.DEFAULT");
+		color: white;
+	}
 }
 
 /* ===== COMPONENT LAYER ===== */
 @layer components {
-  /* ===== MINECRAFT BUTTON ===== */
-  .mc-btn {
-    @apply relative inline-flex items-center justify-center gap-2;
-    @apply px-5 py-3 font-mono text-lg;
-    @apply border-4 cursor-pointer select-none;
-    @apply transition-all duration-100;
+	/* ===== MINECRAFT BUTTON ===== */
+	.mc-btn {
+		@apply relative inline-flex items-center justify-center gap-2;
+		@apply px-5 py-3 font-mono text-lg;
+		@apply border-4 cursor-pointer select-none;
+		@apply transition-all duration-100;
 
-    /* Default stone button */
-    background: linear-gradient(180deg, #7a7a7a 0%, #5a5a5a 50%, #4a4a4a 100%);
-    border-color: #8a8a8a #3a3a3a #3a3a3a #8a8a8a;
-    color: theme("colors.text.DEFAULT");
-    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
-    image-rendering: pixelated;
-  }
+		/* Default stone button */
+		background: linear-gradient(180deg, #7a7a7a 0%, #5a5a5a 50%, #4a4a4a 100%);
+		border-color: #8a8a8a #3a3a3a #3a3a3a #8a8a8a;
+		color: theme("colors.text.DEFAULT");
+		text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+		image-rendering: pixelated;
+	}
 
-  .mc-btn:hover:not(:disabled) {
-    background: linear-gradient(180deg, #8a8a8a 0%, #6a6a6a 50%, #5a5a5a 100%);
-    color: theme("colors.hytale.gold");
-  }
+	.mc-btn:hover:not(:disabled) {
+		background: linear-gradient(180deg, #8a8a8a 0%, #6a6a6a 50%, #5a5a5a 100%);
+		color: theme("colors.hytale.gold");
+	}
 
-  .mc-btn:active:not(:disabled) {
-    border-color: #3a3a3a #8a8a8a #8a8a8a #3a3a3a;
-    padding-top: 0.875rem;
-    padding-bottom: 0.625rem;
-  }
+	.mc-btn:active:not(:disabled) {
+		border-color: #3a3a3a #8a8a8a #8a8a8a #3a3a3a;
+		padding-top: 0.875rem;
+		padding-bottom: 0.625rem;
+	}
 
-  .mc-btn:disabled {
-    @apply opacity-50 cursor-not-allowed;
-    filter: grayscale(0.5);
-  }
+	.mc-btn:disabled {
+		@apply opacity-50 cursor-not-allowed;
+		filter: grayscale(0.5);
+	}
 
-  /* Primary - Grass/Green */
-  .mc-btn-primary {
-    background: linear-gradient(180deg, #7bb342 0%, #5d8731 50%, #486b26 100%);
-    border-color: #8bc34a #3a5a1a #3a5a1a #8bc34a;
-  }
+	/* Primary - Grass/Green */
+	.mc-btn-primary {
+		background: linear-gradient(180deg, #7bb342 0%, #5d8731 50%, #486b26 100%);
+		border-color: #8bc34a #3a5a1a #3a5a1a #8bc34a;
+	}
 
-  .mc-btn-primary:hover:not(:disabled) {
-    background: linear-gradient(180deg, #8bc34a 0%, #6d9741 50%, #587b36 100%);
-  }
+	.mc-btn-primary:hover:not(:disabled) {
+		background: linear-gradient(180deg, #8bc34a 0%, #6d9741 50%, #587b36 100%);
+	}
 
-  /* Danger - Redstone */
-  .mc-btn-danger {
-    background: linear-gradient(180deg, #c54545 0%, #a83232 50%, #8a2525 100%);
-    border-color: #d55 #6a1a1a #6a1a1a #d55;
-  }
+	/* Danger - Redstone */
+	.mc-btn-danger {
+		background: linear-gradient(180deg, #c54545 0%, #a83232 50%, #8a2525 100%);
+		border-color: #d55 #6a1a1a #6a1a1a #d55;
+	}
 
-  .mc-btn-danger:hover:not(:disabled) {
-    background: linear-gradient(180deg, #d55555 0%, #b84242 50%, #9a3535 100%);
-  }
+	.mc-btn-danger:hover:not(:disabled) {
+		background: linear-gradient(180deg, #d55555 0%, #b84242 50%, #9a3535 100%);
+	}
 
-  /* Warning - Gold */
-  .mc-btn-warning {
-    background: linear-gradient(180deg, #e8a93c 0%, #d4a534 50%, #b8922a 100%);
-    border-color: #f5c04a #9a7a1a #9a7a1a #f5c04a;
-    color: #2a2018;
-    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.3);
-  }
+	/* Warning - Gold */
+	.mc-btn-warning {
+		background: linear-gradient(180deg, #e8a93c 0%, #d4a534 50%, #b8922a 100%);
+		border-color: #f5c04a #9a7a1a #9a7a1a #f5c04a;
+		color: #2a2018;
+		text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.3);
+	}
 
-  .mc-btn-warning:hover:not(:disabled) {
-    background: linear-gradient(180deg, #f5b94c 0%, #e4b544 50%, #c8a23a 100%);
-  }
+	.mc-btn-warning:hover:not(:disabled) {
+		background: linear-gradient(180deg, #f5b94c 0%, #e4b544 50%, #c8a23a 100%);
+	}
 
-  /* Wood button */
-  .mc-btn-wood {
-    background: linear-gradient(180deg, #b8956a 0%, #8b6b4a 50%, #6b4f36 100%);
-    border-color: #c8a57a #5a3f26 #5a3f26 #c8a57a;
-  }
+	/* Wood button */
+	.mc-btn-wood {
+		background: linear-gradient(180deg, #b8956a 0%, #8b6b4a 50%, #6b4f36 100%);
+		border-color: #c8a57a #5a3f26 #5a3f26 #c8a57a;
+	}
 
-  .mc-btn-wood:hover:not(:disabled) {
-    background: linear-gradient(180deg, #c8a57a 0%, #9b7b5a 50%, #7b5f46 100%);
-  }
+	.mc-btn-wood:hover:not(:disabled) {
+		background: linear-gradient(180deg, #c8a57a 0%, #9b7b5a 50%, #7b5f46 100%);
+	}
 
-  /* Small button */
-  .mc-btn-sm {
-    @apply px-3 py-2 text-base;
-    border-width: 3px;
-  }
+	/* Small button */
+	.mc-btn-sm {
+		@apply px-3 py-2 text-base;
+		border-width: 3px;
+	}
 
-  /* ===== MINECRAFT PANEL/CARD ===== */
-  .mc-panel {
-    @apply relative overflow-hidden;
-    background: linear-gradient(180deg, theme("colors.panel.lighter") 0%, theme("colors.panel.bg") 100%);
-    border: 4px solid;
-    border-color: theme("colors.panel.border-light") theme("colors.panel.bg") theme("colors.panel.bg")
-      theme("colors.panel.border-light");
-    box-shadow:
-      inset 0 0 0 1px rgba(0, 0, 0, 0.3),
-      4px 4px 0 rgba(0, 0, 0, 0.3);
-  }
+	/* ===== MINECRAFT PANEL/CARD ===== */
+	.mc-panel {
+		@apply relative overflow-hidden;
+		background: linear-gradient(
+			180deg,
+			theme("colors.panel.lighter") 0%,
+			theme("colors.panel.bg") 100%
+		);
+		border: 4px solid;
+		border-color: theme("colors.panel.border-light") theme("colors.panel.bg")
+			theme("colors.panel.bg") theme("colors.panel.border-light");
+		box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3), 4px 4px 0 rgba(0, 0, 0, 0.3);
+	}
 
-  .mc-panel-header {
-    @apply px-5 py-3;
-    @apply font-mono text-lg;
-    @apply flex items-center justify-between gap-4;
-    background: linear-gradient(180deg, theme("colors.panel.border") 0%, theme("colors.panel.light") 100%);
-    border-bottom: 3px solid theme("colors.panel.bg");
-    color: theme("colors.hytale.gold");
-    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
-  }
+	.mc-panel-header {
+		@apply px-5 py-3;
+		@apply font-mono text-lg;
+		@apply flex items-center justify-between gap-4;
+		background: linear-gradient(
+			180deg,
+			theme("colors.panel.border") 0%,
+			theme("colors.panel.light") 100%
+		);
+		border-bottom: 3px solid theme("colors.panel.bg");
+		color: theme("colors.hytale.gold");
+		text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+	}
 
-  .mc-panel-body {
-    @apply p-5;
-  }
+	.mc-panel-body {
+		@apply p-5;
+	}
 
-  /* ===== MINECRAFT INPUT ===== */
-  .mc-input {
-    @apply w-full px-4 py-3;
-    @apply font-mono text-lg;
-    @apply border-4;
-    background: #1a150f;
-    border-color: #0a0805 #3a3027 #3a3027 #0a0805;
-    color: theme("colors.text.DEFAULT");
-    box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.5);
-  }
+	/* ===== MINECRAFT INPUT ===== */
+	.mc-input {
+		@apply w-full px-4 py-3;
+		@apply font-mono text-lg;
+		@apply border-4;
+		background: #1a150f;
+		border-color: #0a0805 #3a3027 #3a3027 #0a0805;
+		color: theme("colors.text.DEFAULT");
+		box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.5);
+	}
 
-  .mc-input::placeholder {
-    color: theme("colors.text.dim");
-  }
+	.mc-input::placeholder {
+		color: theme("colors.text.dim");
+	}
 
-  .mc-input:focus {
-    @apply outline-none;
-    border-color: theme("colors.grass.DEFAULT") theme("colors.grass.dark") theme("colors.grass.dark")
-      theme("colors.grass.DEFAULT");
-    box-shadow:
-      inset 2px 2px 4px rgba(0, 0, 0, 0.5),
-      0 0 0 2px rgba(93, 135, 49, 0.3);
-  }
+	.mc-input:focus {
+		@apply outline-none;
+		border-color: theme("colors.grass.DEFAULT") theme("colors.grass.dark")
+			theme("colors.grass.dark") theme("colors.grass.DEFAULT");
+		box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.5), 0 0 0 2px
+			rgba(93, 135, 49, 0.3);
+	}
 
-  /* ===== STATUS INDICATORS ===== */
-  .status-online {
-    @apply flex items-center gap-2;
-  }
+	/* ===== STATUS INDICATORS ===== */
+	.status-online {
+		@apply flex items-center gap-2;
+	}
 
-  .status-online::before {
-    content: "";
-    @apply w-3 h-3 rounded-sm;
-    background: theme("colors.grass.DEFAULT");
-    box-shadow:
-      0 0 8px theme("colors.grass.DEFAULT"),
-      0 0 16px theme("colors.grass.light");
-    animation: pulse 2s ease-in-out infinite;
-  }
+	.status-online::before {
+		content: "";
+		@apply w-3 h-3 rounded-sm;
+		background: theme("colors.grass.DEFAULT");
+		box-shadow: 0 0 8px theme("colors.grass.DEFAULT"), 0 0 16px
+			theme("colors.grass.light");
+		animation: pulse 2s ease-in-out infinite;
+	}
 
-  .status-offline::before {
-    background: theme("colors.error");
-    box-shadow: none;
-    animation: none;
-  }
+	.status-offline::before {
+		background: theme("colors.error");
+		box-shadow: none;
+		animation: none;
+	}
 
-  /* ===== TAB BUTTON ===== */
-  .mc-tab {
-    @apply relative px-4 py-2.5;
-    @apply font-mono text-base;
-    @apply border-3 cursor-pointer;
-    background: linear-gradient(180deg, theme("colors.panel.light") 0%, theme("colors.panel.bg") 100%);
-    border-color: theme("colors.panel.border") theme("colors.panel.bg") theme("colors.panel.bg")
-      theme("colors.panel.border");
-    color: theme("colors.text.muted");
-    transition: all 0.15s;
-  }
+	/* ===== TAB BUTTON ===== */
+	.mc-tab {
+		@apply relative px-4 py-2.5;
+		@apply font-mono text-base;
+		@apply border-3 cursor-pointer;
+		background: linear-gradient(
+			180deg,
+			theme("colors.panel.light") 0%,
+			theme("colors.panel.bg") 100%
+		);
+		border-color: theme("colors.panel.border") theme("colors.panel.bg")
+			theme("colors.panel.bg") theme("colors.panel.border");
+		color: theme("colors.text.muted");
+		transition: all 0.15s;
+	}
 
-  .mc-tab:hover {
-    color: theme("colors.hytale.cream");
-    background: linear-gradient(180deg, theme("colors.panel.lighter") 0%, theme("colors.panel.light") 100%);
-  }
+	.mc-tab:hover {
+		color: theme("colors.hytale.cream");
+		background: linear-gradient(
+			180deg,
+			theme("colors.panel.lighter") 0%,
+			theme("colors.panel.light") 100%
+		);
+	}
 
-  .mc-tab.active {
-    background: linear-gradient(180deg, theme("colors.dirt.light") 0%, theme("colors.dirt.DEFAULT") 100%);
-    border-color: theme("colors.dirt.light") theme("colors.dirt.dark") theme("colors.dirt.dark")
-      theme("colors.dirt.light");
-    color: theme("colors.hytale.gold");
-  }
+	.mc-tab.active {
+		background: linear-gradient(
+			180deg,
+			theme("colors.dirt.light") 0%,
+			theme("colors.dirt.DEFAULT") 100%
+		);
+		border-color: theme("colors.dirt.light") theme("colors.dirt.dark")
+			theme("colors.dirt.dark") theme("colors.dirt.light");
+		color: theme("colors.hytale.gold");
+	}
 
-  /* ===== TOOLTIP ===== */
-  .mc-tooltip {
-    @apply absolute z-50 px-3 py-2;
-    @apply font-mono text-sm;
-    @apply pointer-events-none;
-    background: linear-gradient(180deg, #2a0f3d 0%, #1a0a28 100%);
-    border: 2px solid #5a2a7a;
-    color: white;
-    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
-  }
+	/* ===== TOOLTIP ===== */
+	.mc-tooltip {
+		@apply absolute z-50 px-3 py-2;
+		@apply font-mono text-sm;
+		@apply pointer-events-none;
+		background: linear-gradient(180deg, #2a0f3d 0%, #1a0a28 100%);
+		border: 2px solid #5a2a7a;
+		color: white;
+		box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+	}
 
-  /* ===== BADGE ===== */
-  .mc-badge {
-    @apply inline-flex items-center gap-1.5;
-    @apply px-2.5 py-1 text-sm font-mono;
-    @apply border-2;
-    background: theme("colors.panel.light");
-    border-color: theme("colors.panel.border-light") theme("colors.panel.bg") theme("colors.panel.bg")
-      theme("colors.panel.border-light");
-  }
+	/* ===== BADGE ===== */
+	.mc-badge {
+		@apply inline-flex items-center gap-1.5;
+		@apply px-2.5 py-1 text-sm font-mono;
+		@apply border-2;
+		background: theme("colors.panel.light");
+		border-color: theme("colors.panel.border-light") theme("colors.panel.bg")
+			theme("colors.panel.bg") theme("colors.panel.border-light");
+	}
 
-  .mc-badge-success {
-    background: theme("colors.grass.dark");
-    border-color: theme("colors.grass.light") theme("colors.grass.dark") theme("colors.grass.dark")
-      theme("colors.grass.light");
-    color: white;
-  }
+	.mc-badge-success {
+		background: theme("colors.grass.dark");
+		border-color: theme("colors.grass.light") theme("colors.grass.dark")
+			theme("colors.grass.dark") theme("colors.grass.light");
+		color: white;
+	}
 
-  .mc-badge-warning {
-    background: theme("colors.hytale.gold");
-    border-color: theme("colors.hytale.orange") theme("colors.dirt.dark") theme("colors.dirt.dark")
-      theme("colors.hytale.orange");
-    color: #2a2018;
-  }
+	.mc-badge-warning {
+		background: theme("colors.hytale.gold");
+		border-color: theme("colors.hytale.orange") theme("colors.dirt.dark")
+			theme("colors.dirt.dark") theme("colors.hytale.orange");
+		color: #2a2018;
+	}
 
-  .mc-badge-error {
-    background: theme("colors.error");
-    border-color: #c54545 #6a1a1a #6a1a1a #c54545;
-    color: white;
-  }
+	.mc-badge-error {
+		background: theme("colors.error");
+		border-color: #c54545 #6a1a1a #6a1a1a #c54545;
+		color: white;
+	}
 
-  /* ===== PROGRESS BAR ===== */
-  .mc-progress {
-    @apply relative h-6 overflow-hidden;
-    background: #1a150f;
-    border: 3px solid;
-    border-color: #0a0805 #3a3027 #3a3027 #0a0805;
-  }
+	/* ===== PROGRESS BAR ===== */
+	.mc-progress {
+		@apply relative h-6 overflow-hidden;
+		background: #1a150f;
+		border: 3px solid;
+		border-color: #0a0805 #3a3027 #3a3027 #0a0805;
+	}
 
-  .mc-progress-bar {
-    @apply h-full transition-all duration-300;
-    background: linear-gradient(
-      180deg,
-      theme("colors.grass.light") 0%,
-      theme("colors.grass.DEFAULT") 50%,
-      theme("colors.grass.dark") 100%
-    );
-    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.3);
-  }
+	.mc-progress-bar {
+		@apply h-full transition-all duration-300;
+		background: linear-gradient(
+			180deg,
+			theme("colors.grass.light") 0%,
+			theme("colors.grass.DEFAULT") 50%,
+			theme("colors.grass.dark") 100%
+		);
+		box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+	}
 
-  /* ===== DIVIDER ===== */
-  .mc-divider {
-    @apply my-4 h-1;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      theme("colors.panel.border") 20%,
-      theme("colors.panel.border-light") 50%,
-      theme("colors.panel.border") 80%,
-      transparent 100%
-    );
-  }
+	/* ===== DIVIDER ===== */
+	.mc-divider {
+		@apply my-4 h-1;
+		background: linear-gradient(
+			90deg,
+			transparent 0%,
+			theme("colors.panel.border") 20%,
+			theme("colors.panel.border-light") 50%,
+			theme("colors.panel.border") 80%,
+			transparent 100%
+		);
+	}
 
-  /* ===== LOADING SPINNER ===== */
-  .mc-spinner {
-    @apply w-10 h-10;
-    border: 4px solid theme("colors.panel.border");
-    border-top-color: theme("colors.grass.DEFAULT");
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
+	/* ===== LOADING SPINNER ===== */
+	.mc-spinner {
+		@apply w-10 h-10;
+		border: 4px solid theme("colors.panel.border");
+		border-top-color: theme("colors.grass.DEFAULT");
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+	}
 
-  /* ===== DROPDOWN/SELECT ===== */
-  .mc-select {
-    @apply w-full px-4 py-3;
-    @apply font-mono text-lg;
-    @apply border-4 cursor-pointer;
-    @apply appearance-none;
-    background: linear-gradient(180deg, theme("colors.panel.lighter") 0%, theme("colors.panel.light") 100%);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23f5e6c8' d='M4 6l4 4 4-4z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    border-color: theme("colors.panel.border-light") theme("colors.panel.bg") theme("colors.panel.bg")
-      theme("colors.panel.border-light");
-    color: theme("colors.text.DEFAULT");
-    padding-right: 40px;
-  }
+	/* ===== DROPDOWN/SELECT ===== */
+	.mc-select {
+		@apply w-full px-4 py-3;
+		@apply font-mono text-lg;
+		@apply border-4 cursor-pointer;
+		@apply appearance-none;
+		background: linear-gradient(
+			180deg,
+			theme("colors.panel.lighter") 0%,
+			theme("colors.panel.light") 100%
+		);
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23f5e6c8' d='M4 6l4 4 4-4z'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 12px center;
+		border-color: theme("colors.panel.border-light") theme("colors.panel.bg")
+			theme("colors.panel.bg") theme("colors.panel.border-light");
+		color: theme("colors.text.DEFAULT");
+		padding-right: 40px;
+	}
 
-  .mc-select:focus {
-    @apply outline-none;
-    border-color: theme("colors.grass.DEFAULT") theme("colors.grass.dark") theme("colors.grass.dark")
-      theme("colors.grass.DEFAULT");
-  }
+	.mc-select:focus {
+		@apply outline-none;
+		border-color: theme("colors.grass.DEFAULT") theme("colors.grass.dark")
+			theme("colors.grass.dark") theme("colors.grass.DEFAULT");
+	}
 
-  .mc-select option {
-    background: theme("colors.panel.bg");
-    color: theme("colors.text.DEFAULT");
-    padding: 8px;
-  }
+	.mc-select option {
+		background: theme("colors.panel.bg");
+		color: theme("colors.text.DEFAULT");
+		padding: 8px;
+	}
 }
 
 /* ===== UTILITY LAYER ===== */
 @layer utilities {
-  /* Pixel perfect borders */
-  .border-pixel {
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-  }
+	/* Pixel perfect borders */
+	.border-pixel {
+		image-rendering: pixelated;
+		image-rendering: crisp-edges;
+	}
 
-  /* Text shadows */
-  .text-shadow-pixel {
-    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
-  }
+	/* Text shadows */
+	.text-shadow-pixel {
+		text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+	}
 
-  .text-shadow-glow {
-    text-shadow: 0 0 8px currentColor;
-  }
+	.text-shadow-glow {
+		text-shadow: 0 0 8px currentColor;
+	}
 
-  /* Minecraft-style glow */
-  .glow-grass {
-    box-shadow:
-      0 0 12px theme("colors.grass.DEFAULT"),
-      0 0 24px rgba(93, 135, 49, 0.5);
-  }
+	/* Minecraft-style glow */
+	.glow-grass {
+		box-shadow: 0 0 12px theme("colors.grass.DEFAULT"), 0 0 24px
+			rgba(93, 135, 49, 0.5);
+	}
 
-  .glow-gold {
-    box-shadow:
-      0 0 12px theme("colors.hytale.gold"),
-      0 0 24px rgba(212, 165, 52, 0.5);
-  }
+	.glow-gold {
+		box-shadow: 0 0 12px theme("colors.hytale.gold"), 0 0 24px
+			rgba(212, 165, 52, 0.5);
+	}
 
-  /* Animation delays */
-  .animation-delay-100 {
-    animation-delay: 100ms;
-  }
-  .animation-delay-200 {
-    animation-delay: 200ms;
-  }
-  .animation-delay-300 {
-    animation-delay: 300ms;
-  }
-  .animation-delay-400 {
-    animation-delay: 400ms;
-  }
-  .animation-delay-500 {
-    animation-delay: 500ms;
-  }
+	/* Animation delays */
+	.animation-delay-100 {
+		animation-delay: 100ms;
+	}
+	.animation-delay-200 {
+		animation-delay: 200ms;
+	}
+	.animation-delay-300 {
+		animation-delay: 300ms;
+	}
+	.animation-delay-400 {
+		animation-delay: 400ms;
+	}
+	.animation-delay-500 {
+		animation-delay: 500ms;
+	}
 
-  /* Border width 3 */
-  .border-3 {
-    border-width: 3px;
-  }
+	/* Border width 3 */
+	.border-3 {
+		border-width: 3px;
+	}
 }

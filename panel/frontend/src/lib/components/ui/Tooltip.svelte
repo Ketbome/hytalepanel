@@ -5,7 +5,7 @@ interface TooltipProps {
   children?: import('svelte').Snippet;
 }
 
-let { text, position = 'top', children }: TooltipProps = $props();
+const { text, position = 'top', children }: TooltipProps = $props();
 
 let showTooltip = $state(false);
 

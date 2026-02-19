@@ -4,7 +4,7 @@ import { type Channel, fetchChannels } from '$lib/services/api';
 import { showToast } from '$lib/stores/ui';
 
 // Props using $props()
-let {
+const {
   serverId,
   selectedChannel: initialChannel,
   disabled = false,
@@ -24,8 +24,8 @@ let loadingChannels = $state(false);
 let error = $state<string | null>(null);
 
 // Derived state using $derived()
-let hasPreRelease = $derived(channels.some((c) => c.id === 'pre-release' && c.available));
-let isPreReleaseSelected = $derived(selectedChannel === 'pre-release');
+const hasPreRelease = $derived(channels.some((c) => c.id === 'pre-release' && c.available));
+const isPreReleaseSelected = $derived(selectedChannel === 'pre-release');
 
 // Load channels on mount using $effect()
 $effect(() => {

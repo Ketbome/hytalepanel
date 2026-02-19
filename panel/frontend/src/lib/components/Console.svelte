@@ -151,7 +151,7 @@ let selectedIndex = $state(-1);
 let showSuggestions = $state(false);
 let filterType = $state<'all' | 'info' | 'warn' | 'error' | 'cmd'>('all');
 
-let filteredLogs = $derived(() => {
+const filteredLogs = $derived(() => {
   if (filterType === 'all') return $logs;
   return $logs.filter((log) => log.type === filterType);
 });

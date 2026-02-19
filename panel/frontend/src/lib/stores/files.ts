@@ -57,7 +57,12 @@ export function closeEditor(): void {
 }
 
 export function setEditorContent(content: string): void {
-  editorState.update((s) => ({ ...s, content, status: 'ready', statusClass: '' }));
+  editorState.update((s) => ({
+    ...s,
+    content,
+    status: 'ready',
+    statusClass: ''
+  }));
 }
 
 export function setEditorStatus(status: string, statusClass = ''): void {

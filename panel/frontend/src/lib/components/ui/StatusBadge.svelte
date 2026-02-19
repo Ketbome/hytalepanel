@@ -5,7 +5,7 @@ interface Props {
   running: boolean;
 }
 
-let { running }: Props = $props();
+const { running }: Props = $props();
 </script>
 
 <div class="mc-badge inline-flex items-center gap-2 px-3 py-2" class:mc-badge-success={running} class:mc-badge-error={!running}>
