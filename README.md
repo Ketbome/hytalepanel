@@ -2,7 +2,7 @@
 
 Docker-based web panel for managing multiple Hytale dedicated servers.
 
-![Panel Preview](docs/public/images/panel.png)
+![Panel Preview](docs/public/images/dashboard.png)
 
 <p align="center">
   <sub>If this project is useful to you and you'd like to support its development (or others like MinePanel), any help is appreciated:</sub>
