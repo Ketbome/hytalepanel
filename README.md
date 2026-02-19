@@ -4,6 +4,14 @@ Docker-based web panel for managing multiple Hytale dedicated servers.
 
 ![Panel Preview](docs/public/images/panel.png)
 
+<p align="center">
+  <sub>If this project is useful to you and you'd like to support its development (or others like MinePanel), any help is appreciated:</sub>
+  <br><br>
+  <a href="https://buymeacoffee.com/pims2711y" target="_blank">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="150" height="40">
+  </a>
+</p>
+
 ## Features
 
 - 🖥️ **Multi-Server Management** - Create and manage multiple servers from one panel
@@ -93,4 +101,14 @@ Commercial use by companies with >$100k revenue requires permission. See [LICENS
 
 ---
 
-_This project is not affiliated with Hypixel Studios or Hytale._
+<p align="center">
+  <sub>If you'd like to support this project, any help is appreciated 💙</sub>
+  <br><br>
+  <a href="https://buymeacoffee.com/pims2711y" target="_blank">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="150" height="40">
+  </a>
+</p>
+
+<p align="center">
+  <em>This project is not affiliated with Hypixel Studios or Hytale.</em>
+</p>

@@ -226,6 +226,57 @@ router.post('/servers/:id/machine-id/regenerate', async (req, res) => {
   }
 });
 
+// ==================== RELEASE CHANNELS API ====================
+
+interface ReleaseChannelInfo {
+  id: 'stable' | 'pre-release';
+  name: string;
+  description: string;
+  recommended: boolean;
+  available: boolean;
+}
+
+router.get('/servers/:id/channels', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const serverResult = await servers.getServer(id);
+
+    if (!serverResult.success || !serverResult.server) {
+      res.status(404).json({ success: false, error: 'Server not found' });
+      return;
+    }
+
+    // Define available release channels
+    // Future: Query Hytale API for real-time availability
+    const channels: ReleaseChannelInfo[] = [
+      {
+        id: 'stable',
+        name: 'Release (Stable)',
+        description: 'Production-ready builds, tested and stable',
+        recommended: true,
+        available: true
+      },
+      {
+        id: 'pre-release',
+        name: 'Pre-Release (Beta)',
+        description: 'Latest features and updates, may contain bugs',
+        recommended: false,
+        available: true
+      }
+    ];
+
+    const currentChannel = serverResult.server.config.releaseChannel || 'stable';
+
+    res.json({
+      success: true,
+      channels,
+      current: currentChannel
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: (e as Error).message });
+  }
+});
+
 // ==================== FILES API ====================
 
 router.post('/files/upload', upload.single('file'), async (req, res) => {

@@ -10,6 +10,7 @@ import {
 } from '$lib/stores/servers';
 import { showToast } from '$lib/stores/ui';
 import MachineIdCard from '../MachineIdCard.svelte';
+import ReleaseChannelSelector from '../ReleaseChannelSelector.svelte';
 
 // Form state - initialized from activeServer
 let javaXms = $state('2G');
@@ -17,6 +18,7 @@ let javaXmx = $state('4G');
 let port = $state(5520);
 let bindAddr = $state('0.0.0.0');
 let autoDownload = $state(true);
+let releaseChannel = $state<'stable' | 'pre-release'>('stable');
 let useG1gc = $state(true);
 let extraArgs = $state('');
 let useMachineId = $state(false);
@@ -34,6 +36,7 @@ $effect(() => {
     port = $activeServer.port;
     bindAddr = $activeServer.config.bindAddr;
     autoDownload = $activeServer.config.autoDownload;
+    releaseChannel = $activeServer.config.releaseChannel || 'stable';
     useG1gc = $activeServer.config.useG1gc;
     extraArgs = $activeServer.config.extraArgs;
     useMachineId = $activeServer.config.useMachineId;
@@ -55,6 +58,7 @@ async function handleSave(): Promise<void> {
     javaXmx,
     bindAddr,
     autoDownload,
+    releaseChannel,
     useG1gc,
     extraArgs,
     useMachineId
@@ -160,6 +164,18 @@ async function handleSave(): Promise<void> {
         {$_('autoDownloadFiles')}
       </label>
     </div>
+
+    {#if $activeServerId}
+      <ReleaseChannelSelector
+        serverId={$activeServerId}
+        selectedChannel={releaseChannel}
+        disabled={$serverStatus.running}
+        onChannelChange={(channel) => {
+          releaseChannel = channel;
+          markChanged();
+        }}
+      />
+    {/if}
 
     <div class="form-group checkbox-group">
       <label>

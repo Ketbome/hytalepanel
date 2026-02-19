@@ -139,9 +139,9 @@ export function setupSocketHandlers(io: Server): void {
       const status = await docker.getStatus(ctx.containerName);
       socket.emit('status', status);
 
-      // Files status from local filesystem
-      socket.emit('files', await files.checkServerFiles(serverId));
-      socket.emit('downloader-auth', await files.checkAuth(serverId));
+      // Files status (with Docker exec fallback for TrueNAS/custom setups)
+      socket.emit('files', await files.checkServerFiles(serverId, ctx.containerName));
+      socket.emit('downloader-auth', await files.checkAuth(serverId, ctx.containerName));
 
       // Logs only available when container is running
       if (status.running) {
@@ -191,7 +191,12 @@ export function setupSocketHandlers(io: Server): void {
 
     socket.on('download', async () => {
       if (!ctx.containerName || !ctx.serverId) return;
-      await downloader.downloadServerFiles(socket, ctx.containerName, ctx.serverId);
+
+      // Get server config to determine release channel
+      const serverResult = await servers.getServer(ctx.serverId);
+      const channel = serverResult.server?.config.releaseChannel || 'stable';
+
+      await downloader.downloadServerFiles(socket, ctx.containerName, ctx.serverId, channel);
     });
 
     socket.on('restart', async () => {
@@ -288,16 +293,16 @@ export function setupSocketHandlers(io: Server): void {
           await connectLogStream(50);
           const status = await docker.getStatus(ctx.containerName!);
           socket.emit('status', status);
-          socket.emit('files', await files.checkServerFiles(ctx.serverId!));
-          socket.emit('downloader-auth', await files.checkAuth(ctx.serverId!));
+          socket.emit('files', await files.checkServerFiles(ctx.serverId!, ctx.containerName ?? undefined));
+          socket.emit('downloader-auth', await files.checkAuth(ctx.serverId!, ctx.containerName ?? undefined));
         }, 2000);
       }
     });
 
     socket.on('check-files', async () => {
       if (!ctx.serverId) return;
-      socket.emit('files', await files.checkServerFiles(ctx.serverId));
-      socket.emit('downloader-auth', await files.checkAuth(ctx.serverId));
+      socket.emit('files', await files.checkServerFiles(ctx.serverId, ctx.containerName ?? undefined));
+      socket.emit('downloader-auth', await files.checkAuth(ctx.serverId, ctx.containerName ?? undefined));
     });
 
     socket.on('logs:more', async ({ currentCount = 0, batchSize = 200 }: LogsMoreParams) => {
@@ -326,7 +331,7 @@ export function setupSocketHandlers(io: Server): void {
       socket.emit('action-status', { action: 'wipe', status: 'starting' });
       const result = await files.wipeData(ctx.serverId);
       socket.emit('action-status', { action: 'wipe', ...result });
-      socket.emit('downloader-auth', await files.checkAuth(ctx.serverId));
+      socket.emit('downloader-auth', await files.checkAuth(ctx.serverId, ctx.containerName ?? undefined));
     });
 
     socket.on('files:list', async (dirPath = '/') => {

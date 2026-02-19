@@ -2,6 +2,7 @@ import type { Socket } from 'socket.io';
 import * as docker from './docker.js';
 import * as downloader from './downloader.js';
 import * as files from './files.js';
+import * as servers from './servers.js';
 
 export interface UpdateMetadata {
   lastDownloadAt: string | null;
@@ -68,7 +69,7 @@ async function getJarInfo(containerName?: string): Promise<{ size: number; hash:
 
 export async function checkForUpdate(serverId: string, containerName?: string): Promise<UpdateCheckResult> {
   try {
-    const filesStatus = await files.checkServerFiles(serverId);
+    const filesStatus = await files.checkServerFiles(serverId, containerName);
     const metadata = await getMetadata(containerName);
 
     let daysSinceUpdate: number | null = null;
@@ -105,13 +106,22 @@ export async function applyUpdate(
     const status = await docker.getStatus(containerName);
     const wasRunning = status.running;
 
+    // Get server config to determine release channel
+    let channel: 'stable' | 'pre-release' = 'stable';
+    if (serverId) {
+      const serverResult = await servers.getServer(serverId);
+      if (serverResult.success && serverResult.server) {
+        channel = serverResult.server.config.releaseChannel || 'stable';
+      }
+    }
+
     // Download new files FIRST (requires container running, not server)
     socket.emit('update:status', {
       status: 'downloading',
       message: 'Downloading update...',
       serverId
     });
-    await downloader.downloadServerFiles(socket, containerName, serverId);
+    await downloader.downloadServerFiles(socket, containerName, serverId, channel);
 
     // Update metadata
     const jarInfo = await getJarInfo(containerName);

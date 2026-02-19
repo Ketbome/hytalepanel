@@ -5,6 +5,7 @@ export interface ServerConfig {
   javaXmx: string;
   bindAddr: string;
   autoDownload: boolean;
+  releaseChannel?: 'stable' | 'pre-release';
   useG1gc: boolean;
   extraArgs: string;
   useMachineId: boolean;

@@ -214,5 +214,17 @@
   "machineIdRegenerate": "Regenerate ID",
   "machineIdRegenerateConfirm": "This will delete encrypted auth data and require reauthorization. Continue?",
   "machineIdRegenerated": "Machine ID regenerated. Please reauthorize server.",
-  "machineIdInfo": "Machine ID is used to encrypt server authentication tokens. If it changes, previous auth data becomes inaccessible and you must reauthorize."
+  "machineIdInfo": "Machine ID is used to encrypt server authentication tokens. If it changes, previous auth data becomes inaccessible and you must reauthorize.",
+  "releaseChannel": "Release Channel",
+  "releaseChannelSelector": "Select Release Channel",
+  "stableChannel": "Stable",
+  "preReleaseChannel": "Pre-Release",
+  "stableDesc": "Tested and stable releases",
+  "preReleaseDesc": "Early access to new features",
+  "preReleaseWarning": "Pre-release builds may contain bugs and instability. Use only if you want to test new features before they are officially released.",
+  "loadingChannels": "Loading channels...",
+  "channelSaved": "Channel updated",
+  "channelLoadError": "Failed to load channels",
+  "comingSoon": "Coming Soon",
+  "channelFeatureDisabled": "Release channel selection will be available when the official hytale-downloader supports it. Currently, only stable releases can be downloaded automatically."
 }

@@ -71,6 +71,7 @@ describe("Updater Service", () => {
         mockSocket as any,
         "test-container",
         "test-server",
+        "stable",
       );
 
       // Should restart since server was running

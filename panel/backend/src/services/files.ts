@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import config from '../config/index.js';
+import * as docker from './docker.js';
 import { getServerDataPath } from './servers.js';
 
 const { editableExtensions, uploadAllowedExtensions } = config.files;
@@ -298,26 +299,54 @@ export async function download(filePath: string, serverId: string): Promise<Down
   }
 }
 
-export async function checkServerFiles(serverId: string): Promise<ServerFilesStatus> {
+export async function checkServerFiles(serverId: string, containerName?: string): Promise<ServerFilesStatus> {
+  // Try direct filesystem access first (works when HOST_DATA_PATH is configured)
   try {
     const serverDataPath = getServerDataPath(serverId);
     const entries = await fs.readdir(serverDataPath);
     const hasJar = entries.some((f) => f === 'HytaleServer.jar');
     const hasAssets = entries.some((f) => f === 'Assets.zip');
     return { hasJar, hasAssets, ready: hasJar && hasAssets };
-  } catch {
-    return { hasJar: false, hasAssets: false, ready: false };
+  } catch (directError) {
+    // Fallback: Check inside container using Docker exec (for TrueNAS, etc.)
+    if (!containerName) {
+      return { hasJar: false, hasAssets: false, ready: false };
+    }
+
+    try {
+      const output = await docker.execCommand('ls -1 /opt/hytale', 5000, containerName);
+      const hasJar = output.includes('HytaleServer.jar');
+      const hasAssets = output.includes('Assets.zip');
+      return { hasJar, hasAssets, ready: hasJar && hasAssets };
+    } catch {
+      return { hasJar: false, hasAssets: false, ready: false };
+    }
   }
 }
 
-export async function checkAuth(serverId: string): Promise<boolean> {
+export async function checkAuth(serverId: string, containerName?: string): Promise<boolean> {
+  // Try direct filesystem access first
   try {
     const serverDataPath = getServerDataPath(serverId);
     const credPath = path.join(serverDataPath, '.hytale-downloader-credentials.json');
     const content = await fs.readFile(credPath, 'utf-8');
     return content.includes('access_token');
   } catch {
-    return false;
+    // Fallback: Check inside container using Docker exec
+    if (!containerName) {
+      return false;
+    }
+
+    try {
+      const output = await docker.execCommand(
+        'cat /opt/hytale/.hytale-downloader-credentials.json 2>/dev/null || echo ""',
+        5000,
+        containerName
+      );
+      return output.includes('access_token');
+    } catch {
+      return false;
+    }
   }
 }
 
