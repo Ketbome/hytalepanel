@@ -10,7 +10,7 @@ const mockExecCommand =
   >();
 const mockDownloadServerFiles =
   jest.fn<
-    (socket: Socket, containerName: string, serverId: string) => Promise<void>
+    (socket: Socket, containerName: string, serverId: string, channel?: 'stable' | 'pre-release') => Promise<void>
   >();
 const mockCheckServerFiles =
   jest.fn<
