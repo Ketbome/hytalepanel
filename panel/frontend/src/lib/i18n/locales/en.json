@@ -3,6 +3,10 @@
   "online": "ONLINE",
   "offline": "OFFLINE",
   "console": "Console",
+  "serverControl": "Server Control",
+  "dangerZone": "Danger Zone",
+  "serverInfo": "Server Info",
+  "actions": "Actions",
   "enterCommand": "Enter command...",
   "send": "SEND",
   "setup": "Setup",
@@ -226,6 +230,7 @@
   "loadingChannels": "Loading channels...",
   "channelSaved": "Channel updated",
   "channelLoadError": "Failed to load channels",
+  "serverUpdates": "Server Updates",
   "comingSoon": "Coming Soon",
   "channelFeatureDisabled": "Release channel selection will be available when the official hytale-downloader supports it. Currently, only stable releases can be downloaded automatically."
 }

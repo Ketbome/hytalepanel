@@ -59,8 +59,11 @@ function handleKeydown(e: KeyboardEvent): void {
 <svelte:window onkeydown={handleKeydown} />
 
 {#if $isLoading}
-  <div class="loading-screen">
-    <div class="loading-spinner"></div>
+  <div class="fixed inset-0 flex items-center justify-center bg-panel-bg">
+    <div class="flex flex-col items-center gap-4 animate-fade-in">
+      <div class="mc-spinner"></div>
+      <span class="font-mono text-text-muted">Loading...</span>
+    </div>
   </div>
 {:else if !$isAuthenticated}
   <LoginScreen />
@@ -69,14 +72,49 @@ function handleKeydown(e: KeyboardEvent): void {
   <Dashboard />
 {:else}
   <!-- Server view - managing a specific server -->
-  <div class="container animate-fade-in" class:sidebar-hidden={$sidebarHidden} class:panel-expanded={$panelExpanded}>
+  <div 
+    class="max-w-[1600px] mx-auto p-5 h-screen flex flex-col animate-fade-in"
+    class:sidebar-collapsed={$sidebarHidden}
+  >
     <Header />
-    <div class="grid">
-      <div class="main">
+    
+    <div 
+      class="flex-1 grid gap-5 min-h-0"
+      class:grid-cols-1={$panelExpanded}
+      class:lg:grid-cols-[1fr_550px]={!$panelExpanded && !$sidebarHidden}
+    >
+      <!-- Main console area -->
+      <main class="min-h-0 flex flex-col relative" class:hidden={$panelExpanded}>
         <Console />
-        <button class="btn-show-sidebar" title="Show Panel" onclick={showSidebar}>☰</button>
-      </div>
-      <Sidebar />
+        
+        {#if $sidebarHidden}
+          <button 
+            class="absolute top-4 right-4 mc-btn mc-btn-sm mc-btn-wood"
+            title="Show Panel" 
+            onclick={showSidebar}
+          >
+            ☰
+          </button>
+        {/if}
+      </main>
+      
+      <!-- Sidebar -->
+      {#if !$sidebarHidden || $panelExpanded}
+        <div 
+          class="min-h-0"
+          class:fixed={$sidebarHidden && !$panelExpanded}
+          class:inset-y-0={$sidebarHidden && !$panelExpanded}
+          class:right-0={$sidebarHidden && !$panelExpanded}
+          class:w-full={$sidebarHidden && !$panelExpanded}
+          class:max-w-md={$sidebarHidden && !$panelExpanded}
+          class:z-40={$sidebarHidden && !$panelExpanded}
+          class:p-5={$sidebarHidden && !$panelExpanded}
+          class:bg-opacity-95={$sidebarHidden && !$panelExpanded}
+          class:bg-panel-bg={$sidebarHidden && !$panelExpanded}
+        >
+          <Sidebar />
+        </div>
+      {/if}
     </div>
   </div>
 {/if}

@@ -246,209 +246,352 @@ function getModUrl(mod: InstalledMod | ModProject): string | null {
 }
 </script>
 
-<div class="mods-view-toggle">
-  <div class="mods-api-status">
-    <span
-      class="mods-api-dot"
-      class:ok={$modtaleStatus.valid}
-      class:error={$modtaleStatus.configured && !$modtaleStatus.valid}
-      title={$modtaleStatus.valid ? 'Modtale: OK' : $modtaleStatus.configured ? `Modtale: ${$modtaleStatus.error || 'Invalid'}` : 'Modtale: Not configured'}
-    >M</span>
-    <span
-      class="mods-api-dot"
-      class:ok={$curseforgeStatus.valid}
-      class:error={$curseforgeStatus.configured && !$curseforgeStatus.valid}
-      title={$curseforgeStatus.valid ? 'CurseForge: OK' : $curseforgeStatus.configured ? `CurseForge: ${$curseforgeStatus.error || 'Invalid'}` : 'CurseForge: Not configured'}
-    >CF</span>
-  </div>
-  <button class="mc-btn small" class:active={$currentView === 'installed'} onclick={() => switchView('installed')}>
-    {$_('local')}
-  </button>
-  <button class="mc-btn small" class:active={$currentView === 'browse'} onclick={() => switchView('browse')}>
-    {$_('browse')}
-  </button>
-  <button class="mc-btn small" onclick={checkForUpdates} disabled={isCheckingUpdates}>
-    ⟳ {$_('checkUpdates')}
-  </button>
-</div>
-
-{#if $currentView === 'browse'}
-  <div class="mods-provider-toggle">
-    <button
-      class="provider-btn"
-      class:active={$currentProvider === 'modtale'}
-      class:unavailable={!$modtaleStatus.configured || !$modtaleStatus.valid}
-      onclick={() => switchProvider('modtale')}
-      title={$modtaleStatus.valid ? 'Modtale API ready' : ($modtaleStatus.configured ? 'API key invalid' : 'API key not configured')}
-    >
-      <span class="provider-dot" class:ok={$modtaleStatus.valid} class:error={$modtaleStatus.configured && !$modtaleStatus.valid}></span>
-      Modtale
-    </button>
-    <button
-      class="provider-btn"
-      class:active={$currentProvider === 'curseforge'}
-      class:unavailable={!$curseforgeStatus.configured || !$curseforgeStatus.valid}
-      onclick={() => switchProvider('curseforge')}
-      title={$curseforgeStatus.valid ? 'CurseForge API ready' : ($curseforgeStatus.configured ? 'API key invalid' : 'API key not configured')}
-    >
-      <span class="provider-dot" class:ok={$curseforgeStatus.valid} class:error={$curseforgeStatus.configured && !$curseforgeStatus.valid}></span>
-      CurseForge
-    </button>
-  </div>
-{/if}
-
-{#if $currentView === 'browse'}
-  <div class="mods-search">
-    <input
-      type="text"
-      class="mods-search-input"
-      placeholder={$_('searchForMods')}
-      bind:value={searchQuery}
-      onkeypress={(e: KeyboardEvent) => e.key === 'Enter' && searchMods()}
-    />
-    {#if $currentProvider === 'modtale'}
-      <select class="mods-filter-select" bind:value={classificationFilter} onchange={() => searchMods()}>
-        <option value="">{$_('allTypes')}</option>
-        <option value="PLUGIN">{$_('typePlugin')}</option>
-        <option value="DATA">{$_('typeData')}</option>
-        <option value="ART">{$_('typeArt')}</option>
-        <option value="SAVE">{$_('typeSave')}</option>
-        <option value="MODPACK">{$_('typeModpack')}</option>
-      </select>
-    {/if}
-    <button class="mc-btn small" onclick={() => searchMods()}>{$_('search')}</button>
-  </div>
-{/if}
-
-{#if $currentView === 'installed'}
-  <div class="mods-list">
-    {#if $isModsLoading}
-      {#each Array(3) as _}
-        <Skeleton type="card" />
-      {/each}
-    {:else if $installedMods.length === 0}
-      <div class="mods-empty">{$_('noModsInstalled')}</div>
-    {:else}
-      {#each $installedMods as mod}
-        {@const updateInfo = getUpdateInfo(mod.id)}
-        {@const modUrl = getModUrl(mod)}
-        <div class="mod-card" class:has-update={updateInfo}>
-          <div class="mod-icon">
-            {#if mod.projectIconUrl}
-              <img src={mod.projectIconUrl} alt="" onerror={(e: Event) => (e.target as HTMLImageElement).style.display='none'} />
-            {:else}
-              ?
-            {/if}
-          </div>
-          <div class="mod-info">
-            <div class="mod-title">
-              {#if modUrl}
-                <a href={modUrl} target="_blank" class="mod-link">{mod.projectTitle}</a>
-              {:else}
-                {mod.projectTitle}
-              {/if}
-              <span class="mod-classification {mod.classification}">{mod.classification}</span>
-              {#if mod.providerId === 'curseforge'}
-                <span class="mod-provider-badge cf">CF</span>
-              {/if}
-              {#if updateInfo}
-                <span class="mod-update-badge">{$_('updateAvailable')}</span>
-              {/if}
-            </div>
-            <div class="mod-meta">
-              <span>v{mod.versionName}</span>
-              {#if updateInfo}
-                <span class="update-version">→ v{updateInfo.latestVersion}</span>
-              {/if}
-              <span style="color: var(--{mod.enabled ? 'success' : 'error'})">{mod.enabled ? 'Enabled' : 'Disabled'}</span>
-              {#if mod.isLocal}
-                <span class="mod-local-badge">Local</span>
-              {/if}
-            </div>
-          </div>
-          <div class="mod-actions">
-            {#if updateInfo}
-              <button class="mod-btn update" onclick={() => updateMod(mod, updateInfo)}>{$_('update')}</button>
-            {/if}
-            <div class="mod-toggle" class:enabled={mod.enabled} role="button" tabindex="0" onclick={() => toggleMod(mod)} onkeydown={(e: KeyboardEvent) => e.key === 'Enter' && toggleMod(mod)} title={mod.enabled ? $_('disable') : $_('enable')}></div>
-            <button class="mod-btn danger" onclick={() => uninstallMod(mod.id)}>{$_('remove')}</button>
-          </div>
-        </div>
-      {/each}
-    {/if}
-  </div>
-{:else}
-  <div class="mods-list">
-    {#if $isModsLoading}
-      {#each Array(4) as _}
-        <Skeleton type="card" />
-      {/each}
-    {:else if $searchResults.length === 0}
-      <div class="mods-empty">{$_('noModsFound')}</div>
-    {:else}
-      {#each $searchResults as mod}
-        {@const alreadyInstalled = isModInstalled(mod.id)}
-        {@const latestVersion = mod.latestVersion || mod.versions?.[0]}
-        {@const modUrl = getModUrl(mod)}
-        {@const noDistribution = 'allowDistribution' in mod && mod.allowDistribution === false}
-        <div class="mod-card" class:no-distribution={noDistribution}>
-          <div class="mod-icon">
-            {#if mod.iconUrl}
-              <img src={mod.iconUrl} alt="" onerror={(e: Event) => (e.target as HTMLImageElement).style.display='none'} />
-            {:else}
-              ?
-            {/if}
-          </div>
-          <div class="mod-info">
-            <div class="mod-title">
-              {#if modUrl}
-                <a href={modUrl} target="_blank" class="mod-link">{mod.title}</a>
-              {:else}
-                {mod.title}
-              {/if}
-              <span class="mod-classification {mod.classification}">{mod.classification}</span>
-              {#if noDistribution}
-                <span class="mod-no-dist-badge" title={$_('modNoDistribution')}>⚠</span>
-              {/if}
-            </div>
-            <div class="mod-meta">
-              <span>{mod.author}</span>
-              {#if mod.downloads}
-                <span>{formatNumber(mod.downloads)} downloads</span>
-              {/if}
-              {#if latestVersion?.version}
-                <span>v{latestVersion.version}</span>
-              {/if}
-            </div>
-            {#if mod.shortDescription}
-              <div class="mod-description">{mod.shortDescription}</div>
-            {/if}
-          </div>
-          <div class="mod-actions">
-            <button class="mod-btn install" onclick={() => installMod(mod)} disabled={alreadyInstalled || noDistribution}>
-              {#if noDistribution}
-                {$_('manualOnly')}
-              {:else if alreadyInstalled}
-                {$_('installed')}
-              {:else}
-                {$_('install')}
-              {/if}
-            </button>
-          </div>
-        </div>
-      {/each}
-    {/if}
-  </div>
-
-  {#if $searchResults.length > 0}
-    <div class="mods-pagination">
-      <button class="mc-btn small" onclick={() => changePage(-1)} disabled={$currentPage <= 1}>
-        &lt; {$_('prev')}
+<div class="space-y-3">
+  <!-- View Toggle & API Status -->
+  <div class="flex flex-wrap items-center justify-between gap-3 px-3 py-2 bg-panel-light border-4 border-panel-border">
+    <!-- API Status -->
+    <div class="flex items-center gap-2">
+      <span 
+        class="px-2 py-1 font-mono text-xs border-2 transition-all cursor-default
+               {$modtaleStatus.valid 
+                 ? 'bg-grass/30 border-grass text-grass-light' 
+                 : $modtaleStatus.configured 
+                   ? 'bg-error/30 border-error text-error' 
+                   : 'bg-panel-bg border-panel-border text-text-dim'}"
+        title={$modtaleStatus.valid ? 'Modtale: OK' : $modtaleStatus.configured ? `Modtale: ${$modtaleStatus.error || 'Invalid'}` : 'Modtale: Not configured'}
+      >
+        M
+      </span>
+      <span 
+        class="px-2 py-1 font-mono text-xs border-2 transition-all cursor-default
+               {$curseforgeStatus.valid 
+                 ? 'bg-grass/30 border-grass text-grass-light' 
+                 : $curseforgeStatus.configured 
+                   ? 'bg-error/30 border-error text-error' 
+                   : 'bg-panel-bg border-panel-border text-text-dim'}"
+        title={$curseforgeStatus.valid ? 'CurseForge: OK' : $curseforgeStatus.configured ? `CurseForge: ${$curseforgeStatus.error || 'Invalid'}` : 'CurseForge: Not configured'}
+      >
+        CF
+      </span>
+    </div>
+    
+    <!-- View Buttons -->
+    <div class="flex items-center gap-2">
+      <button 
+        class="px-3 py-2 font-mono text-sm border-3 transition-all
+               {$currentView === 'installed' 
+                 ? 'bg-grass border-grass-dark text-panel-bg shadow-mc-btn-pressed' 
+                 : 'bg-panel-bg border-panel-border text-text-muted hover:bg-panel-lighter hover:text-text shadow-mc-btn'}"
+        onclick={() => switchView('installed')}
+      >
+        📦 {$_('local')}
       </button>
-      <span class="mods-page-info">{$_('page')} {$currentPage}</span>
-      <button class="mc-btn small" onclick={() => changePage(1)} disabled={!$hasMore}>
-        {$_('next')} &gt;
+      <button 
+        class="px-3 py-2 font-mono text-sm border-3 transition-all
+               {$currentView === 'browse' 
+                 ? 'bg-grass border-grass-dark text-panel-bg shadow-mc-btn-pressed' 
+                 : 'bg-panel-bg border-panel-border text-text-muted hover:bg-panel-lighter hover:text-text shadow-mc-btn'}"
+        onclick={() => switchView('browse')}
+      >
+        🌐 {$_('browse')}
+      </button>
+      <button 
+        class="px-3 py-2 font-mono text-sm border-3 transition-all
+               bg-hytale-gold/20 border-hytale-gold/50 text-hytale-gold
+               hover:bg-hytale-gold hover:text-panel-bg
+               disabled:opacity-50 disabled:cursor-not-allowed
+               shadow-mc-btn active:shadow-mc-btn-pressed"
+        onclick={checkForUpdates} 
+        disabled={isCheckingUpdates}
+      >
+        ⟳ {$_('checkUpdates')}
+      </button>
+    </div>
+  </div>
+
+  <!-- Provider Toggle (Browse mode) -->
+  {#if $currentView === 'browse'}
+    <div class="flex items-center gap-2 px-3 py-2 bg-panel-light border-4 border-panel-border">
+      <span class="font-mono text-sm text-text-dim mr-2">Provider:</span>
+      <button
+        class="flex items-center gap-2 px-4 py-2 font-mono text-sm border-3 transition-all
+               {$currentProvider === 'modtale' 
+                 ? 'bg-info border-info text-white shadow-mc-btn-pressed' 
+                 : 'bg-panel-bg border-panel-border text-text-muted hover:bg-panel-lighter shadow-mc-btn'}
+               {(!$modtaleStatus.configured || !$modtaleStatus.valid) ? 'opacity-50' : ''}"
+        onclick={() => switchProvider('modtale')}
+        title={$modtaleStatus.valid ? 'Modtale API ready' : ($modtaleStatus.configured ? 'API key invalid' : 'API key not configured')}
+      >
+        <span class="w-2 h-2 rounded-full {$modtaleStatus.valid ? 'bg-grass' : $modtaleStatus.configured ? 'bg-error' : 'bg-stone'}"></span>
+        Modtale
+      </button>
+      <button
+        class="flex items-center gap-2 px-4 py-2 font-mono text-sm border-3 transition-all
+               {$currentProvider === 'curseforge' 
+                 ? 'bg-[#f16436] border-[#c44e2b] text-white shadow-mc-btn-pressed' 
+                 : 'bg-panel-bg border-panel-border text-text-muted hover:bg-panel-lighter shadow-mc-btn'}
+               {(!$curseforgeStatus.configured || !$curseforgeStatus.valid) ? 'opacity-50' : ''}"
+        onclick={() => switchProvider('curseforge')}
+        title={$curseforgeStatus.valid ? 'CurseForge API ready' : ($curseforgeStatus.configured ? 'API key invalid' : 'API key not configured')}
+      >
+        <span class="w-2 h-2 rounded-full {$curseforgeStatus.valid ? 'bg-grass' : $curseforgeStatus.configured ? 'bg-error' : 'bg-stone'}"></span>
+        CurseForge
       </button>
     </div>
   {/if}
-{/if}
+
+  <!-- Search Bar (Browse mode) -->
+  {#if $currentView === 'browse'}
+    <div class="flex flex-wrap items-center gap-2 px-3 py-2 bg-panel-light border-4 border-panel-border">
+      <input
+        type="text"
+        class="flex-1 min-w-[200px] px-4 py-2 font-mono text-sm
+               bg-panel-bg border-3 border-panel-border text-text
+               placeholder:text-text-dim
+               focus:outline-none focus:border-grass/50"
+        placeholder={$_('searchForMods')}
+        bind:value={searchQuery}
+        onkeypress={(e: KeyboardEvent) => e.key === 'Enter' && searchMods()}
+      />
+      {#if $currentProvider === 'modtale'}
+        <select 
+          class="px-3 py-2 font-mono text-sm appearance-none cursor-pointer
+                 bg-panel-bg border-3 border-panel-border text-text
+                 focus:outline-none focus:border-grass/50"
+          bind:value={classificationFilter} 
+          onchange={() => searchMods()}
+        >
+          <option value="">{$_('allTypes')}</option>
+          <option value="PLUGIN">{$_('typePlugin')}</option>
+          <option value="DATA">{$_('typeData')}</option>
+          <option value="ART">{$_('typeArt')}</option>
+          <option value="SAVE">{$_('typeSave')}</option>
+          <option value="MODPACK">{$_('typeModpack')}</option>
+        </select>
+      {/if}
+      <button 
+        class="px-4 py-2 font-mono text-sm border-3 transition-all
+               bg-grass border-grass-dark text-panel-bg
+               hover:bg-grass-light shadow-mc-btn active:shadow-mc-btn-pressed"
+        onclick={() => searchMods()}
+      >
+        🔍 {$_('search')}
+      </button>
+    </div>
+  {/if}
+
+  <!-- Installed Mods -->
+  {#if $currentView === 'installed'}
+    <div class="space-y-2">
+      {#if $isModsLoading}
+        {#each Array(3) as _}
+          <Skeleton type="card" />
+        {/each}
+      {:else if $installedMods.length === 0}
+        <div class="px-4 py-8 text-center bg-panel-light border-4 border-panel-border">
+          <div class="text-3xl mb-2">📭</div>
+          <div class="font-mono text-text-dim">{$_('noModsInstalled')}</div>
+        </div>
+      {:else}
+        {#each $installedMods as mod}
+          {@const updateInfo = getUpdateInfo(mod.id)}
+          {@const modUrl = getModUrl(mod)}
+          <div class="flex items-start gap-4 p-4 bg-panel-light border-4 transition-all
+                      {updateInfo ? 'border-hytale-gold/70 hover:border-hytale-gold' : 'border-panel-border hover:border-grass/50'}">
+            <!-- Icon -->
+            <div class="w-14 h-14 shrink-0 bg-panel-bg border-3 border-panel-border flex items-center justify-center overflow-hidden">
+              {#if mod.projectIconUrl}
+                <img src={mod.projectIconUrl} alt="" class="w-full h-full object-cover" onerror={(e: Event) => (e.target as HTMLImageElement).style.display='none'} />
+              {:else}
+                <span class="font-mono text-2xl text-text-dim">?</span>
+              {/if}
+            </div>
+            
+            <!-- Info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex flex-wrap items-center gap-2 mb-1">
+                {#if modUrl}
+                  <a href={modUrl} target="_blank" class="font-mono text-base text-grass-light hover:text-grass hover:underline">{mod.projectTitle}</a>
+                {:else}
+                  <span class="font-mono text-base text-text">{mod.projectTitle}</span>
+                {/if}
+                <span class="px-1.5 py-0.5 text-xs font-mono border 
+                            {mod.classification === 'PLUGIN' ? 'bg-info/20 border-info/50 text-info' : 
+                             mod.classification === 'DATA' ? 'bg-grass/20 border-grass/50 text-grass-light' :
+                             mod.classification === 'ART' ? 'bg-warning/20 border-warning/50 text-warning' :
+                             'bg-stone/30 border-stone text-text-muted'}">{mod.classification}</span>
+                {#if mod.providerId === 'curseforge'}
+                  <span class="px-1.5 py-0.5 text-xs font-mono bg-[#f16436]/20 border border-[#f16436]/50 text-[#f16436]">CF</span>
+                {/if}
+                {#if updateInfo}
+                  <span class="px-1.5 py-0.5 text-xs font-mono bg-hytale-gold/30 border border-hytale-gold text-hytale-gold animate-pulse">{$_('updateAvailable')}</span>
+                {/if}
+              </div>
+              <div class="flex flex-wrap items-center gap-3 font-mono text-sm text-text-muted">
+                <span>v{mod.versionName}</span>
+                {#if updateInfo}
+                  <span class="text-hytale-gold">→ v{updateInfo.latestVersion}</span>
+                {/if}
+                <span class:text-grass-light={mod.enabled} class:text-error={!mod.enabled}>
+                  {mod.enabled ? '● Enabled' : '○ Disabled'}
+                </span>
+                {#if mod.isLocal}
+                  <span class="px-1.5 py-0.5 text-xs bg-panel-bg border border-panel-border">Local</span>
+                {/if}
+              </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex items-center gap-2 shrink-0">
+              {#if updateInfo}
+                <button 
+                  class="px-3 py-2 font-mono text-xs border-3 transition-all
+                         bg-hytale-gold border-hytale-orange text-panel-bg
+                         hover:bg-hytale-orange shadow-mc-btn active:shadow-mc-btn-pressed"
+                  onclick={() => updateMod(mod, updateInfo)}
+                >
+                  ⬆ {$_('update')}
+                </button>
+              {/if}
+              <button 
+                class="w-12 h-8 border-3 transition-all relative
+                       {mod.enabled 
+                         ? 'bg-grass border-grass-dark' 
+                         : 'bg-stone-dark border-stone'}"
+                role="switch"
+                aria-checked={mod.enabled}
+                onclick={() => toggleMod(mod)}
+                title={mod.enabled ? $_('disable') : $_('enable')}
+              >
+                <span class="absolute top-1 w-5 h-5 bg-text transition-all
+                            {mod.enabled ? 'right-1' : 'left-1'}"></span>
+              </button>
+              <button 
+                class="px-3 py-2 font-mono text-xs border-3 transition-all
+                       bg-error/30 border-error/70 text-error
+                       hover:bg-error hover:text-white shadow-mc-btn active:shadow-mc-btn-pressed"
+                onclick={() => uninstallMod(mod.id)}
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        {/each}
+      {/if}
+    </div>
+  {:else}
+    <!-- Browse Mods -->
+    <div class="space-y-2">
+      {#if $isModsLoading}
+        {#each Array(4) as _}
+          <Skeleton type="card" />
+        {/each}
+      {:else if $searchResults.length === 0}
+        <div class="px-4 py-8 text-center bg-panel-light border-4 border-panel-border">
+          <div class="text-3xl mb-2">🔍</div>
+          <div class="font-mono text-text-dim">{$_('noModsFound')}</div>
+        </div>
+      {:else}
+        {#each $searchResults as mod}
+          {@const alreadyInstalled = isModInstalled(mod.id)}
+          {@const latestVersion = mod.latestVersion || mod.versions?.[0]}
+          {@const modUrl = getModUrl(mod)}
+          {@const noDistribution = 'allowDistribution' in mod && mod.allowDistribution === false}
+          <div class="flex items-start gap-4 p-4 bg-panel-light border-4 border-panel-border transition-all
+                      {noDistribution ? 'opacity-60' : 'hover:border-grass/50'}">
+            <!-- Icon -->
+            <div class="w-14 h-14 shrink-0 bg-panel-bg border-3 border-panel-border flex items-center justify-center overflow-hidden">
+              {#if mod.iconUrl}
+                <img src={mod.iconUrl} alt="" class="w-full h-full object-cover" onerror={(e: Event) => (e.target as HTMLImageElement).style.display='none'} />
+              {:else}
+                <span class="font-mono text-2xl text-text-dim">?</span>
+              {/if}
+            </div>
+            
+            <!-- Info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex flex-wrap items-center gap-2 mb-1">
+                {#if modUrl}
+                  <a href={modUrl} target="_blank" class="font-mono text-base text-grass-light hover:text-grass hover:underline">{mod.title}</a>
+                {:else}
+                  <span class="font-mono text-base text-text">{mod.title}</span>
+                {/if}
+                <span class="px-1.5 py-0.5 text-xs font-mono border 
+                            {mod.classification === 'PLUGIN' ? 'bg-info/20 border-info/50 text-info' : 
+                             mod.classification === 'DATA' ? 'bg-grass/20 border-grass/50 text-grass-light' :
+                             mod.classification === 'ART' ? 'bg-warning/20 border-warning/50 text-warning' :
+                             'bg-stone/30 border-stone text-text-muted'}">{mod.classification}</span>
+                {#if noDistribution}
+                  <span class="px-1.5 py-0.5 text-xs font-mono bg-warning/30 border border-warning text-warning" title={$_('modNoDistribution')}>⚠</span>
+                {/if}
+              </div>
+              <div class="flex flex-wrap items-center gap-3 font-mono text-sm text-text-muted mb-2">
+                <span>{mod.author}</span>
+                {#if mod.downloads}
+                  <span>📥 {formatNumber(mod.downloads)}</span>
+                {/if}
+                {#if latestVersion?.version}
+                  <span>v{latestVersion.version}</span>
+                {/if}
+              </div>
+              {#if mod.shortDescription}
+                <div class="font-mono text-sm text-text-dim line-clamp-2">{mod.shortDescription}</div>
+              {/if}
+            </div>
+            
+            <!-- Actions -->
+            <div class="shrink-0">
+              <button 
+                class="px-4 py-2 font-mono text-sm border-3 transition-all
+                       {alreadyInstalled 
+                         ? 'bg-stone-dark border-stone text-text-dim cursor-not-allowed' 
+                         : noDistribution 
+                           ? 'bg-warning/20 border-warning text-warning cursor-not-allowed'
+                           : 'bg-grass border-grass-dark text-panel-bg hover:bg-grass-light shadow-mc-btn active:shadow-mc-btn-pressed'}"
+                onclick={() => installMod(mod)} 
+                disabled={alreadyInstalled || noDistribution}
+              >
+                {#if noDistribution}
+                  ⚠ {$_('manualOnly')}
+                {:else if alreadyInstalled}
+                  ✓ {$_('installed')}
+                {:else}
+                  ⬇ {$_('install')}
+                {/if}
+              </button>
+            </div>
+          </div>
+        {/each}
+      {/if}
+    </div>
+
+    <!-- Pagination -->
+    {#if $searchResults.length > 0}
+      <div class="flex items-center justify-center gap-4 px-4 py-3 bg-panel-light border-4 border-panel-border">
+        <button 
+          class="px-4 py-2 font-mono text-sm border-3 transition-all
+                 bg-panel-bg border-panel-border text-text-muted
+                 hover:bg-panel-lighter hover:text-text
+                 disabled:opacity-50 disabled:cursor-not-allowed
+                 shadow-mc-btn active:shadow-mc-btn-pressed"
+          onclick={() => changePage(-1)} 
+          disabled={$currentPage <= 1}
+        >
+          ◀ {$_('prev')}
+        </button>
+        <span class="font-mono text-text-muted">{$_('page')} {$currentPage}</span>
+        <button 
+          class="px-4 py-2 font-mono text-sm border-3 transition-all
+                 bg-panel-bg border-panel-border text-text-muted
+                 hover:bg-panel-lighter hover:text-text
+                 disabled:opacity-50 disabled:cursor-not-allowed
+                 shadow-mc-btn active:shadow-mc-btn-pressed"
+          onclick={() => changePage(1)} 
+          disabled={!$hasMore}
+        >
+          {$_('next')} ▶
+        </button>
+      </div>
+    {/if}
+  {/if}
+</div>

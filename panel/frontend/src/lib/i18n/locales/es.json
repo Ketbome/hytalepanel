@@ -3,6 +3,10 @@
   "online": "EN LINEA",
   "offline": "DESCONECTADO",
   "console": "Consola",
+  "serverControl": "Control del Servidor",
+  "dangerZone": "Zona de Peligro",
+  "serverInfo": "Info del Servidor",
+  "actions": "Acciones",
   "enterCommand": "Ingresa un comando...",
   "send": "ENVIAR",
   "setup": "Configuracion",
@@ -226,6 +230,7 @@
   "loadingChannels": "Cargando canales...",
   "channelSaved": "Canal actualizado",
   "channelLoadError": "Error al cargar canales",
+  "serverUpdates": "Actualizaciones del Servidor"
   "comingSoon": "Próximamente",
   "channelFeatureDisabled": "La selección de canal de lanzamiento estará disponible cuando el hytale-downloader oficial lo soporte. Actualmente, solo se pueden descargar versiones estables automáticamente."
 }

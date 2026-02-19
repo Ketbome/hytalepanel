@@ -9,13 +9,13 @@ interface SkeletonProps {
 let { type = 'text', height, width, className = '' }: SkeletonProps = $props();
 
 const typeClasses = {
-  text: 'h-4 rounded-sm',
-  card: 'h-32 rounded-md',
-  button: 'h-10 rounded-sm',
-  circle: 'rounded-full aspect-square'
+  text: 'h-4',
+  card: 'h-32',
+  button: 'h-10',
+  circle: 'aspect-square'
 };
 
-const baseClasses = 'bg-mc-panel animate-pulse';
+const baseClasses = 'bg-panel-light border-2 border-panel-border animate-pulse';
 
 const classes = $derived(() => {
   return `${baseClasses} ${typeClasses[type]} ${className}`.trim();

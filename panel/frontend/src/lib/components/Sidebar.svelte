@@ -25,9 +25,10 @@ function hideSidebar(): void {
 }
 </script>
 
-<div class="sidebar">
-  <div class="card">
-    <div class="tabs-header">
+<aside class="h-full flex flex-col">
+  <div class="mc-panel h-full flex flex-col">
+    <!-- Tabs navigation -->
+    <div class="flex flex-wrap border-b-2 border-panel-bg">
       {#each tabs as tab}
         <Button
           variant="tab"
@@ -39,35 +40,61 @@ function hideSidebar(): void {
       {/each}
     </div>
 
-    <div id="tab-setup" class="tab-content animate-fade-in" class:active={$activeTab === 'setup'}>
-      <SetupTab />
+    <!-- Tab content -->
+    <div class="flex-1 overflow-hidden">
+      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'setup'}>
+        <div class="p-5 animate-fade-in">
+          <SetupTab />
+        </div>
+      </div>
+
+      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'files'}>
+        <div class="p-5 animate-fade-in">
+          <FilesTab />
+        </div>
+      </div>
+
+      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'mods'}>
+        <div class="p-5 animate-fade-in">
+          <ModsTab />
+        </div>
+      </div>
+
+      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'control'}>
+        <div class="p-5 animate-fade-in">
+          <ControlTab />
+        </div>
+      </div>
+
+      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'config'}>
+        <div class="p-5 animate-fade-in">
+          <ConfigTab />
+        </div>
+      </div>
+
+      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'backups'}>
+        <div class="p-5 animate-fade-in">
+          <BackupsTab />
+        </div>
+      </div>
     </div>
 
-    <div id="tab-files" class="tab-content animate-fade-in" class:active={$activeTab === 'files'}>
-      <FilesTab />
-    </div>
-
-    <div id="tab-mods" class="tab-content animate-fade-in" class:active={$activeTab === 'mods'}>
-      <ModsTab />
-    </div>
-
-    <div id="tab-control" class="tab-content animate-fade-in" class:active={$activeTab === 'control'}>
-      <ControlTab />
-    </div>
-
-    <div id="tab-config" class="tab-content animate-fade-in" class:active={$activeTab === 'config'}>
-      <ConfigTab />
-    </div>
-
-    <div id="tab-backups" class="tab-content animate-fade-in" class:active={$activeTab === 'backups'}>
-      <BackupsTab />
-    </div>
-
-    <div class="sidebar-toolbar">
-      <button id="btn-expand-panel" class="sidebar-btn" title="Expand" onclick={toggleExpand}>
+    <!-- Toolbar -->
+    <div class="flex justify-end gap-2 p-3 border-t-2 border-panel-border bg-panel-light">
+      <button 
+        class="mc-btn mc-btn-sm !px-3"
+        title="Expand" 
+        onclick={toggleExpand}
+      >
         {$panelExpanded ? '✕' : '⤢'}
       </button>
-      <button id="btn-hide-sidebar" class="sidebar-btn" title="Hide" onclick={hideSidebar}>✕</button>
+      <button 
+        class="mc-btn mc-btn-sm mc-btn-danger !px-3"
+        title="Hide" 
+        onclick={hideSidebar}
+      >
+        ✕
+      </button>
     </div>
   </div>
-</div>
+</aside>

@@ -20,50 +20,69 @@ let {
 let isRunning = $derived(server.status === 'running');
 </script>
 
-<div class="server-card transition-all duration-300 hover:scale-105 hover:shadow-lg" class:running={isRunning}>
-  <div class="server-card-header">
-    <div class="server-icon">
-      <img src="/images/favicon.ico" alt="Server" />
-    </div>
-    <div class="server-info">
-      <h3 class="server-name">{server.name}</h3>
-      <div class="server-meta">
-        <span class="server-port">:{server.port}/UDP</span>
-        <span class="server-container">{server.containerName}</span>
+<div class="mc-panel transition-transform duration-200 hover:-translate-y-1" class:glow-grass={isRunning}>
+  <!-- Header -->
+  <div class="mc-panel-header">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-gradient-to-br from-dirt-light to-dirt-dark border-2 border-dirt-light border-r-dirt-dark border-b-dirt-dark flex items-center justify-center">
+        <img src="/images/favicon.ico" alt="Server" class="w-6 h-6" />
+      </div>
+      <div>
+        <h3 class="font-mono text-lg text-hytale-cream leading-tight">{server.name}</h3>
+        <p class="font-mono text-sm text-text-dim">:{server.port}/UDP</p>
       </div>
     </div>
-    <div class="server-status">
-      <span class="status-dot transition-all duration-300" class:online={isRunning}></span>
-      <span class="status-text">{isRunning ? $_('online') : $_('offline')}</span>
+    <div class="flex items-center gap-2">
+      <span 
+        class="w-3 h-3"
+        class:bg-grass={isRunning}
+        class:glow-grass={isRunning}
+        class:animate-pulse={isRunning}
+        class:bg-stone-dark={!isRunning}
+      ></span>
+      <span class="font-mono text-sm uppercase" class:text-grass-light={isRunning} class:text-stone={!isRunning}>
+        {isRunning ? $_('online') : $_('offline')}
+      </span>
     </div>
   </div>
 
-  <div class="server-card-config">
-    <div class="config-item">
-      <span class="config-label">RAM</span>
-      <span class="config-value">{server.config.javaXms} - {server.config.javaXmx}</span>
+  <!-- Config info -->
+  <div class="px-5 py-4 border-b-2 border-panel-bg">
+    <div class="grid grid-cols-2 gap-4">
+      <div class="flex flex-col gap-1">
+        <span class="font-mono text-xs text-text-dim uppercase tracking-wide">Container</span>
+        <span class="font-mono text-sm text-text truncate">{server.containerName}</span>
+      </div>
+      <div class="flex flex-col gap-1">
+        <span class="font-mono text-xs text-text-dim uppercase tracking-wide">RAM</span>
+        <span class="font-mono text-sm text-text">{server.config.javaXms} - {server.config.javaXmx}</span>
+      </div>
     </div>
-    <div class="config-item">
-      <span class="config-label">G1GC</span>
-      <span class="config-value">{server.config.useG1gc ? 'ON' : 'OFF'}</span>
+    <div class="mt-3 flex items-center gap-4">
+      <span class="mc-badge text-xs" class:mc-badge-success={server.config.useG1gc}>
+        G1GC: {server.config.useG1gc ? 'ON' : 'OFF'}
+      </span>
     </div>
   </div>
 
-  <div class="server-card-actions">
-    <Button size="small" variant="primary" onclick={onEnter}>
-      {$_('enter')}
-    </Button>
-    {#if isRunning}
-      <Button size="small" variant="warning" onclick={onStop}>
-        {$_('stop')}
+  <!-- Actions -->
+  <div class="mc-panel-body">
+    <div class="flex gap-3">
+      <Button size="small" variant="primary" onclick={onEnter}>
+        ⏵ {$_('enter')}
       </Button>
-    {:else}
-      <Button size="small" onclick={onStart}>
-        {$_('start')}
+      {#if isRunning}
+        <Button size="small" variant="warning" onclick={onStop}>
+          ⏹ {$_('stop')}
+        </Button>
+      {:else}
+        <Button size="small" onclick={onStart}>
+          ⏵ {$_('start')}
+        </Button>
+      {/if}
+      <Button size="small" variant="danger" onclick={onDelete}>
+        ✕
       </Button>
-    {/if}
-    <Button size="small" variant="danger" onclick={onDelete}>
-      {$_('delete')}
-    </Button>
+    </div>
   </div>
 </div>

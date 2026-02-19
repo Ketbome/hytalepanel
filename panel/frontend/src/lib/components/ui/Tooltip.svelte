@@ -29,7 +29,7 @@ const positionClasses = {
   {@render children?.()}
   
   {#if showTooltip && text}
-    <div class="absolute {positionClasses[position]} z-50 px-3 py-1.5 bg-mc-darker border-2 border-mc-border-light text-xs text-white whitespace-nowrap pointer-events-none animate-[fade-in_0.1s_ease-out] font-[var(--font-mono)]">
+    <div class="mc-tooltip {positionClasses[position]} animate-fade-in">
       {text}
     </div>
   {/if}

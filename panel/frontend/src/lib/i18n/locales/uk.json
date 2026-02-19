@@ -3,6 +3,10 @@
   "online": "ОНЛАЙН",
   "offline": "ОФЛАЙН",
   "console": "Консоль",
+  "serverControl": "Керування сервером",
+  "dangerZone": "Небезпечна зона",
+  "serverInfo": "Інфо сервера",
+  "actions": "Дії",
   "enterCommand": "Введiть команду...",
   "send": "НАДIСЛАТИ",
   "setup": "Налаштування",
@@ -226,6 +230,7 @@
   "loadingChannels": "Завантаження каналів...",
   "channelSaved": "Канал оновлено",
   "channelLoadError": "Не вдалося завантажити канали",
+  "serverUpdates": "Оновлення сервера",
   "comingSoon": "Незабаром",
   "channelFeatureDisabled": "Вибір каналу випуску буде доступний, коли офіційний hytale-downloader підтримуватиме це. Наразі автоматично можна завантажити лише стабільні версії."
 }

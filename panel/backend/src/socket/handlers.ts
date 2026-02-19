@@ -96,7 +96,7 @@ export function setupSocketHandlers(io: Server): void {
         });
 
         logStream.on('data', (chunk: Buffer) => {
-          socket.emit('log', chunk.slice(8).toString('utf8'));
+          socket.emit('log', chunk.subarray(8).toString('utf8'));
         });
 
         logStream.on('error', () => {
@@ -388,7 +388,7 @@ export function setupSocketHandlers(io: Server): void {
               const searchTerm = mod.fileName
                 .replace(/\.(jar|zip|disabled)$/gi, '')
                 .replace(/-[\d.]+.*$/, '')
-                .replace(/[-_]/g, ' ');
+                .replaceAll(/[-_]/g, ' ');
 
               if (!searchTerm || searchTerm.length < 2) return;
 
@@ -471,7 +471,7 @@ export function setupSocketHandlers(io: Server): void {
       let fileName = downloadResult.fileName || metadata.fileName;
       if (!fileName) {
         const ext = metadata.classification === 'MODPACK' ? 'zip' : 'jar';
-        fileName = `${metadata.projectTitle.replace(/[^a-zA-Z0-9]/g, '-')}-${metadata.versionName}.${ext}`;
+        fileName = `${metadata.projectTitle.replaceAll(/[^a-zA-Z0-9]/g, '-')}-${metadata.versionName}.${ext}`;
       }
 
       const installResult = await mods.installMod(
@@ -552,7 +552,7 @@ export function setupSocketHandlers(io: Server): void {
       let fileName = downloadResult.fileName || metadata.fileName;
       if (!fileName) {
         const ext = metadata.classification === 'PACK' ? 'zip' : 'jar';
-        fileName = `${metadata.projectTitle.replace(/[^a-zA-Z0-9]/g, '-')}-${metadata.versionName}.${ext}`;
+        fileName = `${metadata.projectTitle.replaceAll(/[^a-zA-Z0-9]/g, '-')}-${metadata.versionName}.${ext}`;
       }
 
       const installResult = await mods.installMod(

@@ -9,9 +9,9 @@ interface CardProps {
 let { children, header, headerText, noPadding = false }: CardProps = $props();
 </script>
 
-<div class="bg-gradient-to-b from-mc-panel-light to-mc-panel border-[4px] border-t-mc-border-light border-l-mc-border-light border-r-mc-dark border-b-mc-dark rounded-sm overflow-hidden">
+<div class="mc-panel">
   {#if header || headerText}
-    <div class="bg-mc-panel border-b-2 border-mc-border-light px-5 py-3 font-[var(--font-mono)] text-lg text-hytale-yellow flex justify-between items-center">
+    <div class="mc-panel-header">
       {#if header}
         {@render header()}
       {:else if headerText}
@@ -19,7 +19,7 @@ let { children, header, headerText, noPadding = false }: CardProps = $props();
       {/if}
     </div>
   {/if}
-  <div class={noPadding ? '' : 'p-5'}>
+  <div class={noPadding ? '' : 'mc-panel-body'}>
     {@render children?.()}
   </div>
 </div>

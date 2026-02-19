@@ -149,7 +149,7 @@ let lastCmdTime = 0;
 let suggestions = $state<typeof COMMANDS>([]);
 let selectedIndex = $state(-1);
 let showSuggestions = $state(false);
-let filterType = $state<'all' | 'info' | 'warning' | 'error' | 'cmd'>('all');
+let filterType = $state<'all' | 'info' | 'warn' | 'error' | 'cmd'>('all');
 
 let filteredLogs = $derived(() => {
   if (filterType === 'all') return $logs;
@@ -261,184 +261,142 @@ $effect(() => {
 });
 </script>
 
-<div class="card">
-  <div class="card-header">
+<div class="mc-panel h-full flex flex-col">
+  <div class="mc-panel-header">
     <span>{$_('console')}</span>
-    <div class="console-filters">
+    <div class="flex items-center gap-1 ml-auto">
       <button 
-        class="filter-btn" 
-        class:active={filterType === 'all'} 
+        class="px-2 py-1 text-xs font-mono border-2 transition-all"
+        class:bg-panel-light={filterType !== 'all'}
+        class:border-panel-border={filterType !== 'all'}
+        class:text-text-dim={filterType !== 'all'}
+        class:bg-dirt={filterType === 'all'}
+        class:border-dirt-light={filterType === 'all'}
+        class:text-hytale-gold={filterType === 'all'}
         onclick={() => filterType = 'all'}
         title="All logs"
       >
         All
       </button>
       <button 
-        class="filter-btn" 
-        class:active={filterType === 'info'} 
+        class="px-2 py-1 text-xs font-mono border-2 transition-all"
+        class:bg-panel-light={filterType !== 'info'}
+        class:border-panel-border={filterType !== 'info'}
+        class:text-text-dim={filterType !== 'info'}
+        class:bg-info={filterType === 'info'}
+        class:border-info={filterType === 'info'}
+        class:text-white={filterType === 'info'}
         onclick={() => filterType = 'info'}
         title="Info logs"
       >
         Info
       </button>
       <button 
-        class="filter-btn" 
-        class:active={filterType === 'warning'} 
-        onclick={() => filterType = 'warning'}
+        class="px-2 py-1 text-xs font-mono border-2 transition-all"
+        class:bg-panel-light={filterType !== 'warn'}
+        class:border-panel-border={filterType !== 'warn'}
+        class:text-text-dim={filterType !== 'warn'}
+        class:bg-warning={filterType === 'warn'}
+        class:border-warning={filterType === 'warn'}
+        class:text-panel-bg={filterType === 'warn'}
+        onclick={() => filterType = 'warn'}
         title="Warning logs"
       >
         Warn
       </button>
       <button 
-        class="filter-btn" 
-        class:active={filterType === 'error'} 
+        class="px-2 py-1 text-xs font-mono border-2 transition-all"
+        class:bg-panel-light={filterType !== 'error'}
+        class:border-panel-border={filterType !== 'error'}
+        class:text-text-dim={filterType !== 'error'}
+        class:bg-error={filterType === 'error'}
+        class:border-error={filterType === 'error'}
+        class:text-white={filterType === 'error'}
         onclick={() => filterType = 'error'}
         title="Error logs"
       >
         Error
       </button>
       <button 
-        class="filter-btn" 
-        class:active={filterType === 'cmd'} 
+        class="px-2 py-1 text-xs font-mono border-2 transition-all"
+        class:bg-panel-light={filterType !== 'cmd'}
+        class:border-panel-border={filterType !== 'cmd'}
+        class:text-text-dim={filterType !== 'cmd'}
+        class:bg-grass={filterType === 'cmd'}
+        class:border-grass-light={filterType === 'cmd'}
+        class:text-white={filterType === 'cmd'}
         onclick={() => filterType = 'cmd'}
         title="Command logs"
       >
         Cmd
       </button>
     </div>
-    <button class="console-clear-btn" title={$_('clearConsole')} onclick={handleClear}>✕</button>
+    <button 
+      class="mc-btn mc-btn-sm mc-btn-danger !px-2 !py-1 ml-2"
+      title={$_('clearConsole')} 
+      onclick={handleClear}
+    >
+      ✕
+    </button>
   </div>
-  <div class="console" bind:this={consoleEl} onscroll={handleScroll}>
+  
+  <!-- Console output -->
+  <div 
+    class="flex-1 overflow-auto p-4 font-code text-sm leading-relaxed bg-[#0a0805]"
+    bind:this={consoleEl} 
+    onscroll={handleScroll}
+  >
     {#each filteredLogs() as log}
-      <div class="log-line {log.type}">
-        <span class="log-time">{log.timestamp} </span>{log.text}
+      <div 
+        class="py-0.5 border-b border-panel-bg/30"
+        class:text-text-muted={log.type === 'info'}
+        class:text-warning={log.type === 'warn'}
+        class:text-error={log.type === 'error'}
+        class:text-grass-light={log.type === 'cmd'}
+      >
+        <span class="text-text-dim mr-2">{log.timestamp}</span>{log.text}
       </div>
     {/each}
   </div>
-  <div class="command-bar">
-    <div class="input-wrapper">
-      <input
-        type="text"
-        placeholder={$serverStatus.running ? $_('enterCommand') : $_('offline')}
-        autocomplete="off"
-        bind:value={cmdInput}
-        oninput={handleInput}
-        onkeydown={handleKeydown}
-        onblur={handleBlur}
-        onfocus={handleFocus}
+  
+  <!-- Command input -->
+  <div class="p-3 border-t-2 border-panel-border bg-panel-light">
+    <div class="flex gap-3">
+      <div class="flex-1 relative">
+        <input
+          type="text"
+          class="mc-input !py-2"
+          placeholder={$serverStatus.running ? $_('enterCommand') : $_('offline')}
+          autocomplete="off"
+          bind:value={cmdInput}
+          oninput={handleInput}
+          onkeydown={handleKeydown}
+          onblur={handleBlur}
+          onfocus={handleFocus}
+          disabled={!$serverStatus.running}
+        />
+        {#if showSuggestions && suggestions.length > 0}
+          <div class="absolute bottom-full left-0 right-0 mc-panel !border-b-0 max-h-72 overflow-y-auto z-50">
+            {#each suggestions as suggestion, i}
+              <button
+                class="w-full flex justify-between items-center px-3 py-2 font-mono text-sm border-b border-panel-bg hover:bg-panel-lighter transition-colors"
+                class:bg-panel-lighter={i === selectedIndex}
+                onmousedown={() => selectSuggestion(suggestion)}
+              >
+                <span class="text-grass-light font-bold">{suggestion.cmd}</span>
+                <span class="text-text-dim text-xs ml-4">{suggestion.desc}</span>
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </div>
+      <button 
+        class="mc-btn mc-btn-primary"
+        onclick={sendCommand} 
         disabled={!$serverStatus.running}
-      />
-      {#if showSuggestions && suggestions.length > 0}
-        <div class="suggestions">
-          {#each suggestions as suggestion, i}
-            <button
-              class="suggestion"
-              class:selected={i === selectedIndex}
-              onmousedown={() => selectSuggestion(suggestion)}
-            >
-              <span class="cmd">{suggestion.cmd}</span>
-              <span class="desc">{suggestion.desc}</span>
-            </button>
-          {/each}
-        </div>
-      {/if}
+      >
+        {$_('send')}
+      </button>
     </div>
-    <button onclick={sendCommand} disabled={!$serverStatus.running}>{$_('send')}</button>
   </div>
 </div>
-
-<style>
-  .card-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .console-filters {
-    display: flex;
-    gap: 0.25rem;
-    margin-left: auto;
-  }
-
-  .filter-btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    background: var(--mc-panel);
-    border: 1px solid var(--mc-border-light);
-    color: var(--text-dim);
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .filter-btn:hover {
-    background: var(--mc-panel-light);
-    color: var(--hytale-yellow);
-  }
-
-  .filter-btn.active {
-    background: var(--mc-panel-light);
-    color: var(--hytale-orange);
-    border-color: var(--hytale-orange);
-  }
-
-  .command-bar {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .input-wrapper {
-    flex: 1;
-    position: relative;
-  }
-
-  .input-wrapper input {
-    width: 100%;
-  }
-
-  .suggestions {
-    position: absolute;
-    bottom: 100%;
-    left: 0;
-    right: 0;
-    background: #1a1a1a;
-    border: 2px solid #444;
-    border-bottom: none;
-    max-height: 280px;
-    overflow-y: auto;
-    z-index: 100;
-    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.5);
-  }
-
-  .suggestion {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    background: #1a1a1a;
-    border: none;
-    border-bottom: 1px solid #333;
-    color: #e0e0e0;
-    font-family: inherit;
-    font-size: 0.9rem;
-    cursor: pointer;
-    text-align: left;
-  }
-
-  .suggestion:hover,
-  .suggestion.selected {
-    background: #2a2a2a;
-  }
-
-  .suggestion .cmd {
-    color: #5f5;
-    font-family: monospace;
-    font-weight: bold;
-  }
-
-  .suggestion .desc {
-    color: #aaa;
-    font-size: 0.8rem;
-    margin-left: 1rem;
-  }
-</style>

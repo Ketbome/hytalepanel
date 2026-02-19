@@ -604,8 +604,10 @@ function handleDownloadStatus(d: DownloadStatusEvent & { serverId?: string }): v
     case 'auth-required':
       if (d.message) {
         addLog(d.message, 'auth');
-        const url = d.message.match(/https:\/\/oauth\.accounts\.hytale\.com\S+/);
-        const code = d.message.match(/(?:user_code[=:]\s*|code:\s*)([A-Za-z0-9]+)/i);
+        const urlRegex = /https:\/\/oauth\.accounts\.hytale\.com\S+/;
+        const codeRegex = /(?:user_code[=:]\s*|code:\s*)([\w]+)/i;
+        const url = urlRegex.exec(d.message);
+        const code = codeRegex.exec(d.message);
         downloadProgress.update((p) => ({
           ...p,
           status: get(_)('waitingAuth'),
