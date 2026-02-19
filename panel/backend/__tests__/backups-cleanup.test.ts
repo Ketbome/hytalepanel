@@ -21,12 +21,8 @@ jest.unstable_mockModule("../src/config/index.js", () => ({
 
 import type { BackupConfig, BackupInfo } from "../src/services/backups.js";
 
-const {
-  createBackup,
-  listBackups,
-  deleteBackup,
-  cleanupOldBackups,
-} = await import("../src/services/backups.js");
+const { createBackup, listBackups, deleteBackup, cleanupOldBackups } =
+  await import("../src/services/backups.js");
 
 describe("Backup Cleanup", () => {
   let tempDir: string;
@@ -37,10 +33,7 @@ describe("Backup Cleanup", () => {
   // Helper to create a fake backup file with specific timestamp
   async function createFakeBackup(daysOld: number): Promise<string> {
     const date = new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000);
-    const timestamp = date
-      .toISOString()
-      .replaceAll(/[:.]/g, "-")
-      .slice(0, 19);
+    const timestamp = date.toISOString().replaceAll(/[:.]/g, "-").slice(0, 19);
     const filename = `backup-${timestamp}.zip`;
     const filePath = path.join(backupsDir, filename);
 
@@ -234,7 +227,9 @@ describe("Backup Cleanup", () => {
       };
 
       // Should not throw
-      await expect(cleanupOldBackups(testServerId, config)).resolves.not.toThrow();
+      await expect(
+        cleanupOldBackups(testServerId, config),
+      ).resolves.not.toThrow();
     });
 
     test("handles cleanup when all backups should be deleted", async () => {
@@ -275,7 +270,9 @@ describe("Backup Cleanup", () => {
       };
 
       // Should not throw even though one file is missing
-      await expect(cleanupOldBackups(testServerId, config)).resolves.not.toThrow();
+      await expect(
+        cleanupOldBackups(testServerId, config),
+      ).resolves.not.toThrow();
 
       const result = await listBackups(testServerId);
       // Should still have deleted the other old backups
