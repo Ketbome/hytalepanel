@@ -26,11 +26,7 @@ $effect(() => {
   }
 });
 
-const machineIdVolumes = $derived(
-  useMachineId
-    ? `      - /etc/machine-id:/etc/machine-id:ro`
-    : ''
-);
+const machineIdVolumes = $derived(useMachineId ? `      - /etc/machine-id:/etc/machine-id:ro` : '');
 
 // Use platform detection from backend (ARM64 gets x64 emulation for downloader)
 const platformLine = '';

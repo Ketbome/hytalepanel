@@ -17,7 +17,7 @@ export interface DefaultsCheck {
 // Server types
 export interface ServerStatus {
   running: boolean;
-  status: "online" | "offline" | "starting" | "stopping" | "unknown";
+  status: 'online' | 'offline' | 'starting' | 'stopping' | 'unknown';
   startedAt: string | null;
 }
 
@@ -27,7 +27,7 @@ export interface FilesReady {
   ready: boolean;
 }
 
-export type DownloadStep = "auth" | "download" | "extract" | "complete";
+export type DownloadStep = 'auth' | 'download' | 'extract' | 'complete';
 
 export interface DownloadProgress {
   active: boolean;
@@ -40,10 +40,10 @@ export interface DownloadProgress {
 }
 
 // Console types
-export type LogType = "error" | "warn" | "auth" | "info" | "cmd" | "";
+export type LogType = 'error' | 'warn' | 'auth' | 'info' | 'cmd' | '';
 
 export interface LogTextPart {
-  type: "text" | "url" | "code";
+  type: 'text' | 'url' | 'code';
   value: string;
   url?: string;
 }
@@ -64,19 +64,19 @@ export interface LogsHistoryData {
 
 // Files types
 export type FileType =
-  | "folder"
-  | "java"
-  | "archive"
-  | "json"
-  | "yaml"
-  | "config"
-  | "text"
-  | "log"
-  | "image"
-  | "script"
-  | "data"
-  | "audio"
-  | "file";
+  | 'folder'
+  | 'java'
+  | 'archive'
+  | 'json'
+  | 'yaml'
+  | 'config'
+  | 'text'
+  | 'log'
+  | 'image'
+  | 'script'
+  | 'data'
+  | 'audio'
+  | 'file';
 
 export interface FileEntry {
   name: string;
@@ -87,13 +87,7 @@ export interface FileEntry {
   permissions?: string;
 }
 
-export type EditorStatus =
-  | "ready"
-  | "loading"
-  | "saving"
-  | "saved"
-  | "error"
-  | string;
+export type EditorStatus = 'ready' | 'loading' | 'saving' | 'saved' | 'error' | string;
 
 export interface EditorState {
   isOpen: boolean;
@@ -212,7 +206,7 @@ export interface ModUpdatesResult {
 }
 
 // UI types
-export type ToastType = "error" | "success" | "info" | "warning" | "";
+export type ToastType = 'error' | 'success' | 'info' | 'warning' | '';
 
 export interface Toast {
   id: number;
@@ -220,13 +214,7 @@ export interface Toast {
   type: ToastType;
 }
 
-export type TabId =
-  | "setup"
-  | "files"
-  | "mods"
-  | "backups"
-  | "control"
-  | "config";
+export type TabId = 'setup' | 'files' | 'mods' | 'backups' | 'control' | 'config';
 
 // Socket types
 export interface ActionStatus {
@@ -240,13 +228,6 @@ export interface CommandResult {
 }
 
 export interface DownloadStatusEvent {
-  status:
-    | "starting"
-    | "auth-required"
-    | "output"
-    | "extracting"
-    | "complete"
-    | "done"
-    | "error";
+  status: 'starting' | 'auth-required' | 'output' | 'extracting' | 'complete' | 'done' | 'error';
   message?: string;
 }

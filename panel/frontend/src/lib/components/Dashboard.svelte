@@ -86,7 +86,7 @@ $effect(() => {
 
 function changeLanguage(lang: string): void {
   locale.set(lang);
-  showToast($_('language') + ': ' + lang.toUpperCase());
+  showToast(`${$_('language')}: ${lang.toUpperCase()}`);
   showLangDropdown = false;
 }
 

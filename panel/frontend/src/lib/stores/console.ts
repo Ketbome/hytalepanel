@@ -1,5 +1,5 @@
-import { writable } from "svelte/store";
-import type { LogEntry, LogType } from "$lib/types";
+import { writable } from 'svelte/store';
+import type { LogEntry, LogType } from '$lib/types';
 
 export const logs = writable<LogEntry[]>([]);
 export const autoScroll = writable<boolean>(true);
@@ -8,15 +8,11 @@ export const hasMoreHistory = writable<boolean>(true);
 export const loadedCount = writable<number>(0);
 export const initialLoadDone = writable<boolean>(false);
 
-export function addLog(
-  text: string,
-  type: LogType = "",
-  timestamp: string | null = null,
-): void {
+export function addLog(text: string, type: LogType = '', timestamp: string | null = null): void {
   logs.update((current) => {
     const ts = timestamp || getCurrentTimestamp();
     const lines = cleanLog(text)
-      .split("\n")
+      .split('\n')
       .filter((l) => l.trim());
     const newLogs: LogEntry[] = lines.map((line) => {
       const trimmedLine = line.trim();
@@ -27,8 +23,7 @@ export function addLog(
         text: trimmedLine,
         type: logType,
         timestamp: ts,
-        parts:
-          parts.length > 1 || parts[0]?.type !== "text" ? parts : undefined,
+        parts: parts.length > 1 || parts[0]?.type !== 'text' ? parts : undefined
       };
     });
 
@@ -53,11 +48,11 @@ export function clearLogs(): void {
 
 function getCurrentTimestamp(): string {
   const now = new Date();
-  const d = String(now.getDate()).padStart(2, "0");
-  const mo = String(now.getMonth() + 1).padStart(2, "0");
-  const h = String(now.getHours()).padStart(2, "0");
-  const m = String(now.getMinutes()).padStart(2, "0");
-  const s = String(now.getSeconds()).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, '0');
+  const mo = String(now.getMonth() + 1).padStart(2, '0');
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
   return `[${d}/${mo} ${h}:${m}:${s}]`;
 }
 
@@ -66,68 +61,61 @@ export function formatTimestamp(isoString: string | null): string {
   const d = new Date(isoString);
   if (Number.isNaN(d.getTime())) return getCurrentTimestamp();
 
-  const day = String(d.getDate()).padStart(2, "0");
-  const mon = String(d.getMonth() + 1).padStart(2, "0");
-  const h = String(d.getHours()).padStart(2, "0");
-  const m = String(d.getMinutes()).padStart(2, "0");
-  const s = String(d.getSeconds()).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, '0');
+  const mon = String(d.getMonth() + 1).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  const s = String(d.getSeconds()).padStart(2, '0');
   return `[${day}/${mon} ${h}:${m}:${s}]`;
 }
 
 export function extractTimestamp(line: string): string | null {
-  const match = line.match(
-    /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?)/,
-  );
+  const match = line.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?)/);
   return match ? match[1] : null;
 }
 
 function cleanLog(text: string): string {
-  const ansiEscape = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
+  const ansiEscape = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
   return text
-    .replace(ansiEscape, "")
-    .replace(/\[\d*;?\d*m/g, "")
-    .replace(/\[0?m/g, "")
-    .replace(/\[38;5;\d+m/g, "")
-    .replace(/^\d{2}T\d{2}:\d{2}:\d{2}[.\d]*Z?\s*/gm, "")
-    .replace(/^\d{4}[-/]\d{2}[-/]\d{2}[T ]\d{2}:\d{2}:\d{2}[.\d]*Z?\s*/gm, "")
-    .replace(/^\[\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}\s+\w+\]\s*/gm, "");
+    .replace(ansiEscape, '')
+    .replace(/\[\d*;?\d*m/g, '')
+    .replace(/\[0?m/g, '')
+    .replace(/\[38;5;\d+m/g, '')
+    .replace(/^\d{2}T\d{2}:\d{2}:\d{2}[.\d]*Z?\s*/gm, '')
+    .replace(/^\d{4}[-/]\d{2}[-/]\d{2}[T ]\d{2}:\d{2}:\d{2}[.\d]*Z?\s*/gm, '')
+    .replace(/^\[\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}\s+\w+\]\s*/gm, '');
 }
 
 export function getLogType(text: string): LogType {
-  if (text.startsWith(">")) return "cmd";
+  if (text.startsWith('>')) return 'cmd';
   const lower = text.toLowerCase();
-  if (
-    lower.includes("error") ||
-    lower.includes("failed") ||
-    lower.includes("exception")
-  )
-    return "error";
-  if (lower.includes("warn")) return "warn";
+  if (lower.includes('error') || lower.includes('failed') || lower.includes('exception')) return 'error';
+  if (lower.includes('warn')) return 'warn';
   // OAuth messages should be treated as info for filtering
   if (
-    lower.includes("oauth") ||
-    lower.includes("user_code") ||
-    lower.includes("authorization") ||
-    lower.includes("authenticate") ||
-    lower.includes("visit the following")
+    lower.includes('oauth') ||
+    lower.includes('user_code') ||
+    lower.includes('authorization') ||
+    lower.includes('authenticate') ||
+    lower.includes('visit the following')
   )
-    return "info";
+    return 'info';
   if (
-    lower.includes("success") ||
-    lower.includes("complete") ||
-    lower.includes("started") ||
-    lower.includes("initialized")
+    lower.includes('success') ||
+    lower.includes('complete') ||
+    lower.includes('started') ||
+    lower.includes('initialized')
   )
-    return "info";
-  return "";
+    return 'info';
+  return '';
 }
 
 /**
  * Parse log text to detect URLs and authorization codes
  * Returns an array of text parts with highlighting info
  */
-export function parseLogText(text: string): import("$lib/types").LogTextPart[] {
-  const parts: import("$lib/types").LogTextPart[] = [];
+export function parseLogText(text: string): import('$lib/types').LogTextPart[] {
+  const parts: import('$lib/types').LogTextPart[] = [];
 
   // Regex to match URLs
   const urlRegex = /(https?:\/\/[^\s]+)/gi;
@@ -146,20 +134,20 @@ export function parseLogText(text: string): import("$lib/types").LogTextPart[] {
 
     // Add text before code
     if (codeIndex > 0) {
-      parts.push({ type: "text", value: text.substring(0, codeIndex) });
+      parts.push({ type: 'text', value: text.substring(0, codeIndex) });
     }
 
     // Add the label
-    const colonIndex = fullMatch.indexOf(":");
-    parts.push({ type: "text", value: fullMatch.substring(0, colonIndex + 1) });
+    const colonIndex = fullMatch.indexOf(':');
+    parts.push({ type: 'text', value: fullMatch.substring(0, colonIndex + 1) });
 
     // Add the code highlighted
-    parts.push({ type: "code", value: code });
+    parts.push({ type: 'code', value: code });
 
     // Add remaining text
     const remaining = text.substring(codeIndex + fullMatch.length);
     if (remaining) {
-      parts.push({ type: "text", value: remaining });
+      parts.push({ type: 'text', value: remaining });
     }
 
     return parts;
@@ -167,28 +155,30 @@ export function parseLogText(text: string): import("$lib/types").LogTextPart[] {
 
   // Otherwise, look for URLs
   urlRegex.lastIndex = 0;
-  while ((match = urlRegex.exec(text)) !== null) {
+  match = urlRegex.exec(text);
+  while (match !== null) {
     // Add text before URL
     if (match.index > lastIndex) {
       parts.push({
-        type: "text",
-        value: text.substring(lastIndex, match.index),
+        type: 'text',
+        value: text.substring(lastIndex, match.index)
       });
     }
 
     // Add URL
-    parts.push({ type: "url", value: match[1], url: match[1] });
+    parts.push({ type: 'url', value: match[1], url: match[1] });
     lastIndex = match.index + match[1].length;
+    match = urlRegex.exec(text);
   }
 
   // Add remaining text
   if (lastIndex < text.length) {
-    parts.push({ type: "text", value: text.substring(lastIndex) });
+    parts.push({ type: 'text', value: text.substring(lastIndex) });
   }
 
   // If no special parts found, return plain text
   if (parts.length === 0) {
-    parts.push({ type: "text", value: text });
+    parts.push({ type: 'text', value: text });
   }
 
   return parts;
