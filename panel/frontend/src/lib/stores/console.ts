@@ -14,11 +14,18 @@ export function addLog(text: string, type: LogType = '', timestamp: string | nul
     const lines = cleanLog(text)
       .split('\n')
       .filter((l) => l.trim());
-    const newLogs: LogEntry[] = lines.map((line) => ({
-      text: line.trim(),
-      type: type || getLogType(line),
-      timestamp: ts
-    }));
+    const newLogs: LogEntry[] = lines.map((line) => {
+      const trimmedLine = line.trim();
+      const logType = type || getLogType(trimmedLine);
+      const parts = parseLogText(trimmedLine);
+
+      return {
+        text: trimmedLine,
+        type: logType,
+        timestamp: ts,
+        parts: parts.length > 1 || parts[0]?.type !== 'text' ? parts : undefined
+      };
+    });
 
     const updated = [...current, ...newLogs];
     if (updated.length > 1000) {
@@ -84,7 +91,15 @@ export function getLogType(text: string): LogType {
   const lower = text.toLowerCase();
   if (lower.includes('error') || lower.includes('failed') || lower.includes('exception')) return 'error';
   if (lower.includes('warn')) return 'warn';
-  if (lower.includes('oauth') || lower.includes('user_code') || lower.includes('authorization')) return 'auth';
+  // OAuth messages should be treated as info for filtering
+  if (
+    lower.includes('oauth') ||
+    lower.includes('user_code') ||
+    lower.includes('authorization') ||
+    lower.includes('authenticate') ||
+    lower.includes('visit the following')
+  )
+    return 'info';
   if (
     lower.includes('success') ||
     lower.includes('complete') ||
@@ -93,4 +108,78 @@ export function getLogType(text: string): LogType {
   )
     return 'info';
   return '';
+}
+
+/**
+ * Parse log text to detect URLs and authorization codes
+ * Returns an array of text parts with highlighting info
+ */
+export function parseLogText(text: string): import('$lib/types').LogTextPart[] {
+  const parts: import('$lib/types').LogTextPart[] = [];
+
+  // Regex to match URLs
+  const urlRegex = /(https?:\/\/[^\s]+)/gi;
+  // Regex to match authorization code lines
+  const codeRegex = /(?:Authorization code|user_code):\s*([A-Za-z0-9_-]+)/i;
+
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  // First check for authorization code
+  const codeMatch = text.match(codeRegex);
+  if (codeMatch) {
+    const fullMatch = codeMatch[0];
+    const code = codeMatch[1];
+    const codeIndex = text.indexOf(fullMatch);
+
+    // Add text before code
+    if (codeIndex > 0) {
+      parts.push({ type: 'text', value: text.substring(0, codeIndex) });
+    }
+
+    // Add the label
+    const colonIndex = fullMatch.indexOf(':');
+    parts.push({ type: 'text', value: fullMatch.substring(0, colonIndex + 1) });
+
+    // Add the code highlighted
+    parts.push({ type: 'code', value: code });
+
+    // Add remaining text
+    const remaining = text.substring(codeIndex + fullMatch.length);
+    if (remaining) {
+      parts.push({ type: 'text', value: remaining });
+    }
+
+    return parts;
+  }
+
+  // Otherwise, look for URLs
+  urlRegex.lastIndex = 0;
+  match = urlRegex.exec(text);
+  while (match !== null) {
+    // Add text before URL
+    if (match.index > lastIndex) {
+      parts.push({
+        type: 'text',
+        value: text.substring(lastIndex, match.index)
+      });
+    }
+
+    // Add URL
+    parts.push({ type: 'url', value: match[1], url: match[1] });
+    lastIndex = match.index + match[1].length;
+    match = urlRegex.exec(text);
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push({ type: 'text', value: text.substring(lastIndex) });
+  }
+
+  // If no special parts found, return plain text
+  if (parts.length === 0) {
+    parts.push({ type: 'text', value: text });
+  }
+
+  return parts;
 }

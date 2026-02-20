@@ -1,10 +1,10 @@
-import { getLocaleFromNavigator, init, locale, register, waitLocale } from 'svelte-i18n';
+import { init, locale, register, waitLocale } from 'svelte-i18n';
 
 register('en', () => import('./locales/en.json'));
 register('es', () => import('./locales/es.json'));
 register('uk', () => import('./locales/uk.json'));
 
-const savedLang = localStorage.getItem('hytale-panel-lang') || getLocaleFromNavigator() || 'en';
+const savedLang = localStorage.getItem('hytale-panel-lang') || 'en';
 
 function setLangAttribute(lang: string): void {
   document.documentElement.setAttribute('data-lang', lang);

@@ -42,10 +42,17 @@ export interface DownloadProgress {
 // Console types
 export type LogType = 'error' | 'warn' | 'auth' | 'info' | 'cmd' | '';
 
+export interface LogTextPart {
+  type: 'text' | 'url' | 'code';
+  value: string;
+  url?: string;
+}
+
 export interface LogEntry {
   text: string;
   type: LogType;
   timestamp: string;
+  parts?: LogTextPart[];
 }
 
 export interface LogsHistoryData {

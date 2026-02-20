@@ -21,7 +21,8 @@ COPY frontend/package.json frontend/pnpm-lock.yaml* ./frontend/
 RUN cd frontend && pnpm install
 
 # Copy shared config
-COPY tsconfig.base.json biome.json ./
+# Use backend/biome.json (file exists) instead of missing root biome.json
+COPY tsconfig.base.json backend/biome.json ./
 
 # Copy source files (NOT node_modules - those stay from pnpm install)
 COPY backend/src ./backend/src

@@ -36,4 +36,3 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${HOST_DATA_PATH:-${PWD}/data}:/opt/hytale-panel/data
       - /etc/machine-id:/etc/machine-id:ro
-      - /sys/class/dmi/id:/sys/class/dmi/id:ro

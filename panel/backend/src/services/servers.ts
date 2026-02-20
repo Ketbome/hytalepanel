@@ -89,20 +89,20 @@ async function saveServersData(data: ServersData): Promise<void> {
 }
 
 function generateDockerCompose(server: Server): string {
-  const machineIdVolumes = server.config.useMachineId
-    ? `      - /etc/machine-id:/etc/machine-id:ro
-      - /sys/class/dmi/id:/sys/class/dmi/id:ro
-`
-    : '';
+  const machineIdVolumes = server.config.useMachineId ? '      - /etc/machine-id:/etc/machine-id:ro' : '';
 
   // Server volume - must use absolute host path for Docker-in-Docker to work
   // HOST_DATA_PATH should always be absolute (e.g., /home/user/hytale/data)
   const serverVolume = `${config.data.hostPath}/servers/${server.id}/server:/opt/hytale`;
 
+  // Force x64 emulation on ARM64 (macOS Rosetta 2) to enable auto-downloader
+  const isARM64 = process.arch === 'arm64';
+  const platformLine = isARM64 ? '    platform: linux/amd64\n' : '';
+
   return `services:
   ${server.containerName}:
     image: ketbom/hytale-server:latest
-    container_name: ${server.containerName}
+${platformLine}    container_name: ${server.containerName}
     restart: on-failure
     stdin_open: true
     tty: true

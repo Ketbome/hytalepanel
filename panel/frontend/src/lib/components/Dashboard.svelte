@@ -1,7 +1,8 @@
 <script lang="ts">
-import { _ } from 'svelte-i18n';
+import { _, locale } from 'svelte-i18n';
 import { deleteServer as apiDeleteServer, fetchServers, startServer, stopServer } from '$lib/services/api';
 import { joinServer } from '$lib/services/socketClient';
+import { logout } from '$lib/stores/auth';
 import { type Server, servers, serversLoading } from '$lib/stores/servers';
 import { showToast } from '$lib/stores/ui';
 import CreateServerModal from './CreateServerModal.svelte';
@@ -10,6 +11,7 @@ import Button from './ui/Button.svelte';
 import Skeleton from './ui/Skeleton.svelte';
 
 let showCreateModal = $state(false);
+let showLangDropdown = $state(false);
 
 async function loadServers(): Promise<void> {
   serversLoading.set(true);
@@ -67,11 +69,36 @@ function handleServerCreated(): void {
 $effect(() => {
   loadServers();
 });
+
+$effect(() => {
+  function handleClickOutside(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (showLangDropdown && !target.closest('.lang-dropdown-container')) {
+      showLangDropdown = false;
+    }
+  }
+
+  if (showLangDropdown) {
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }
+});
+
+function changeLanguage(lang: string): void {
+  locale.set(lang);
+  showToast(`${$_('language')}: ${lang.toUpperCase()}`);
+  showLangDropdown = false;
+}
+
+async function handleLogout(): Promise<void> {
+  await logout();
+  showToast($_('logout'));
+}
 </script>
 
 <div class="min-h-screen p-6 animate-fade-in">
   <!-- Header -->
-  <header class="mc-panel mb-8">
+  <header class="mc-panel mb-8 !overflow-visible z-50">
     <div class="flex items-center justify-between px-6 py-4">
       <div class="flex items-center gap-4">
         <img src="/images/logo.png" alt="HytalePanel" class="w-14 h-14 object-contain" />
@@ -80,7 +107,7 @@ $effect(() => {
           <span class="font-mono text-base text-text-muted">{$_('serverPanel')}</span>
         </div>
       </div>
-      <nav class="flex items-center gap-4">
+      <nav class="flex items-center gap-4 relative z-50">
         <a 
           href="https://hytalepanel.ketbome.com/" 
           target="_blank" 
@@ -97,6 +124,50 @@ $effect(() => {
         >
           🐛 {$_('issues')}
         </a>
+        
+        <!-- Language Selector -->
+        <div class="relative lang-dropdown-container z-[9999]">
+          <button 
+            class="mc-btn mc-btn-sm !inline-flex" 
+            title={$_('language')}
+            onclick={() => showLangDropdown = !showLangDropdown}
+          >
+            🌐 {($locale || 'en').toUpperCase()}
+          </button>
+          {#if showLangDropdown}
+            <div class="absolute right-0 mt-2 mc-panel min-w-[120px]">
+              <div class="mc-panel-body flex flex-col gap-2 p-2">
+                <button 
+                  onclick={() => changeLanguage('en')} 
+                  class="mc-btn mc-btn-sm w-full justify-start"
+                >
+                  🇬🇧 EN
+                </button>
+                <button 
+                  onclick={() => changeLanguage('es')} 
+                  class="mc-btn mc-btn-sm w-full justify-start"
+                >
+                  🇪🇸 ES
+                </button>
+                <button 
+                  onclick={() => changeLanguage('uk')} 
+                  class="mc-btn mc-btn-sm w-full justify-start"
+                >
+                  🇺🇦 UK
+                </button>
+              </div>
+            </div>
+          {/if}
+        </div>
+
+        <!-- Logout Button -->
+        <button 
+          onclick={handleLogout}
+          class="mc-btn mc-btn-sm mc-btn-danger !inline-flex"
+          title={$_('logout')}
+        >
+          🚪 {$_('logout')}
+        </button>
       </nav>
     </div>
   </header>
