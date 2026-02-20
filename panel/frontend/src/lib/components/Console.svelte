@@ -354,7 +354,25 @@ $effect(() => {
         class:text-error={log.type === 'error'}
         class:text-grass-light={log.type === 'cmd'}
       >
-        <span class="text-text-dim mr-2">{log.timestamp}</span>{log.text}
+        <span class="text-text-dim mr-2">{log.timestamp}</span>
+        {#if log.parts && log.parts.length > 0}
+          {#each log.parts as part}
+            {#if part.type === 'url'}
+              <a 
+                href={part.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="text-yellow-400 hover:text-yellow-300 underline cursor-pointer"
+              >{part.value}</a>
+            {:else if part.type === 'code'}
+              <span class="text-yellow-400 font-bold">{part.value}</span>
+            {:else}
+              {part.value}
+            {/if}
+          {/each}
+        {:else}
+          {log.text}
+        {/if}
       </div>
     {/each}
   </div>
