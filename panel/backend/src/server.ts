@@ -44,9 +44,13 @@ if (process.env.NODE_ENV === 'production') {
   const publicDist = path.join(__dirname, '../../public-dist');
   panelRouter.use(express.static(publicDist));
   // SPA fallback - serve index.html for all non-API routes
-  panelRouter.get('/:path*', (_req, res) => {
-    res.setHeader('Content-Type', 'text/html');
-    res.sendFile(path.join(publicDist, 'index.html'));
+  panelRouter.use((req, res, next) => {
+    if (req.method === 'GET' && req.accepts('html')) {
+      res.setHeader('Content-Type', 'text/html');
+      res.sendFile(path.join(publicDist, 'index.html'));
+    } else {
+      next();
+    }
   });
 }
 
