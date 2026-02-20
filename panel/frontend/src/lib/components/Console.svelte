@@ -342,13 +342,13 @@ $effect(() => {
   
   <!-- Console output -->
   <div 
-    class="flex-1 overflow-auto p-4 font-code text-sm leading-relaxed bg-[#0a0805]"
+    class="flex-1 overflow-y-auto overflow-x-hidden p-4 font-code text-sm leading-relaxed bg-[#0a0805]"
     bind:this={consoleEl} 
     onscroll={handleScroll}
   >
     {#each filteredLogs() as log}
       <div 
-        class="py-0.5 border-b border-panel-bg/30"
+        class="py-0.5 border-b border-panel-bg/30 break-all"
         class:text-text-muted={log.type === 'info'}
         class:text-warning={log.type === 'warn'}
         class:text-error={log.type === 'error'}
