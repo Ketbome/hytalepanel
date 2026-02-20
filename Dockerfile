@@ -10,14 +10,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bash curl unzip gosu dbus \
     && rm -rf /var/lib/apt/lists/*
 
-# Download hytale-downloader (x64 only - not available for ARM64)
-RUN if [ "$TARGETARCH" = "amd64" ]; then \
-    curl -L -o /tmp/hytale-downloader.zip https://downloader.hytale.com/hytale-downloader.zip && \
+# Download hytale-downloader (works on ARM64 via emulation when platform: linux/amd64)
+RUN curl -L -o /tmp/hytale-downloader.zip https://downloader.hytale.com/hytale-downloader.zip && \
     unzip /tmp/hytale-downloader.zip -d /tmp/downloader && \
     mv /tmp/downloader/hytale-downloader-linux-amd64 /usr/local/bin/hytale-downloader && \
     chmod +x /usr/local/bin/hytale-downloader && \
-    rm -rf /tmp/hytale-downloader.zip /tmp/downloader; \
-    else echo "Skipping hytale-downloader (not available for $TARGETARCH)"; fi
+    rm -rf /tmp/hytale-downloader.zip /tmp/downloader
 
 # Non-root user
 RUN groupadd -f hytale && useradd -g hytale -m hytale || true

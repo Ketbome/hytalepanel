@@ -13,7 +13,7 @@ setup_machine_id() {
     validate_machine_id() {
         local id="$1"
         # Remove any whitespace/newlines and check format
-        id=$(echo "$id" | tr -d '\n\r \t')
+        id=$(echo "$id" | tr -d '\n\r\t ')
         if echo "$id" | grep -Eq '^[a-f0-9]{32}$'; then
             return 0
         fi
@@ -22,7 +22,7 @@ setup_machine_id() {
     
     # Read and clean machine-id (remove newlines/spaces, take first 32 chars)
     read_and_clean() {
-        tr -d '\n\r \t' < "$1" 2>/dev/null | head -c 32 | tr '[:upper:]' '[:lower:]'
+        tr -d '\n\r\t ' < "$1" 2>/dev/null | head -c 32 | tr '[:upper:]' '[:lower:]'
     }
     
     # 1. Try to restore from persistent copy first
@@ -53,7 +53,7 @@ setup_machine_id() {
     
     # 3. Generate new machine-id (consistent format)
     echo "[HYTALE] ⚠ Generating NEW machine-id (auth data will be fresh)"
-    NEW_ID=$(cat /proc/sys/kernel/random/uuid | tr -d '-\n\r \t' | head -c 32 | tr '[:upper:]' '[:lower:]')
+    NEW_ID=$(cat /proc/sys/kernel/random/uuid | tr -d '-\n\r\t ' | head -c 32 | tr '[:upper:]' '[:lower:]')
     
     if validate_machine_id "$NEW_ID"; then
         echo "[HYTALE] ✓ Generated machine-id: $NEW_ID"
@@ -83,11 +83,9 @@ ARCH=$(uname -m)
 # Check if files exist
 if [ ! -f "HytaleServer.jar" ] || [ ! -f "Assets.zip" ]; then
     
-    # Only attempt download once (skip on ARM64 - downloader is x64 only)
+    # Only attempt download once
     if [ ! -f "$DOWNLOAD_FLAG" ] && [ "$AUTO_DOWNLOAD" = "true" ]; then
-        if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-            echo "[HYTALE] Auto-download not available on ARM64. Please copy server files manually."
-        elif command -v hytale-downloader &> /dev/null; then
+        if command -v hytale-downloader &> /dev/null; then
             touch "$DOWNLOAD_FLAG"
             echo "[HYTALE] Server files not found. Attempting download..."
             hytale-downloader --download-path /tmp/hytale-game.zip 2>&1 || true
