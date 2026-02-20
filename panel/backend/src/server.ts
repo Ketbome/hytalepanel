@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import express, { type Router } from 'express';
 import { Server } from 'socket.io';
 
+import fs from 'node:fs';
 import config from './config/index.js';
 import { socketAuth } from './middleware/auth.js';
 import apiRoutes from './routes/api.js';
@@ -39,19 +40,26 @@ panelRouter.get('/panel-config', (_req, res) => {
 panelRouter.use('/auth', authRoutes);
 panelRouter.use('/api', apiRoutes);
 
-// Serve built frontend in production
+// Serve built frontend in production only if build exists
 if (process.env.NODE_ENV === 'production') {
   const publicDist = path.join(__dirname, '../../public-dist');
-  panelRouter.use(express.static(publicDist));
-  // SPA fallback - serve index.html for all non-API routes
-  panelRouter.use((req, res, next) => {
-    if (req.method === 'GET' && req.accepts('html')) {
-      res.setHeader('Content-Type', 'text/html');
-      res.sendFile(path.join(publicDist, 'index.html'));
-    } else {
-      next();
-    }
-  });
+  const indexFile = path.join(publicDist, 'index.html');
+
+  if (fs.existsSync(indexFile)) {
+    panelRouter.use(express.static(publicDist));
+    // SPA fallback - serve index.html for all non-API routes
+    panelRouter.use((req, res, next) => {
+      if (req.method === 'GET' && req.accepts('html')) {
+        res.setHeader('Content-Type', 'text/html');
+        res.sendFile(indexFile);
+      } else {
+        next();
+      }
+    });
+  } else {
+    console.warn('Warning: production build not found at', indexFile);
+    console.warn('The panel will not serve frontend assets; start the frontend dev server or build the frontend.');
+  }
 }
 
 // Mount panel router at base path (or root if no base path)

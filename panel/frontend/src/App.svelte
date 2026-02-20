@@ -8,7 +8,7 @@ import Toast from '$lib/components/ui/Toast.svelte';
 import { connectSocket, disconnectSocket } from '$lib/services/socketClient';
 import { checkStatus, isAuthenticated, isLoading } from '$lib/stores/auth';
 import { loadPanelConfig, panelConfig } from '$lib/stores/config';
-import { initRouter, isOnDashboard, currentRoute } from '$lib/stores/router';
+import { currentRoute, initRouter, isOnDashboard } from '$lib/stores/router';
 import { panelExpanded, sidebarHidden } from '$lib/stores/ui';
 
 // Initialize on mount
