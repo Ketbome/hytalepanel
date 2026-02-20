@@ -5,12 +5,14 @@ import { disconnectSocket, leaveServer } from '$lib/services/socketClient';
 import { logout } from '$lib/stores/auth';
 import { serverStatus } from '$lib/stores/server';
 import { activeServer, activeServerId } from '$lib/stores/servers';
+import { showToast } from '$lib/stores/ui';
 import { formatUptime } from '$lib/utils/formatters';
 import Button from './ui/Button.svelte';
 import StatusBadge from './ui/StatusBadge.svelte';
 
 let clockTime = $state('--:--:--');
 let uptime = $state('00:00:00');
+let showLangDropdown = $state(false);
 
 function updateClock(): void {
   const now = new Date();
@@ -33,6 +35,20 @@ $effect(() => {
   };
 });
 
+$effect(() => {
+  function handleClickOutside(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (showLangDropdown && !target.closest('.lang-dropdown-container')) {
+      showLangDropdown = false;
+    }
+  }
+
+  if (showLangDropdown) {
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }
+});
+
 function handleLogout(): void {
   disconnectSocket();
   logout();
@@ -42,13 +58,14 @@ function handleBackToPanel(): void {
   leaveServer();
 }
 
-function handleLangChange(e: Event): void {
-  const target = e.target as HTMLSelectElement;
-  locale.set(target.value);
+function changeLanguage(lang: string): void {
+  locale.set(lang);
+  showToast($_('language') + ': ' + lang.toUpperCase());
+  showLangDropdown = false;
 }
 </script>
 
-<header class="mc-panel mb-5">
+<header class="mc-panel mb-5 !overflow-visible">
   <div class="flex items-center justify-between px-5 py-3 flex-wrap gap-4">
     <!-- Left section: Logo -->
     <div class="flex items-center gap-4">
@@ -78,7 +95,7 @@ function handleLangChange(e: Event): void {
     </div>
 
     <!-- Right section: Controls -->
-    <div class="flex items-center gap-3 flex-wrap">
+    <div class="flex items-center gap-3 flex-wrap relative z-50">
       <!-- Links -->
       <a 
         href="https://hytalepanel.ketbome.com/" 
@@ -98,15 +115,39 @@ function handleLangChange(e: Event): void {
       </a>
 
       <!-- Language selector -->
-      <select 
-        class="mc-select !py-2 !px-3 !text-sm !w-auto !pr-8"
-        value={$locale} 
-        onchange={handleLangChange}
-      >
-        <option value="en">EN</option>
-        <option value="es">ES</option>
-        <option value="uk">UK</option>
-      </select>
+      <div class="relative lang-dropdown-container z-[9999]">
+        <button 
+          class="mc-btn mc-btn-sm !inline-flex" 
+          title={$_('language')}
+          onclick={() => showLangDropdown = !showLangDropdown}
+        >
+          🌐 {($locale || 'en').toUpperCase()}
+        </button>
+        {#if showLangDropdown}
+          <div class="absolute right-0 mt-2 mc-panel min-w-[120px]">
+            <div class="mc-panel-body flex flex-col gap-2 p-2">
+              <button 
+                onclick={() => changeLanguage('en')} 
+                class="mc-btn mc-btn-sm w-full justify-start"
+              >
+                🇬🇧 EN
+              </button>
+              <button 
+                onclick={() => changeLanguage('es')} 
+                class="mc-btn mc-btn-sm w-full justify-start"
+              >
+                🇪🇸 ES
+              </button>
+              <button 
+                onclick={() => changeLanguage('uk')} 
+                class="mc-btn mc-btn-sm w-full justify-start"
+              >
+                🇺🇦 UK
+              </button>
+            </div>
+          </div>
+        {/if}
+      </div>
 
       <!-- Time displays -->
       <div class="mc-badge !hidden md:!flex gap-2">
@@ -122,9 +163,13 @@ function handleLangChange(e: Event): void {
       <StatusBadge running={$serverStatus.running} />
 
       <!-- Logout -->
-      <Button size="small" variant="danger" onclick={handleLogout}>
-        {$_('logout')}
-      </Button>
+      <button 
+        onclick={handleLogout}
+        class="mc-btn mc-btn-sm mc-btn-danger !inline-flex"
+        title={$_('logout')}
+      >
+        🚪 {$_('logout')}
+      </button>
     </div>
   </div>
 </header>
