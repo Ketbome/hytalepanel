@@ -41,10 +41,12 @@ panelRouter.use('/api', apiRoutes);
 
 // Serve built frontend in production
 if (process.env.NODE_ENV === 'production') {
-  panelRouter.use(express.static(path.join(__dirname, '../../public-dist')));
+  const publicDist = path.join(__dirname, '../../public-dist');
+  panelRouter.use(express.static(publicDist));
   // SPA fallback - serve index.html for all non-API routes
-  panelRouter.use((_req, res) => {
-    res.sendFile(path.join(__dirname, '../../public-dist/index.html'));
+  panelRouter.get('/:path*', (_req, res) => {
+    res.setHeader('Content-Type', 'text/html');
+    res.sendFile(path.join(publicDist, 'index.html'));
   });
 }
 
