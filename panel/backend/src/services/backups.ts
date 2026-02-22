@@ -97,10 +97,13 @@ export async function createBackup(serverId: string): Promise<BackupResult> {
 
     const filename = generateBackupFilename();
     const backupPath = path.join(backupsDir, filename);
+    const tempFilename = `${filename}.tmp`;
+    const tempPath = path.join(backupsDir, tempFilename);
 
-    // Create ZIP archive
+    // Create ZIP archive atomically: write to temp file then rename
+    console.log(`[Backups] Creating backup (temp): ${tempPath}`);
     await new Promise<void>((resolve, reject) => {
-      const output = createWriteStream(backupPath);
+      const output = createWriteStream(tempPath);
       const archive = archiver('zip', { zlib: { level: 6 } });
 
       output.on('close', () => resolve());
@@ -123,6 +126,29 @@ export async function createBackup(serverId: string): Promise<BackupResult> {
 
       archive.finalize();
     });
+
+    // Move temp file to final name atomically
+    try {
+      await fs.rename(tempPath, backupPath);
+      console.log(`[Backups] Backup created: ${backupPath}`);
+    } catch (e) {
+      const err = e as NodeJS.ErrnoException;
+      console.warn(`[Backups] Rename failed (${err.code}) for ${tempPath} -> ${backupPath}, attempting copy fallback`);
+      // Attempt cross-device or permission-safe fallback: copy then unlink temp
+      try {
+        await fs.copyFile(tempPath, backupPath);
+        await fs.unlink(tempPath);
+        console.log(`[Backups] Backup created via copy fallback: ${backupPath}`);
+      } catch (error_) {
+        // Cleanup temp file if copy/unlink fails
+        try {
+          await fs.unlink(tempPath);
+        } catch {
+          /* ignore */
+        }
+        throw error_;
+      }
+    }
 
     // Get backup info
     const stats = await fs.stat(backupPath);
@@ -224,10 +250,49 @@ export async function deleteBackup(serverId: string, backupId: string): Promise<
     const backupPath = path.join(backupsDir, filename);
 
     console.log(`[Backups] Deleting backup: ${filename} for server ${serverId}`);
-    await fs.unlink(backupPath);
-    console.log(`[Backups] Successfully deleted: ${filename}`);
 
-    return { success: true };
+    try {
+      await fs.unlink(backupPath);
+      console.log(`[Backups] Successfully deleted: ${filename}`);
+      return { success: true };
+    } catch (e) {
+      // If file does not exist, return error
+      const err = e as NodeJS.ErrnoException;
+      if (err.code === 'ENOENT') {
+        const msg = `Backup not found: ${filename}`;
+        console.error(`[Backups] ${msg}`);
+        return { success: false, error: msg };
+      }
+
+      // Fallback: move to .trash directory inside backups
+      try {
+        const trashDir = path.join(backupsDir, '.trash');
+        await fs.mkdir(trashDir, { recursive: true });
+        const dest = path.join(trashDir, `${filename}.deleted-${Date.now()}`);
+        try {
+          await fs.rename(backupPath, dest);
+          console.log(`[Backups] Moved ${filename} to trash: ${dest}`);
+          return { success: true };
+        } catch (error_) {
+          const me = error_ as NodeJS.ErrnoException;
+          console.warn(`[Backups] Rename to trash failed (${me.code}), attempting copy fallback`);
+          try {
+            await fs.copyFile(backupPath, dest);
+            await fs.unlink(backupPath);
+            console.log(`[Backups] Copied ${filename} to trash: ${dest}`);
+            return { success: true };
+          } catch (error__) {
+            const msg = (error__ as Error).message || (error_ as Error).message;
+            console.error(`[Backups] Failed to delete or move ${filename}: ${msg}`);
+            return { success: false, error: msg };
+          }
+        }
+      } catch (error_) {
+        const msg = (error_ as Error).message || (e as Error).message;
+        console.error(`[Backups] Failed to delete or move ${filename}: ${msg}`);
+        return { success: false, error: msg };
+      }
+    }
   } catch (e) {
     const error = (e as Error).message;
     console.error(`[Backups] Failed to delete ${filename}: ${error}`);
@@ -235,7 +300,7 @@ export async function deleteBackup(serverId: string, backupId: string): Promise<
   }
 }
 
-export async function cleanupOldBackups(serverId: string, backupConfig: BackupConfig): Promise<void> {
+export async function cleanupOldBackups(serverId: string, backupConfig: BackupConfig, dryRun = false): Promise<void> {
   try {
     const result = await listBackups(serverId);
     if (!result.success || result.backups.length === 0) {
@@ -277,6 +342,13 @@ export async function cleanupOldBackups(serverId: string, backupConfig: BackupCo
 
     if (toDelete.length === 0) {
       console.log(`[Backups] No old backups to delete for ${serverId}`);
+      return;
+    }
+    // If dryRun is requested, just log what would be deleted
+    if (dryRun) {
+      console.log(
+        `[Backups] Dry run - would delete ${toDelete.length} backup(s) for ${serverId}: ${toDelete.map((b) => b.filename).join(', ')}`
+      );
       return;
     }
 
