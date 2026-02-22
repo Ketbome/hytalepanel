@@ -34,12 +34,32 @@ let onServerStart = $state(true);
 let hasConfigChanges = $state(false);
 let isSavingConfig = $state(false);
 
+// svelte-ignore non_reactive_update
+let backupsListEl: HTMLElement | null = null;
+let prevBackupCount = 0;
+let listMaxHeight = $state('400px');
+
 // Load backups when socket is joined to server (not just activeServerId)
 $effect(() => {
   if ($joinedServerId) {
     loadBackups();
     loadConfig();
   }
+});
+
+// Update list max-height and scroll when backups change
+$effect(() => {
+  const count = backupsList.length;
+  // compute max height: each item ~84px, cap at 480px
+  const max = Math.min(Math.max(count * 84, 120), 480);
+  listMaxHeight = `${max}px`;
+
+  // if items increased, scroll to top to reveal newest at top
+  if (backupsListEl && count > prevBackupCount) {
+    backupsListEl.scrollTop = 0;
+  }
+
+  prevBackupCount = count;
 });
 
 // Socket event listeners
@@ -256,7 +276,7 @@ function formatDate(isoString: string): string {
     {:else if backupsList.length === 0}
       <div class="empty-state">{$_('noBackups')}</div>
     {:else}
-      <div class="backups-list">
+      <div class="backups-list" bind:this={backupsListEl} style="max-height: {listMaxHeight};">
         {#each backupsList as backup}
           <div class="backup-item">
             <div class="backup-info">
@@ -367,8 +387,30 @@ function formatDate(isoString: string): string {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    max-height: 400px;
     overflow-y: auto;
+    flex: 1 1 auto;
+    padding-right: 0.25rem; /* space for scrollbar */
+    box-sizing: border-box;
+  }
+
+  /* nicer thin scrollbar that fits the game's UI */
+  .backups-list::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .backups-list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .backups-list::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.06);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    border-radius: 4px;
+  }
+
+  .backups-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.12);
   }
 
   .backup-item {
