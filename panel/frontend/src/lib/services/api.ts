@@ -36,6 +36,7 @@ export async function uploadFile(
 
   const response = await fetch(apiUrl('/api/files/upload'), {
     method: 'POST',
+    credentials: 'include',
     body: formData
   });
 
