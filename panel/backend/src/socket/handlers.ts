@@ -76,6 +76,19 @@ export function setupSocketHandlers(io: Server): void {
     };
 
     let logStream: NodeJS.ReadableStream | null = null;
+    const emitBackupStatus = (status: 'idle' | 'creating' | 'restoring' | 'error', error?: string): void => {
+      socket.emit('backup:status', { status, error });
+    };
+
+    const getSafeBackupConfig = (rawConfig: Partial<backups.BackupConfig> | undefined): backups.BackupConfig => {
+      const normalized = backups.normalizeBackupConfig(rawConfig);
+      if (normalized.success && normalized.config) {
+        return normalized.config;
+      }
+
+      console.warn(`[Backups] Invalid backup config detected, using defaults: ${normalized.error}`);
+      return backups.DEFAULT_BACKUP_CONFIG;
+    };
 
     async function connectLogStream(tail = 0): Promise<void> {
       if (logStream) {
@@ -263,16 +276,20 @@ export function setupSocketHandlers(io: Server): void {
 
       // Get server config for backup settings
       const serverResult = await servers.getServer(ctx.serverId);
-      const backupConfig = serverResult.server?.config.backup;
+      const backupConfig = getSafeBackupConfig(serverResult.server?.config.backup);
 
       // Create backup on start if enabled
-      if (backupConfig?.onServerStart) {
+      if (backupConfig.onServerStart) {
         console.log('[Socket] Creating backup before start');
-        socket.emit('backup:status', { status: 'creating' });
+        emitBackupStatus('creating');
         const backupResult = await backups.createBackup(ctx.serverId);
         if (backupResult.success) {
           console.log(`[Socket] Backup created: ${backupResult.backup?.filename}`);
           await backups.cleanupOldBackups(ctx.serverId, backupConfig);
+          emitBackupStatus('idle');
+        } else {
+          emitBackupStatus('error', backupResult.error);
+          emitBackupStatus('idle');
         }
       }
 
@@ -285,7 +302,7 @@ export function setupSocketHandlers(io: Server): void {
 
       if (result.success && ctx.containerName && ctx.serverId) {
         // Start backup scheduler if enabled
-        if (backupConfig?.enabled && backupConfig.intervalMinutes > 0) {
+        if (backupConfig.enabled && backupConfig.intervalMinutes > 0) {
           backups.startBackupScheduler(ctx.serverId, backupConfig);
         }
 
@@ -758,15 +775,18 @@ export function setupSocketHandlers(io: Server): void {
     // Backup handlers
     socket.on('backup:create', async () => {
       if (!ctx.serverId) return;
-      socket.emit('backup:status', { status: 'creating' });
+      emitBackupStatus('creating');
       const result = await backups.createBackup(ctx.serverId);
       socket.emit('backup:create-result', result);
       if (result.success) {
         // Cleanup old backups after creating new one
         const serverResult = await servers.getServer(ctx.serverId);
-        if (serverResult.server?.config.backup) {
-          await backups.cleanupOldBackups(ctx.serverId, serverResult.server.config.backup);
-        }
+        const backupConfig = getSafeBackupConfig(serverResult.server?.config.backup);
+        await backups.cleanupOldBackups(ctx.serverId, backupConfig);
+        emitBackupStatus('idle');
+      } else {
+        emitBackupStatus('error', result.error);
+        emitBackupStatus('idle');
       }
     });
 
@@ -785,12 +805,20 @@ export function setupSocketHandlers(io: Server): void {
           success: false,
           error: 'Server must be stopped before restoring backup'
         });
+        emitBackupStatus('error', 'Server must be stopped before restoring backup');
+        emitBackupStatus('idle');
         return;
       }
 
-      socket.emit('backup:status', { status: 'restoring' });
+      emitBackupStatus('restoring');
       const result = await backups.restoreBackup(ctx.serverId, backupId);
       socket.emit('backup:restore-result', result);
+      if (result.success) {
+        emitBackupStatus('idle');
+      } else {
+        emitBackupStatus('error', result.error);
+        emitBackupStatus('idle');
+      }
     });
 
     socket.on('backup:delete', async (backupId: string) => {
@@ -803,20 +831,29 @@ export function setupSocketHandlers(io: Server): void {
       if (!ctx.serverId) return;
 
       if (newConfig) {
+        const normalized = backups.normalizeBackupConfig(newConfig);
+        if (!normalized.success || !normalized.config) {
+          socket.emit('backup:config-result', {
+            success: false,
+            error: normalized.error
+          });
+          return;
+        }
+
         // Update backup config
         const result = await servers.updateServer(ctx.serverId, {
-          config: { backup: newConfig }
+          config: { backup: normalized.config }
         });
         if (result.success && result.server) {
           // Restart scheduler if needed
-          if (newConfig.enabled && newConfig.intervalMinutes > 0) {
-            backups.startBackupScheduler(ctx.serverId, newConfig);
+          if (normalized.config.enabled && normalized.config.intervalMinutes > 0) {
+            backups.startBackupScheduler(ctx.serverId, normalized.config);
           } else {
             backups.stopBackupScheduler(ctx.serverId);
           }
           socket.emit('backup:config-result', {
             success: true,
-            config: newConfig
+            config: normalized.config
           });
         } else {
           socket.emit('backup:config-result', {
@@ -828,9 +865,11 @@ export function setupSocketHandlers(io: Server): void {
         // Get current backup config
         const serverResult = await servers.getServer(ctx.serverId);
         if (serverResult.success && serverResult.server) {
+          const normalized = backups.normalizeBackupConfig(serverResult.server.config.backup);
+          const configToSend = normalized.success && normalized.config ? normalized.config : backups.DEFAULT_BACKUP_CONFIG;
           socket.emit('backup:config-result', {
             success: true,
-            config: serverResult.server.config.backup
+            config: configToSend
           });
         } else {
           socket.emit('backup:config-result', {

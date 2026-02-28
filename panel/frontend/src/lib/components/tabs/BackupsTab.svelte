@@ -20,10 +20,14 @@ interface BackupConfig {
   onServerStart: boolean;
 }
 
+type BackupStatus = 'idle' | 'creating' | 'restoring' | 'error';
+
 let backupsList = $state<BackupInfo[]>([]);
 let isLoading = $state(false);
 let isCreating = $state(false);
 let isRestoring = $state(false);
+let backupStatus = $state<BackupStatus>('idle');
+let backupStatusError = $state('');
 
 // Config form state
 let enabled = $state(false);
@@ -38,6 +42,7 @@ let isSavingConfig = $state(false);
 let backupsListEl: HTMLElement | null = null;
 let prevBackupCount = 0;
 let listMaxHeight = $state('400px');
+const isBusy = $derived(backupStatus === 'creating' || backupStatus === 'restoring' || isCreating || isRestoring);
 
 // Load backups when socket is joined to server (not just activeServerId)
 $effect(() => {
@@ -113,6 +118,16 @@ $effect(() => {
       maxAgeDays = result.config.maxAgeDays;
       onServerStart = result.config.onServerStart;
       hasConfigChanges = false;
+    } else {
+      showToast(result.error || $_('backupConfigInvalid'), 'error');
+    }
+  };
+
+  const handleBackupStatus = (result: { status: BackupStatus; error?: string }) => {
+    backupStatus = result.status;
+    backupStatusError = result.error || '';
+    if (result.status === 'error' && result.error) {
+      showToast(result.error, 'error');
     }
   };
 
@@ -121,6 +136,7 @@ $effect(() => {
   s.on('backup:restore-result', handleRestoreResult);
   s.on('backup:delete-result', handleDeleteResult);
   s.on('backup:config-result', handleConfigResult);
+  s.on('backup:status', handleBackupStatus);
 
   return () => {
     s.off('backup:list-result', handleListResult);
@@ -128,6 +144,7 @@ $effect(() => {
     s.off('backup:restore-result', handleRestoreResult);
     s.off('backup:delete-result', handleDeleteResult);
     s.off('backup:config-result', handleConfigResult);
+    s.off('backup:status', handleBackupStatus);
   };
 });
 
@@ -141,6 +158,9 @@ function loadConfig(): void {
 }
 
 function handleCreateBackup(): void {
+  if ($serverStatus.running) {
+    showToast($_('backupRunningWarning'), 'warning');
+  }
   isCreating = true;
   emit('backup:create');
 }
@@ -217,6 +237,7 @@ function formatDate(isoString: string): string {
             onchange={markConfigChanged}
             min="0"
             max="1440"
+            step="1"
           />
           <span class="hint">0 = {$_('disabled')}</span>
         </div>
@@ -230,6 +251,7 @@ function formatDate(isoString: string): string {
             onchange={markConfigChanged}
             min="0"
             max="100"
+            step="1"
           />
           <span class="hint">0 = {$_('unlimited')}</span>
         </div>
@@ -243,6 +265,7 @@ function formatDate(isoString: string): string {
             onchange={markConfigChanged}
             min="0"
             max="365"
+            step="1"
           />
           <span class="hint">0 = {$_('unlimited')}</span>
         </div>
@@ -265,11 +288,23 @@ function formatDate(isoString: string): string {
       <button 
         class="mc-btn" 
         onclick={handleCreateBackup}
-        disabled={isCreating}
+        disabled={isBusy}
       >
         {isCreating ? $_('creating') : $_('createBackup')}
       </button>
     </div>
+
+    {#if backupStatus !== 'idle'}
+      <div class="backup-status {backupStatus === 'error' ? 'error' : ''}">
+        {#if backupStatus === 'creating'}
+          {$_('backupStatusCreating')}
+        {:else if backupStatus === 'restoring'}
+          {$_('backupStatusRestoring')}
+        {:else if backupStatus === 'error'}
+          {backupStatusError || $_('backupStatusError')}
+        {/if}
+      </div>
+    {/if}
 
     {#if isLoading}
       <div class="loading">{$_('loading')}...</div>
@@ -447,6 +482,20 @@ function formatDate(isoString: string): string {
     text-align: center;
     padding: 2rem;
     color: var(--mc-text-secondary);
+  }
+
+  .backup-status {
+    margin-bottom: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--mc-border);
+    background: var(--mc-bg);
+    color: var(--mc-text-secondary);
+    font-size: 0.85rem;
+  }
+
+  .backup-status.error {
+    border-color: var(--mc-red);
+    color: var(--mc-red);
   }
 
   .mc-btn.danger {

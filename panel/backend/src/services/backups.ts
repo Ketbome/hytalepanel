@@ -49,8 +49,15 @@ export interface OperationResult {
   error?: string;
 }
 
+export interface BackupConfigValidationResult {
+  success: boolean;
+  config?: BackupConfig;
+  error?: string;
+}
+
 // Active schedulers map
 const activeSchedulers = new Map<string, NodeJS.Timeout>();
+const activeBackupOperations = new Set<string>();
 
 function getBackupsDir(serverId: string): string {
   return path.join(getServersDir(), serverId, 'backups');
@@ -60,27 +67,161 @@ function getServerDataDir(serverId: string): string {
   return path.join(getServersDir(), serverId, 'server');
 }
 
+function normalizeNonNegativeInteger(value: unknown, fieldName: string): { value?: number; error?: string } {
+  if (typeof value !== 'number' || !Number.isFinite(value) || Number.isNaN(value)) {
+    return { error: `${fieldName} must be a number` };
+  }
+  if (!Number.isInteger(value)) {
+    return { error: `${fieldName} must be an integer` };
+  }
+  if (value < 0) {
+    return { error: `${fieldName} must be >= 0` };
+  }
+  return { value };
+}
+
+export function normalizeBackupConfig(
+  input: Partial<BackupConfig> | undefined,
+  base: BackupConfig = DEFAULT_BACKUP_CONFIG
+): BackupConfigValidationResult {
+  const candidate: Partial<BackupConfig> = {
+    ...base,
+    ...(input || {})
+  };
+
+  if (typeof candidate.enabled !== 'boolean') {
+    return { success: false, error: 'enabled must be a boolean' };
+  }
+  if (typeof candidate.onServerStart !== 'boolean') {
+    return { success: false, error: 'onServerStart must be a boolean' };
+  }
+
+  const intervalValidation = normalizeNonNegativeInteger(candidate.intervalMinutes, 'intervalMinutes');
+  if (intervalValidation.error) {
+    return { success: false, error: intervalValidation.error };
+  }
+
+  const maxBackupsValidation = normalizeNonNegativeInteger(candidate.maxBackups, 'maxBackups');
+  if (maxBackupsValidation.error) {
+    return { success: false, error: maxBackupsValidation.error };
+  }
+
+  const maxAgeValidation = normalizeNonNegativeInteger(candidate.maxAgeDays, 'maxAgeDays');
+  if (maxAgeValidation.error) {
+    return { success: false, error: maxAgeValidation.error };
+  }
+
+  const intervalMinutes = intervalValidation.value ?? base.intervalMinutes;
+  if (candidate.enabled && intervalMinutes < 1) {
+    return { success: false, error: 'intervalMinutes must be >= 1 when automatic backups are enabled' };
+  }
+
+  const config: BackupConfig = {
+    enabled: candidate.enabled,
+    intervalMinutes: candidate.enabled ? intervalMinutes : 0,
+    maxBackups: maxBackupsValidation.value ?? base.maxBackups,
+    maxAgeDays: maxAgeValidation.value ?? base.maxAgeDays,
+    onServerStart: candidate.onServerStart
+  };
+
+  return { success: true, config };
+}
+
 function generateBackupFilename(): string {
   const now = new Date();
-  const timestamp = now.toISOString().replaceAll(/[:.]/g, '-').slice(0, 19);
-  return `backup-${timestamp}.zip`;
+  const iso = now.toISOString();
+  const base = iso.slice(0, 19).replaceAll(':', '-');
+  const ms = iso.slice(20, 23);
+  const randomSuffix = Math.random().toString(36).slice(2, 8);
+  return `backup-${base}-${ms}-${randomSuffix}.zip`;
 }
 
 function parseBackupFilename(filename: string): { id: string; createdAt: string } | null {
-  const match = filename.match(/^backup-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})\.zip$/);
-  if (!match) return null;
+  const withMsAndSuffix = filename.match(
+    /^backup-(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})-([a-z0-9]{6})\.zip$/i
+  );
+  if (withMsAndSuffix) {
+    const [, y, mo, d, h, mi, s, ms, suffix] = withMsAndSuffix;
+    const isoUtc = `${y}-${mo}-${d}T${h}:${mi}:${s}.${ms}Z`;
+    return {
+      id: `${y}-${mo}-${d}T${h}-${mi}-${s}-${ms}-${suffix}`,
+      createdAt: new Date(isoUtc).toISOString()
+    };
+  }
 
-  // Convert filename timestamp format (2026-02-18T12-30-45) to ISO (2026-02-18T12:30:45)
-  const timestampId = match[1];
-  const isoTimestamp = timestampId.replace(/T(\d{2})-(\d{2})-(\d{2})$/, 'T$1:$2:$3');
+  const legacy = filename.match(/^backup-(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})\.zip$/);
+  if (!legacy) return null;
 
+  const [, y, mo, d, h, mi, s] = legacy;
+  const isoUtc = `${y}-${mo}-${d}T${h}:${mi}:${s}Z`;
   return {
-    id: timestampId,
-    createdAt: new Date(isoTimestamp).toISOString()
+    id: `${y}-${mo}-${d}T${h}-${mi}-${s}`,
+    createdAt: new Date(isoUtc).toISOString()
   };
 }
 
+function isValidBackupId(backupId: string): boolean {
+  return (
+    /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$/.test(backupId) ||
+    /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}-[a-z0-9]{6}$/i.test(backupId)
+  );
+}
+
+function getBackupPathFromId(serverId: string, backupId: string): string | null {
+  if (!isValidBackupId(backupId)) return null;
+  return path.join(getBackupsDir(serverId), `backup-${backupId}.zip`);
+}
+
+function hasAllowedBackupContent(entries: string[]): boolean {
+  const foldersToRestore = ['universe', 'config', 'mods', 'logs'];
+  const rootConfigPattern = /\.(json|ya?ml|properties)$/i;
+  return entries.some((entry) => {
+    const normalized = entry.replaceAll('\\', '/');
+    if (!normalized) return false;
+    const topLevel = normalized.split('/')[0];
+    if (foldersToRestore.includes(topLevel)) return true;
+    if (!normalized.includes('/') && rootConfigPattern.test(normalized)) return true;
+    return false;
+  });
+}
+
+function normalizePathForZipEntry(entry: string): string {
+  return entry.replaceAll('\\', '/').replace(/^\/+/, '');
+}
+
+async function listTopLevelEntries(dir: string): Promise<string[]> {
+  const entries = await fs.readdir(dir, { recursive: true });
+  return entries.map((entry) => normalizePathForZipEntry(String(entry)));
+}
+
+async function replaceDirectory(targetDir: string, sourceDir: string, rollbackRoot: string): Promise<void> {
+  const rollbackTarget = path.join(rollbackRoot, path.basename(targetDir));
+  const targetExists = await fs
+    .access(targetDir)
+    .then(() => true)
+    .catch(() => false);
+
+  if (targetExists) {
+    await fs.mkdir(rollbackRoot, { recursive: true });
+    await fs.rename(targetDir, rollbackTarget);
+  }
+
+  const sourceExists = await fs
+    .access(sourceDir)
+    .then(() => true)
+    .catch(() => false);
+
+  if (sourceExists) {
+    await fs.rename(sourceDir, targetDir);
+  }
+}
+
 export async function createBackup(serverId: string): Promise<BackupResult> {
+  if (activeBackupOperations.has(serverId)) {
+    return { success: false, error: 'backup already in progress' };
+  }
+
+  activeBackupOperations.add(serverId);
   try {
     const backupsDir = getBackupsDir(serverId);
     const serverDir = getServerDataDir(serverId);
@@ -164,6 +305,8 @@ export async function createBackup(serverId: string): Promise<BackupResult> {
     return { success: true, backup };
   } catch (e) {
     return { success: false, error: (e as Error).message };
+  } finally {
+    activeBackupOperations.delete(serverId);
   }
 }
 
@@ -209,12 +352,11 @@ export async function listBackups(serverId: string): Promise<BackupListResult> {
 
 export async function restoreBackup(serverId: string, backupId: string): Promise<OperationResult> {
   try {
-    const backupsDir = getBackupsDir(serverId);
     const serverDir = getServerDataDir(serverId);
-
-    // Find backup file
-    const filename = `backup-${backupId}.zip`;
-    const backupPath = path.join(backupsDir, filename);
+    const backupPath = getBackupPathFromId(serverId, backupId);
+    if (!backupPath) {
+      return { success: false, error: 'Invalid backup id' };
+    }
 
     try {
       await fs.access(backupPath);
@@ -222,19 +364,81 @@ export async function restoreBackup(serverId: string, backupId: string): Promise
       return { success: false, error: 'Backup not found' };
     }
 
-    // Clear existing data folders (but keep jar and assets)
+    const restoreTmpDir = path.join(serverDir, `.restore-tmp-${Date.now()}`);
+    const rollbackRoot = path.join(serverDir, `.restore-backup-${Date.now()}`);
     const foldersToRestore = ['universe', 'config', 'mods', 'logs'];
-    for (const folder of foldersToRestore) {
-      const folderPath = path.join(serverDir, folder);
-      try {
-        await fs.rm(folderPath, { recursive: true, force: true });
-      } catch {
-        // Ignore if doesn't exist
-      }
-    }
 
-    // Extract backup
-    await Extract(backupPath, { dir: serverDir });
+    try {
+      await fs.rm(restoreTmpDir, { recursive: true, force: true });
+      await fs.mkdir(restoreTmpDir, { recursive: true });
+      await Extract(backupPath, { dir: restoreTmpDir });
+
+      const extractedEntries = await listTopLevelEntries(restoreTmpDir);
+      if (!hasAllowedBackupContent(extractedEntries)) {
+        return { success: false, error: 'Backup archive has no restorable content' };
+      }
+
+      for (const folder of foldersToRestore) {
+        const sourceDir = path.join(restoreTmpDir, folder);
+        const targetDir = path.join(serverDir, folder);
+        await replaceDirectory(targetDir, sourceDir, rollbackRoot);
+      }
+
+      const rootConfigFiles = extractedEntries.filter(
+        (entry) => !entry.includes('/') && /\.(json|ya?ml|properties)$/i.test(entry)
+      );
+
+      for (const file of rootConfigFiles) {
+        const sourceFile = path.join(restoreTmpDir, file);
+        const targetFile = path.join(serverDir, file);
+        const rollbackFile = path.join(rollbackRoot, file);
+        const exists = await fs
+          .access(targetFile)
+          .then(() => true)
+          .catch(() => false);
+        if (exists) {
+          await fs.mkdir(path.dirname(rollbackFile), { recursive: true });
+          await fs.rename(targetFile, rollbackFile);
+        }
+        await fs.copyFile(sourceFile, targetFile);
+      }
+    } catch (e) {
+      // Attempt rollback to preserve previous state
+      for (const folder of foldersToRestore) {
+        const rollbackDir = path.join(rollbackRoot, folder);
+        const targetDir = path.join(serverDir, folder);
+        const rollbackExists = await fs
+          .access(rollbackDir)
+          .then(() => true)
+          .catch(() => false);
+        if (!rollbackExists) continue;
+        try {
+          await fs.rm(targetDir, { recursive: true, force: true });
+          await fs.rename(rollbackDir, targetDir);
+        } catch {
+          /* ignore rollback failure */
+        }
+      }
+
+      try {
+        const rollbackFiles = await fs.readdir(rollbackRoot);
+        for (const file of rollbackFiles) {
+          const rollbackFile = path.join(rollbackRoot, file);
+          const targetFile = path.join(serverDir, file);
+          const stat = await fs.stat(rollbackFile);
+          if (!stat.isFile()) continue;
+          await fs.rm(targetFile, { force: true });
+          await fs.rename(rollbackFile, targetFile);
+        }
+      } catch {
+        /* ignore rollback failure */
+      }
+
+      return { success: false, error: `Failed to restore backup: ${(e as Error).message}` };
+    } finally {
+      await fs.rm(restoreTmpDir, { recursive: true, force: true }).catch(() => undefined);
+      await fs.rm(rollbackRoot, { recursive: true, force: true }).catch(() => undefined);
+    }
 
     return { success: true };
   } catch (e) {
@@ -243,11 +447,14 @@ export async function restoreBackup(serverId: string, backupId: string): Promise
 }
 
 export async function deleteBackup(serverId: string, backupId: string): Promise<OperationResult> {
-  const filename = `backup-${backupId}.zip`;
+  const backupPath = getBackupPathFromId(serverId, backupId);
+  if (!backupPath) {
+    return { success: false, error: 'Invalid backup id' };
+  }
+  const filename = path.basename(backupPath);
 
   try {
     const backupsDir = getBackupsDir(serverId);
-    const backupPath = path.join(backupsDir, filename);
 
     console.log(`[Backups] Deleting backup: ${filename} for server ${serverId}`);
 
