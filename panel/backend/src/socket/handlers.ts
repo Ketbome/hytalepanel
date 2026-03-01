@@ -866,7 +866,8 @@ export function setupSocketHandlers(io: Server): void {
         const serverResult = await servers.getServer(ctx.serverId);
         if (serverResult.success && serverResult.server) {
           const normalized = backups.normalizeBackupConfig(serverResult.server.config.backup);
-          const configToSend = normalized.success && normalized.config ? normalized.config : backups.DEFAULT_BACKUP_CONFIG;
+          const configToSend =
+            normalized.success && normalized.config ? normalized.config : backups.DEFAULT_BACKUP_CONFIG;
           socket.emit('backup:config-result', {
             success: true,
             config: configToSend

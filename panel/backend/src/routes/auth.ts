@@ -3,19 +3,11 @@ import config from '../config/index.js';
 import { type AuthenticatedRequest, generateToken, requireAuth } from '../middleware/auth.js';
 
 const router: RouterType = Router();
+const cookiePath = config.server.basePath || '/';
 
 function isSecureConnection(req: AuthenticatedRequest): boolean {
-  // Check X-Forwarded-Proto header (reverse proxy with SSL termination)
-  const forwardedProto = req.headers['x-forwarded-proto'];
-  if (forwardedProto === 'https') return true;
-
-  // Check if request was made over HTTPS directly
+  // Express handles proxy SSL when "trust proxy" is enabled
   if (req.secure) return true;
-
-  // Check protocol from host header or origin
-  const origin = req.headers.origin || '';
-  if (origin.startsWith('https://')) return true;
-
   return false;
 }
 
@@ -47,7 +39,8 @@ router.post('/login', async (req: AuthenticatedRequest, res) => {
     res.cookie('token', token, {
       httpOnly: true,
       secure,
-      sameSite: secure ? 'strict' : 'lax',
+      sameSite: 'lax',
+      path: cookiePath,
       maxAge: 24 * 60 * 60 * 1000
     });
 
@@ -58,7 +51,7 @@ router.post('/login', async (req: AuthenticatedRequest, res) => {
 });
 
 router.post('/logout', (_req, res) => {
-  res.clearCookie('token');
+  res.clearCookie('token', { path: cookiePath });
   res.json({ success: true });
 });
 

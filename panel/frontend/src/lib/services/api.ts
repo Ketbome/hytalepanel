@@ -47,7 +47,9 @@ export async function uploadFile(
 
 export async function fetchServers(): Promise<ServersResponse> {
   try {
-    const response = await fetch(apiUrl('/api/servers'));
+    const response = await fetch(apiUrl('/api/servers'), {
+      credentials: 'include'
+    });
     return await response.json();
   } catch (e) {
     return { success: false, error: (e as Error).message };
@@ -64,6 +66,7 @@ export async function createServer(params: CreateServerParams): Promise<ServerRe
   try {
     const response = await fetch(apiUrl('/api/servers'), {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params)
     });
@@ -77,6 +80,7 @@ export async function updateServer(id: string, params: Partial<CreateServerParam
   try {
     const response = await fetch(apiUrl(`/api/servers/${id}`), {
       method: 'PUT',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params)
     });
@@ -89,7 +93,8 @@ export async function updateServer(id: string, params: Partial<CreateServerParam
 export async function deleteServer(id: string): Promise<OperationResponse> {
   try {
     const response = await fetch(apiUrl(`/api/servers/${id}`), {
-      method: 'DELETE'
+      method: 'DELETE',
+      credentials: 'include'
     });
     return await response.json();
   } catch (e) {
@@ -100,7 +105,8 @@ export async function deleteServer(id: string): Promise<OperationResponse> {
 export async function startServer(id: string): Promise<OperationResponse> {
   try {
     const response = await fetch(apiUrl(`/api/servers/${id}/start`), {
-      method: 'POST'
+      method: 'POST',
+      credentials: 'include'
     });
     return await response.json();
   } catch (e) {
@@ -111,7 +117,8 @@ export async function startServer(id: string): Promise<OperationResponse> {
 export async function stopServer(id: string): Promise<OperationResponse> {
   try {
     const response = await fetch(apiUrl(`/api/servers/${id}/stop`), {
-      method: 'POST'
+      method: 'POST',
+      credentials: 'include'
     });
     return await response.json();
   } catch (e) {
@@ -138,7 +145,9 @@ export interface ChannelsResponse {
 
 export async function fetchChannels(serverId: string): Promise<ChannelsResponse> {
   try {
-    const response = await fetch(apiUrl(`/api/servers/${serverId}/channels`));
+    const response = await fetch(apiUrl(`/api/servers/${serverId}/channels`), {
+      credentials: 'include'
+    });
     return await response.json();
   } catch (e) {
     return { success: false, error: (e as Error).message };

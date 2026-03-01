@@ -16,7 +16,8 @@ export interface AuthenticatedSocket extends Socket {
   user?: JwtPayload;
 }
 
-const ANONYMOUS_USER: JwtPayload = { username: 'anonymous', iat: Date.now() };
+const nowInSeconds = (): number => Math.floor(Date.now() / 1000);
+const ANONYMOUS_USER: JwtPayload = { username: 'anonymous', iat: nowInSeconds() };
 
 export function verifyToken(token: string): JwtPayload | null {
   try {
@@ -38,7 +39,7 @@ function verifyBasicAuth(authHeader: string): JwtPayload | null {
     const password = decoded.slice(colonIndex + 1);
 
     if (username === config.auth.username && password === config.auth.password) {
-      return { username, iat: Date.now() };
+      return { username, iat: nowInSeconds() };
     }
   } catch {
     // Invalid base64
@@ -143,7 +144,7 @@ export function socketAuth(socket: AuthenticatedSocket, next: (err?: Error) => v
 }
 
 export function generateToken(username: string): string {
-  return jwt.sign({ username, iat: Date.now() }, config.auth.jwtSecret, {
+  return jwt.sign({ username }, config.auth.jwtSecret, {
     expiresIn: config.auth.tokenExpiry as jwt.SignOptions['expiresIn']
   });
 }

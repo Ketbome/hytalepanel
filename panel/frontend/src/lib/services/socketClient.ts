@@ -82,7 +82,10 @@ export function connectSocket(): Socket {
 
   const config = get(panelConfig);
   const socketPath = config.basePath ? `${config.basePath}/socket.io` : '/socket.io';
-  socketInstance = io({ path: socketPath });
+  socketInstance = io({
+    path: socketPath,
+    withCredentials: true
+  });
 
   socketInstance.on('connect', () => {
     isConnected.set(true);
@@ -124,7 +127,7 @@ export function connectSocket(): Socket {
     if (err.message === 'Authentication required' || err.message === 'Invalid or expired token') {
       disconnectSocket();
       isAuthenticated.set(false);
-      showToast('Session expired. Please login again.', 'error');
+      showToast(`Authentication error: ${err.message}. Please login again.`, 'error');
     }
   });
 

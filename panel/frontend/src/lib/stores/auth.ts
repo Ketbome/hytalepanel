@@ -10,7 +10,7 @@ export const isLoading = writable<boolean>(true);
 
 export async function checkStatus(): Promise<boolean> {
   try {
-    const res = await fetch(apiUrl('/auth/status'));
+    const res = await fetch(apiUrl('/auth/status'), { credentials: 'include' });
     if (res.ok) {
       const data: AuthStatus = await res.json();
       isAuthenticated.set(data.authenticated);
@@ -27,7 +27,7 @@ export async function checkStatus(): Promise<boolean> {
 
 export async function checkDefaults(): Promise<void> {
   try {
-    const res = await fetch(apiUrl('/auth/check-defaults'));
+    const res = await fetch(apiUrl('/auth/check-defaults'), { credentials: 'include' });
     const data: DefaultsCheck = await res.json();
     isUsingDefaults.set(data.usingDefaults);
     authDisabled.set(data.authDisabled);
@@ -47,6 +47,7 @@ export async function login(username: string, password: string): Promise<boolean
   try {
     const res = await fetch(apiUrl('/auth/login'), {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
@@ -54,7 +55,12 @@ export async function login(username: string, password: string): Promise<boolean
     const data: LoginResponse = await res.json();
 
     if (res.ok && data.success) {
-      isAuthenticated.set(true);
+      // Ensure cookie auth is actually active before continuing
+      const authenticated = await checkStatus();
+      if (!authenticated) {
+        authError.set('Login succeeded but auth cookie was not stored. Check proxy/cookie settings.');
+        return false;
+      }
       return true;
     }
     authError.set(data.error || 'Login failed');
@@ -67,7 +73,10 @@ export async function login(username: string, password: string): Promise<boolean
 
 export async function logout(): Promise<void> {
   try {
-    await fetch(apiUrl('/auth/logout'), { method: 'POST' });
+    await fetch(apiUrl('/auth/logout'), {
+      method: 'POST',
+      credentials: 'include'
+    });
   } catch {
     // ignore
   }

@@ -26,6 +26,8 @@ const basePath = config.server.basePath;
 const socketPath = basePath ? `${basePath}/socket.io` : '/socket.io';
 const io = new Server(server, { path: socketPath });
 
+// Needed so req.secure works behind reverse proxies
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(cookieParser());
 
