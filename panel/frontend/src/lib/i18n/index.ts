@@ -3,6 +3,7 @@ import { init, locale, register, waitLocale } from 'svelte-i18n';
 register('en', () => import('./locales/en.json'));
 register('es', () => import('./locales/es.json'));
 register('uk', () => import('./locales/uk.json'));
+register('br', () => import('./locales/br.json'));
 
 const savedLang = localStorage.getItem('hytale-panel-lang') || 'en';
 

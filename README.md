@@ -20,7 +20,7 @@ Docker-based web panel for managing multiple Hytale dedicated servers.
 - 🔧 **Mod Manager** - Install mods from [Modtale](https://modtale.net) or [CurseForge](https://curseforge.com/hytale)
 - 🔄 **Auto-Updates** - Track and update server files with one click
 - 🔐 **Authentication** - JWT auth with SSO support
-- 🌍 **Multi-language** - English, Spanish, Ukrainian
+- 🌍 **Multi-language** - English, Spanish, Ukrainian, Brazilian Portuguese
 
 ## Documentation
 

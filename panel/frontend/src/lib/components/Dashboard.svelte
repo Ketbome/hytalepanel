@@ -155,6 +155,12 @@ async function handleLogout(): Promise<void> {
                 >
                   🇺🇦 UK
                 </button>
+                <button 
+                  onclick={() => changeLanguage('br')} 
+                  class="mc-btn mc-btn-sm w-full justify-start"
+                >
+                  🇧🇷 BR
+                </button>
               </div>
             </div>
           {/if}
