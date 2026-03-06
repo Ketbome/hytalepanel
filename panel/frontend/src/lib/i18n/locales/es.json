@@ -20,6 +20,8 @@
 	"downloadFiles": "Descargar Archivos",
 	"redownload": "Re-descargar",
 	"downloadHint": "Descarga ~2GB desde Hytale",
+	"downloadRequiresRunningServer": "El servidor está apagado. Inícialo desde la pestaña Control e inténtalo de nuevo.",
+	"downloadStartServerHint": "Tip: inicia primero el servidor desde Control para inicializar el contenedor.",
 	"credentialsSaved": "✓ Credenciales guardadas",
 	"noCredentials": "○ Sin credenciales",
 	"authRequired": "Auth Requerida",

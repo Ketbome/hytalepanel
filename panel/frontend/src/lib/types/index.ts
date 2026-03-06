@@ -232,4 +232,5 @@ export interface CommandResult {
 export interface DownloadStatusEvent {
   status: 'starting' | 'auth-required' | 'output' | 'extracting' | 'complete' | 'done' | 'error';
   message?: string;
+  code?: 'CONTAINER_NOT_RUNNING' | 'CONTAINER_NOT_FOUND' | 'DOWNLOAD_FAILED' | string;
 }

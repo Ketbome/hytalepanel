@@ -20,6 +20,8 @@
 	"downloadFiles": "Завантажити файли",
 	"redownload": "Перезавантажити",
 	"downloadHint": "Завантажує ~2ГБ з Hytale",
+	"downloadRequiresRunningServer": "Сервер офлайн. Запустіть його у вкладці Control і спробуйте ще раз.",
+	"downloadStartServerHint": "Порада: спочатку запустіть сервер у вкладці Control, щоб ініціалізувати контейнер.",
 	"credentialsSaved": "✓ Облiковi данi збережено",
 	"noCredentials": "○ Немає облiкових даних",
 	"authRequired": "Потрiбна авторизацiя",

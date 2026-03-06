@@ -7,6 +7,7 @@ import * as updater from './updater.js';
 export interface DownloadStatus {
   status: 'starting' | 'auth-required' | 'output' | 'error' | 'extracting' | 'complete' | 'done';
   message: string;
+  code?: 'CONTAINER_NOT_RUNNING' | 'CONTAINER_NOT_FOUND' | 'DOWNLOAD_FAILED';
   serverId?: string;
 }
 
@@ -17,8 +18,27 @@ export async function downloadServerFiles(
   _channel?: ReleaseChannel
 ): Promise<void> {
   try {
+    const status = await docker.getStatus(containerName);
+    if (!status.running) {
+      socket.emit('download-status', {
+        status: 'error',
+        code: 'CONTAINER_NOT_RUNNING',
+        message: 'Server is offline. Start it from Control tab and try again.',
+        serverId
+      } satisfies DownloadStatus);
+      return;
+    }
+
     const c = await docker.getContainer(containerName);
-    if (!c) throw new Error('Container not found');
+    if (!c) {
+      socket.emit('download-status', {
+        status: 'error',
+        code: 'CONTAINER_NOT_FOUND',
+        message: 'Server container was not found. Check your server setup.',
+        serverId
+      } satisfies DownloadStatus);
+      return;
+    }
 
     socket.emit('download-status', {
       status: 'starting',
@@ -142,9 +162,13 @@ export async function downloadServerFiles(
     });
   } catch (e) {
     console.error('Download error:', e);
+    const message = (e as Error).message;
+    const isContainerRunningIssue = message.includes('409') || message.toLowerCase().includes('not running');
+
     socket.emit('download-status', {
       status: 'error',
-      message: (e as Error).message,
+      code: isContainerRunningIssue ? 'CONTAINER_NOT_RUNNING' : 'DOWNLOAD_FAILED',
+      message: isContainerRunningIssue ? 'Server is offline. Start it from Control tab and try again.' : message,
       serverId
     });
   }

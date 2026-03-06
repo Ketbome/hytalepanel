@@ -20,6 +20,8 @@
   "downloadFiles": "Download Files",
   "redownload": "Re-download",
   "downloadHint": "Downloads ~2GB from Hytale",
+  "downloadRequiresRunningServer": "Server is offline. Start it from Control tab and try again.",
+  "downloadStartServerHint": "Tip: start the server first from Control to initialize the container.",
   "credentialsSaved": "✓ Credentials saved",
   "noCredentials": "○ No credentials",
   "authRequired": "Auth Required",

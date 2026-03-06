@@ -1,10 +1,22 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
 import { emit } from '$lib/services/socketClient';
-import { downloaderAuth, downloadProgress, filesReady, isCheckingFiles, updateInfo } from '$lib/stores/server';
+import {
+  downloaderAuth,
+  downloadProgress,
+  filesReady,
+  isCheckingFiles,
+  serverStatus,
+  updateInfo
+} from '$lib/stores/server';
+import { showToast } from '$lib/stores/ui';
 import type { DownloadStep } from '$lib/types';
 
 function handleDownload(): void {
+  if (!$serverStatus.running) {
+    showToast($_('downloadRequiresRunningServer'), 'warning');
+    return;
+  }
   downloadProgress.update((p) => ({ ...p, authUrl: null, authCode: null }));
   emit('download');
 }
@@ -234,6 +246,9 @@ $effect(() => {
     {/if}
   </button>
   <p class="font-mono text-sm text-center text-text-dim">{$_('downloadHint')}</p>
+  {#if !$serverStatus.running}
+    <p class="font-mono text-xs text-center text-warning">{$_('downloadStartServerHint')}</p>
+  {/if}
 
   <!-- Update Section -->
   {#if $filesReady.ready}

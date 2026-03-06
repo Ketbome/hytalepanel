@@ -427,7 +427,10 @@ export function setupSocketHandlers(io: Server): void {
 
     socket.on('mods:list', async () => {
       if (!ctx.containerName) return;
-      const result = await mods.listInstalledMods(ctx.containerName);
+      const result = await mods.listInstalledMods({
+        containerName: ctx.containerName ?? undefined,
+        serverId: ctx.serverId ?? undefined
+      });
 
       if (result.success && (modtale.isConfigured() || curseforge.isConfigured())) {
         const localMods = result.mods.filter((m) => m.isLocal && !m.projectId);
@@ -533,7 +536,10 @@ export function setupSocketHandlers(io: Server): void {
                 }
 
                 Object.assign(mod, updates);
-                await mods.updateMod(mod.id, updates, ctx.containerName!);
+                await mods.updateMod(mod.id, updates, {
+                  containerName: ctx.containerName ?? undefined,
+                  serverId: ctx.serverId ?? undefined
+                });
               }
             } catch (e) {
               console.error(`[Mods] Error enriching mod ${mod.fileName}:`, (e as Error).message);
@@ -587,7 +593,10 @@ export function setupSocketHandlers(io: Server): void {
           versionId,
           fileName
         },
-        ctx.containerName
+        {
+          containerName: ctx.containerName ?? undefined,
+          serverId: ctx.serverId ?? undefined
+        }
       );
 
       socket.emit('mods:install-result', installResult);
@@ -595,17 +604,35 @@ export function setupSocketHandlers(io: Server): void {
 
     socket.on('mods:uninstall', async (modId: string) => {
       if (!ctx.containerName) return;
-      socket.emit('mods:uninstall-result', await mods.uninstallMod(modId, ctx.containerName));
+      socket.emit(
+        'mods:uninstall-result',
+        await mods.uninstallMod(modId, {
+          containerName: ctx.containerName ?? undefined,
+          serverId: ctx.serverId ?? undefined
+        })
+      );
     });
 
     socket.on('mods:enable', async (modId: string) => {
       if (!ctx.containerName) return;
-      socket.emit('mods:enable-result', await mods.enableMod(modId, ctx.containerName));
+      socket.emit(
+        'mods:enable-result',
+        await mods.enableMod(modId, {
+          containerName: ctx.containerName ?? undefined,
+          serverId: ctx.serverId ?? undefined
+        })
+      );
     });
 
     socket.on('mods:disable', async (modId: string) => {
       if (!ctx.containerName) return;
-      socket.emit('mods:disable-result', await mods.disableMod(modId, ctx.containerName));
+      socket.emit(
+        'mods:disable-result',
+        await mods.disableMod(modId, {
+          containerName: ctx.containerName ?? undefined,
+          serverId: ctx.serverId ?? undefined
+        })
+      );
     });
 
     socket.on('mods:check-config', async () => {
@@ -673,7 +700,10 @@ export function setupSocketHandlers(io: Server): void {
           projectIconUrl: metadata.projectIconUrl,
           projectSlug: metadata.projectSlug
         },
-        ctx.containerName
+        {
+          containerName: ctx.containerName ?? undefined,
+          serverId: ctx.serverId ?? undefined
+        }
       );
 
       socket.emit('cf:install-result', installResult);
@@ -693,7 +723,10 @@ export function setupSocketHandlers(io: Server): void {
     socket.on('mods:check-updates', async () => {
       if (!ctx.containerName) return;
       try {
-        const listResult = await mods.listInstalledMods(ctx.containerName);
+        const listResult = await mods.listInstalledMods({
+          containerName: ctx.containerName ?? undefined,
+          serverId: ctx.serverId ?? undefined
+        });
         if (!listResult.success) {
           socket.emit('mods:check-updates-result', {
             success: false,
@@ -827,7 +860,10 @@ export function setupSocketHandlers(io: Server): void {
       if (!ctx.containerName) return;
       console.log(`[Mods] Update request: modId=${modId}, versionId=${versionId}`);
 
-      const modResult = await mods.getMod(modId, ctx.containerName);
+      const modResult = await mods.getMod(modId, {
+        containerName: ctx.containerName ?? undefined,
+        serverId: ctx.serverId ?? undefined
+      });
       if (!modResult.success || !modResult.mod) {
         socket.emit('mods:update-result', {
           success: false,
@@ -875,7 +911,10 @@ export function setupSocketHandlers(io: Server): void {
           classification: mod.classification,
           fileName: downloadResult.fileName || metadata.fileName
         },
-        ctx.containerName
+        {
+          containerName: ctx.containerName ?? undefined,
+          serverId: ctx.serverId ?? undefined
+        }
       );
 
       if (installResult.success) {

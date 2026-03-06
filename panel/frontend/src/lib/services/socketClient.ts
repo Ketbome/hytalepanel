@@ -680,7 +680,11 @@ function handleDownloadStatus(d: DownloadStatusEvent & { serverId?: string }): v
           status: get(_)('error'),
           active: false
         }));
-        if (d.message) {
+        if (d.code === 'CONTAINER_NOT_RUNNING') {
+          const message = get(_)('downloadRequiresRunningServer');
+          showToast(message, 'warning');
+          addLog(message, 'warn');
+        } else if (d.message) {
           showToast(d.message, 'error');
           addLog(`${get(_)('error')}: ${d.message}`, 'error');
         }

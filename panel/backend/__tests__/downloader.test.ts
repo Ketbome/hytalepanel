@@ -7,12 +7,14 @@ const mockContainer = { exec: jest.fn(() => Promise.resolve(mockExec)) } as unkn
 
 const mockGetContainer = jest.fn<() => Promise<Container | null>>();
 const mockExecCommand = jest.fn<(cmd: string, timeout?: number) => Promise<string>>();
+const mockGetStatus = jest.fn<() => Promise<{ running: boolean; status: string }>>();
 const mockCheckServerFiles = jest.fn<() => Promise<{ hasJar: boolean; hasAssets: boolean; ready: boolean }>>();
 const mockCheckAuth = jest.fn<() => Promise<boolean>>();
 
 jest.unstable_mockModule('../src/services/docker.js', () => ({
   getContainer: mockGetContainer,
-  execCommand: mockExecCommand
+  execCommand: mockExecCommand,
+  getStatus: mockGetStatus
 }));
 
 jest.unstable_mockModule('../src/services/files.js', () => ({
@@ -30,6 +32,7 @@ describe('Downloader Service', () => {
     mockSocket = { emit: jest.fn() };
     mockGetContainer.mockResolvedValue(mockContainer);
     mockExecCommand.mockResolvedValue('');
+    mockGetStatus.mockResolvedValue({ running: true, status: 'running' });
     mockCheckServerFiles.mockResolvedValue({ hasJar: false, hasAssets: false, ready: false });
     mockCheckAuth.mockResolvedValue(false);
   });
@@ -43,12 +46,23 @@ describe('Downloader Service', () => {
     })
   });
 
-  test('emits error when container not found', async () => {
+  test('emits semantic error when container is not running', async () => {
+    mockGetStatus.mockResolvedValue({ running: false, status: 'exited' });
+    await downloadServerFiles(mockSocket as unknown as Socket);
+    expect(mockSocket.emit).toHaveBeenCalledWith('download-status', {
+      status: 'error',
+      code: 'CONTAINER_NOT_RUNNING',
+      message: 'Server is offline. Start it from Control tab and try again.'
+    });
+  });
+
+  test('emits semantic error when container not found', async () => {
     mockGetContainer.mockResolvedValue(null);
     await downloadServerFiles(mockSocket as unknown as Socket);
     expect(mockSocket.emit).toHaveBeenCalledWith('download-status', {
       status: 'error',
-      message: 'Container not found'
+      code: 'CONTAINER_NOT_FOUND',
+      message: 'Server container was not found. Check your server setup.'
     });
   });
 
