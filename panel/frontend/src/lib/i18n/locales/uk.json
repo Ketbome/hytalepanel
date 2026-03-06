@@ -178,6 +178,8 @@
 	"reportIssue": "Повідомити про проблему",
 	"modNoDistribution": "Цей мод не дозволяє завантаження через API. Встановiть вручну з CurseForge.",
 	"manualOnly": "Вручну",
+	"manualDownload": "Ручне завантаження",
+	"openModPage": "Відкрити сторінку",
 	"apiKeyNotConfigured": "API ключ {provider} не налаштовано. Встановiть його в файлі .env.",
 	"apiKeyInvalid": "API ключ {provider} недійсний або закінчився. Перевірте ваш ключ.",
 	"updatesRequireModtale": "Перевірка оновлень потребує API ключ Modtale.",

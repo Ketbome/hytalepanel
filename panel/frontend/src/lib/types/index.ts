@@ -183,6 +183,7 @@ export interface ModUpdate {
   latestVersion: string;
   latestVersionId: string;
   latestFileName?: string;
+  manualOnly?: boolean;
 }
 
 export interface ModSearchResult {

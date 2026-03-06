@@ -446,14 +446,28 @@ function getModUrl(mod: InstalledMod | ModProject): string | null {
             <!-- Actions -->
             <div class="flex items-center gap-2 shrink-0">
               {#if updateInfo}
-                <button 
-                  class="px-3 py-2 font-mono text-xs border-3 transition-all
-                         bg-hytale-gold border-hytale-orange text-panel-bg
-                         hover:bg-hytale-orange shadow-mc-btn active:shadow-mc-btn-pressed"
-                  onclick={() => updateMod(mod, updateInfo)}
-                >
-                  ⬆ {$_('update')}
-                </button>
+                {#if updateInfo.manualOnly && modUrl}
+                  <a
+                    href={modUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="px-3 py-2 font-mono text-xs border-3 transition-all
+                           bg-warning/20 border-warning text-warning
+                           hover:bg-warning hover:text-panel-bg shadow-mc-btn active:shadow-mc-btn-pressed"
+                    title={$_('modNoDistribution')}
+                  >
+                    ↗ {$_('manualDownload')}
+                  </a>
+                {:else}
+                  <button 
+                    class="px-3 py-2 font-mono text-xs border-3 transition-all
+                           bg-hytale-gold border-hytale-orange text-panel-bg
+                           hover:bg-hytale-orange shadow-mc-btn active:shadow-mc-btn-pressed"
+                    onclick={() => updateMod(mod, updateInfo)}
+                  >
+                    ⬆ {$_('update')}
+                  </button>
+                {/if}
               {/if}
               <button 
                 class="w-12 h-8 border-3 transition-all relative
@@ -543,24 +557,38 @@ function getModUrl(mod: InstalledMod | ModProject): string | null {
             
             <!-- Actions -->
             <div class="shrink-0">
-              <button 
-                class="px-4 py-2 font-mono text-sm border-3 transition-all
-                       {alreadyInstalled 
-                         ? 'bg-stone-dark border-stone text-text-dim cursor-not-allowed' 
-                         : noDistribution 
-                           ? 'bg-warning/20 border-warning text-warning cursor-not-allowed'
-                           : 'bg-grass border-grass-dark text-panel-bg hover:bg-grass-light shadow-mc-btn active:shadow-mc-btn-pressed'}"
-                onclick={() => installMod(mod)} 
-                disabled={alreadyInstalled || noDistribution}
-              >
-                {#if noDistribution}
-                  ⚠ {$_('manualOnly')}
-                {:else if alreadyInstalled}
-                  ✓ {$_('installed')}
-                {:else}
-                  ⬇ {$_('install')}
-                {/if}
-              </button>
+              {#if noDistribution && modUrl}
+                <a
+                  href={modUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="px-4 py-2 font-mono text-sm border-3 transition-all inline-block
+                         bg-warning/20 border-warning text-warning
+                         hover:bg-warning hover:text-panel-bg shadow-mc-btn active:shadow-mc-btn-pressed"
+                  title={$_('modNoDistribution')}
+                >
+                  ↗ {$_('manualDownload')}
+                </a>
+              {:else}
+                <button 
+                  class="px-4 py-2 font-mono text-sm border-3 transition-all
+                         {alreadyInstalled 
+                           ? 'bg-stone-dark border-stone text-text-dim cursor-not-allowed' 
+                           : noDistribution 
+                             ? 'bg-warning/20 border-warning text-warning cursor-not-allowed'
+                             : 'bg-grass border-grass-dark text-panel-bg hover:bg-grass-light shadow-mc-btn active:shadow-mc-btn-pressed'}"
+                  onclick={() => installMod(mod)} 
+                  disabled={alreadyInstalled || noDistribution}
+                >
+                  {#if noDistribution}
+                    ⚠ {$_('manualOnly')}
+                  {:else if alreadyInstalled}
+                    ✓ {$_('installed')}
+                  {:else}
+                    ⬇ {$_('install')}
+                  {/if}
+                </button>
+              {/if}
             </div>
           </div>
         {/each}

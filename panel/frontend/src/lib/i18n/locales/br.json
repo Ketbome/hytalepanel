@@ -178,6 +178,8 @@
   "reportIssue": "Reportar problema",
   "modNoDistribution": "Este mod não permite downloads via API. Instale manualmente pelo CurseForge.",
   "manualOnly": "Manual",
+  "manualDownload": "Download manual",
+  "openModPage": "Abrir página",
   "apiKeyNotConfigured": "Chave de API do {provider} não configurada. Defina-a no arquivo .env.",
   "apiKeyInvalid": "A chave de API do {provider} é inválida ou expirou. Verifique sua chave.",
   "updatesRequireModtale": "A verificação de atualizações requer chave da API Modtale.",

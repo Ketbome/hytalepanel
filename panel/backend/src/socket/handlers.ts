@@ -733,6 +733,7 @@ export function setupSocketHandlers(io: Server): void {
           latestVersionId: string;
           latestFileName?: string;
           providerId: string;
+          manualOnly?: boolean;
         }> = [];
 
         // Check Modtale mods if API is configured
@@ -789,7 +790,8 @@ export function setupSocketHandlers(io: Server): void {
                       latestVersion: latest.version,
                       latestVersionId: latest.id,
                       latestFileName: latest.fileName,
-                      providerId: 'curseforge'
+                      providerId: 'curseforge',
+                      manualOnly: projectResult.project.allowDistribution === false
                     };
                   }
                 } else {
