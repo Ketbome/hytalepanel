@@ -1,4 +1,5 @@
 import config from '../config/index.js';
+import { getAvailableFilesSorted, pickLatestByStability } from './curseforgeUtils.js';
 
 const CURSEFORGE_API_BASE = 'https://api.curseforge.com';
 let HYTALE_GAME_ID = 6399; // Default, will be verified on init
@@ -287,9 +288,22 @@ function transformFile(file: CFFile): ModVersion {
   };
 }
 
-function transformMod(mod: CFMod): ModProject {
-  const versions = mod.latestFiles?.map(transformFile) || [];
-  const latestFile = mod.latestFiles?.[0];
+async function getModFilesRaw(modId: string): Promise<CFFile[]> {
+  const response = await request<{ data: CFFile[] }>(`/v1/mods/${modId}/files`);
+  return response.data;
+}
+
+async function transformMod(mod: CFMod): Promise<ModProject> {
+  let filesSource: CFFile[] = mod.latestFiles || [];
+  try {
+    filesSource = await getModFilesRaw(String(mod.id));
+  } catch {
+    // Fall back to latestFiles from project payload when files endpoint fails
+  }
+
+  const sortedAvailableFiles = getAvailableFilesSorted(filesSource);
+  const latestFile = pickLatestByStability(filesSource);
+  const versions = sortedAvailableFiles.map(transformFile);
 
   return {
     id: String(mod.id),
@@ -347,9 +361,11 @@ export async function searchProjects(params: SearchParams = {}): Promise<SearchR
     const endpoint = `/v1/mods/search?${queryParams.toString()}`;
     const response = await request<CFSearchResponse>(endpoint);
 
+    const projects = await Promise.all(response.data.map((mod) => transformMod(mod)));
+
     return {
       success: true,
-      projects: response.data.map(transformMod),
+      projects,
       total: response.pagination.totalCount,
       page: Math.floor(response.pagination.index / pageSize) + 1,
       pageSize: response.pagination.pageSize,
@@ -371,7 +387,7 @@ export async function searchProjects(params: SearchParams = {}): Promise<SearchR
 export async function getProject(projectId: string): Promise<ProjectResult> {
   try {
     const response = await request<{ data: CFMod }>(`/v1/mods/${projectId}`);
-    return { success: true, project: transformMod(response.data) };
+    return { success: true, project: await transformMod(response.data) };
   } catch (e) {
     return { success: false, error: (e as Error).message };
   }
@@ -395,10 +411,10 @@ export async function getCategories(): Promise<ClassificationsResult> {
 
 export async function getModFiles(modId: string): Promise<{ success: boolean; files: ModVersion[]; error?: string }> {
   try {
-    const response = await request<{ data: CFFile[] }>(`/v1/mods/${modId}/files`);
+    const files = await getModFilesRaw(modId);
     return {
       success: true,
-      files: response.data.filter((f) => f.isAvailable).map(transformFile)
+      files: getAvailableFilesSorted(files).map(transformFile)
     };
   } catch (e) {
     return { success: false, error: (e as Error).message, files: [] };

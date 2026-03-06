@@ -65,6 +65,39 @@ interface ServerContext {
   containerName: string | null;
 }
 
+function normalizeSearchText(value: string): string {
+  return value.toLowerCase().replaceAll(/[^a-z0-9]/g, '');
+}
+
+function buildModSearchTerm(fileName: string): string {
+  return fileName
+    .replace(/\.(jar|zip|disabled)$/gi, '')
+    .replace(/[-_ ]v?\d+\.\d+(?:\.\d+)?(?:[-_.][a-z0-9]+)?$/i, '')
+    .replaceAll(/[-_]/g, ' ')
+    .trim();
+}
+
+function extractVersionFromFileName(fileName: string): string | null {
+  const versionMatch = fileName.match(/[-_ ]v?(\d+\.\d+(?:\.\d+)?(?:[-_.][a-z0-9]+)?)/i);
+  return versionMatch ? versionMatch[1] : null;
+}
+
+function normalizeVersion(value: string): string {
+  return value.toLowerCase().replace(/^v/, '').trim();
+}
+
+function getProjectMatchScore(project: { title: string; slug: string }, searchTerm: string): number {
+  const normalizedSearch = normalizeSearchText(searchTerm);
+  const normalizedTitle = normalizeSearchText(project.title);
+  const normalizedSlug = normalizeSearchText(project.slug);
+
+  if (!normalizedSearch || normalizedSearch.length < 2) return 0;
+  if (normalizedTitle === normalizedSearch || normalizedSlug === normalizedSearch) return 100;
+  if (normalizedTitle.startsWith(normalizedSearch) || normalizedSlug.startsWith(normalizedSearch)) return 85;
+  if (normalizedTitle.includes(normalizedSearch) || normalizedSlug.includes(normalizedSearch)) return 70;
+  return 0;
+}
+
 export function setupSocketHandlers(io: Server): void {
   io.on('connection', (socket: Socket) => {
     console.log('Client connected');
@@ -396,34 +429,87 @@ export function setupSocketHandlers(io: Server): void {
       if (!ctx.containerName) return;
       const result = await mods.listInstalledMods(ctx.containerName);
 
-      if (result.success && modtale.isConfigured()) {
+      if (result.success && (modtale.isConfigured() || curseforge.isConfigured())) {
         const localMods = result.mods.filter((m) => m.isLocal && !m.projectId);
 
         if (localMods.length > 0) {
           const enrichPromises = localMods.map(async (mod) => {
             try {
-              const searchTerm = mod.fileName
-                .replace(/\.(jar|zip|disabled)$/gi, '')
-                .replace(/-[\d.]+.*$/, '')
-                .replaceAll(/[-_]/g, ' ');
+              const searchTerm = buildModSearchTerm(mod.fileName);
 
               if (!searchTerm || searchTerm.length < 2) return;
 
-              const searchResult = await modtale.searchProjects({
-                query: searchTerm,
-                pageSize: 5
-              });
-              if (!searchResult.success || !searchResult.projects.length) return;
+              const [modtaleResult, curseforgeResult] = await Promise.all([
+                modtale.isConfigured()
+                  ? modtale.searchProjects({
+                      query: searchTerm,
+                      pageSize: 5
+                    })
+                  : Promise.resolve(null),
+                curseforge.isConfigured()
+                  ? curseforge.searchProjects({
+                      query: searchTerm,
+                      pageSize: 5
+                    })
+                  : Promise.resolve(null)
+              ]);
 
-              const match = searchResult.projects.find(
-                (p) =>
-                  p.title.toLowerCase() === searchTerm.toLowerCase() ||
-                  p.title.toLowerCase().includes(searchTerm.toLowerCase())
-              );
+              const candidates: Array<{
+                providerId: 'modtale' | 'curseforge';
+                id: string;
+                slug: string;
+                title: string;
+                iconUrl: string | null;
+                classification: string;
+                downloads: number;
+                versions: Array<{ id: string; version: string }>;
+              }> = [];
+
+              if (modtaleResult?.success && modtaleResult.projects.length > 0) {
+                candidates.push(
+                  ...modtaleResult.projects.map((project) => ({
+                    providerId: 'modtale' as const,
+                    id: project.id,
+                    slug: project.slug,
+                    title: project.title,
+                    iconUrl: project.iconUrl,
+                    classification: project.classification,
+                    downloads: project.downloads,
+                    versions: project.versions || []
+                  }))
+                );
+              }
+
+              if (curseforgeResult?.success && curseforgeResult.projects.length > 0) {
+                candidates.push(
+                  ...curseforgeResult.projects.map((project) => ({
+                    providerId: 'curseforge' as const,
+                    id: project.id,
+                    slug: project.slug,
+                    title: project.title,
+                    iconUrl: project.iconUrl,
+                    classification: project.classification,
+                    downloads: project.downloads,
+                    versions: project.versions || []
+                  }))
+                );
+              }
+
+              if (candidates.length === 0) return;
+
+              const rankedCandidates = candidates
+                .map((candidate) => ({
+                  candidate,
+                  score: getProjectMatchScore(candidate, searchTerm)
+                }))
+                .filter((entry) => entry.score > 0)
+                .sort((a, b) => b.score - a.score || b.candidate.downloads - a.candidate.downloads);
+
+              const match = rankedCandidates[0]?.candidate;
 
               if (match) {
                 const updates: Partial<mods.InstalledMod> = {
-                  providerId: 'modtale',
+                  providerId: match.providerId,
                   projectId: match.id,
                   projectSlug: match.slug,
                   projectTitle: match.title,
@@ -432,10 +518,12 @@ export function setupSocketHandlers(io: Server): void {
                   isLocal: false
                 };
 
-                const versionMatch = mod.fileName.match(/-(\d+\.\d+(?:\.\d+)?)/);
-                if (versionMatch) {
-                  const fileVersion = versionMatch[1];
-                  const matchingVersion = match.versions?.find((v) => v.version === fileVersion);
+                const fileVersion = extractVersionFromFileName(mod.fileName);
+                if (fileVersion) {
+                  const normalizedFileVersion = normalizeVersion(fileVersion);
+                  const matchingVersion = match.versions?.find(
+                    (v) => normalizeVersion(v.version) === normalizedFileVersion
+                  );
                   if (matchingVersion) {
                     updates.versionId = matchingVersion.id;
                     updates.versionName = matchingVersion.version;
@@ -614,6 +702,28 @@ export function setupSocketHandlers(io: Server): void {
           return;
         }
 
+        const hasModtaleApi = modtale.isConfigured();
+        const hasCurseforgeApi = curseforge.isConfigured();
+        const uncheckedModIds = new Set<string>();
+
+        for (const mod of listResult.mods) {
+          if (!mod.projectId || mod.providerId === 'local') {
+            uncheckedModIds.add(mod.id);
+            continue;
+          }
+          if (mod.providerId === 'modtale' && !hasModtaleApi) {
+            uncheckedModIds.add(mod.id);
+            continue;
+          }
+          if (mod.providerId === 'curseforge' && !hasCurseforgeApi) {
+            uncheckedModIds.add(mod.id);
+            continue;
+          }
+          if (mod.providerId !== 'modtale' && mod.providerId !== 'curseforge') {
+            uncheckedModIds.add(mod.id);
+          }
+        }
+
         const allUpdates: Array<{
           modId: string;
           projectId: string | null;
@@ -626,7 +736,7 @@ export function setupSocketHandlers(io: Server): void {
         }> = [];
 
         // Check Modtale mods if API is configured
-        if (modtale.isConfigured()) {
+        if (hasModtaleApi) {
           const modtaleMods = listResult.mods.filter((m) => m.providerId === 'modtale' && m.projectId);
 
           const modtaleChecks = await Promise.all(
@@ -647,9 +757,12 @@ export function setupSocketHandlers(io: Server): void {
                       providerId: 'modtale'
                     };
                   }
+                } else {
+                  uncheckedModIds.add(mod.id);
                 }
               } catch (e) {
                 console.error(`[Mods] Error checking Modtale updates for ${mod.projectTitle}:`, (e as Error).message);
+                uncheckedModIds.add(mod.id);
               }
               return null;
             })
@@ -658,7 +771,7 @@ export function setupSocketHandlers(io: Server): void {
         }
 
         // Check CurseForge mods if API is configured
-        if (curseforge.isConfigured()) {
+        if (hasCurseforgeApi) {
           const cfMods = listResult.mods.filter((m) => m.providerId === 'curseforge' && m.projectId);
 
           const cfChecks = await Promise.all(
@@ -679,12 +792,15 @@ export function setupSocketHandlers(io: Server): void {
                       providerId: 'curseforge'
                     };
                   }
+                } else {
+                  uncheckedModIds.add(mod.id);
                 }
               } catch (e) {
                 console.error(
                   `[Mods] Error checking CurseForge updates for ${mod.projectTitle}:`,
                   (e as Error).message
                 );
+                uncheckedModIds.add(mod.id);
               }
               return null;
             })
@@ -694,7 +810,8 @@ export function setupSocketHandlers(io: Server): void {
 
         socket.emit('mods:check-updates-result', {
           success: true,
-          updates: allUpdates
+          updates: allUpdates,
+          uncheckedMods: uncheckedModIds.size
         });
       } catch (e) {
         socket.emit('mods:check-updates-result', {

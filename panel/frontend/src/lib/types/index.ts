@@ -202,6 +202,7 @@ export interface ModOperationResult {
 export interface ModUpdatesResult {
   success: boolean;
   updates?: ModUpdate[];
+  uncheckedMods?: number;
   error?: string;
 }
 

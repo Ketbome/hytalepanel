@@ -369,6 +369,8 @@ export function connectSocket(): Socket {
       availableUpdates.set(result.updates || []);
       if (result.updates && result.updates.length > 0) {
         showToast(t('updatesAvailable', { values: { count: result.updates.length } }));
+      } else if ((result.uncheckedMods || 0) > 0) {
+        showToast(t('noUpdatesUnchecked', { values: { count: result.uncheckedMods || 0 } }), 'warning');
       } else {
         showToast(t('noUpdates'));
       }

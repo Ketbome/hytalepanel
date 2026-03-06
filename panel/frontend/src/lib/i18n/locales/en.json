@@ -131,6 +131,7 @@
   "updateAvailable": "Update available",
   "updatesAvailable": "{count} update(s) available",
   "noUpdates": "All mods are up to date",
+  "noUpdatesUnchecked": "No updates found for tracked mods ({count} mod(s) could not be checked)",
   "modUpdated": "Mod updated!",
   "prev": "Prev",
   "next": "Next",

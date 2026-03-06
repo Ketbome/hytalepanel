@@ -131,6 +131,7 @@
 	"updateAvailable": "Доступне оновлення",
 	"updatesAvailable": "Доступно {count} оновлень",
 	"noUpdates": "Усi моди оновленi",
+	"noUpdatesUnchecked": "Для відстежуваних модів оновлень немає ({count} мод(ів) не вдалося перевірити)",
 	"modUpdated": "Мод оновлено!",
 	"prev": "Назад",
 	"next": "Далi",

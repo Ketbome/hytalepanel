@@ -131,6 +131,7 @@
 	"updateAvailable": "Actualizacion disponible",
 	"updatesAvailable": "{count} actualizacion(es) disponible(s)",
 	"noUpdates": "Todos los mods estan actualizados",
+	"noUpdatesUnchecked": "No hay actualizaciones en mods vinculados ({count} mod(s) no se pudieron verificar)",
 	"modUpdated": "Mod actualizado!",
 	"prev": "Ant",
 	"next": "Sig",
