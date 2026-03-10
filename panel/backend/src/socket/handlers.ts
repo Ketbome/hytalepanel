@@ -86,6 +86,30 @@ function normalizeVersion(value: string): string {
   return value.toLowerCase().replace(/^v/, '').trim();
 }
 
+function getComparableVersion(value: string): string | null {
+  const cleaned = value.replace(/\.(jar|zip|disabled)$/gi, '').trim();
+  const extracted = extractVersionFromFileName(cleaned);
+  if (extracted) return normalizeVersion(extracted);
+
+  const normalized = normalizeVersion(cleaned);
+  return normalized.length > 0 ? normalized : null;
+}
+
+function isUpdateNeeded(mod: mods.InstalledMod, latest: { id: string; version: string; fileName: string }): boolean {
+  if (latest.id && mod.versionId && latest.id === mod.versionId) {
+    return false;
+  }
+  
+  const currentComparable = getComparableVersion(mod.versionName) ?? getComparableVersion(mod.fileName);
+  const latestComparable = getComparableVersion(latest.version) ?? getComparableVersion(latest.fileName);
+
+  if (currentComparable && latestComparable && currentComparable === latestComparable) {
+    return false;
+  }
+
+  return !!latest.id;
+}
+
 function getProjectMatchScore(project: { title: string; slug: string }, searchTerm: string): number {
   const normalizedSearch = normalizeSearchText(searchTerm);
   const normalizedTitle = normalizeSearchText(project.title);
@@ -779,7 +803,7 @@ export function setupSocketHandlers(io: Server): void {
                 const projectResult = await modtale.getProject(mod.projectId!);
                 if (projectResult.success && projectResult.project?.latestVersion) {
                   const latest = projectResult.project.latestVersion;
-                  if (latest.id && latest.id !== mod.versionId) {
+                  if (isUpdateNeeded(mod, latest)) {
                     return {
                       modId: mod.id,
                       projectId: mod.projectId,
@@ -814,7 +838,7 @@ export function setupSocketHandlers(io: Server): void {
                 const projectResult = await curseforge.getProject(mod.projectId!);
                 if (projectResult.success && projectResult.project?.latestVersion) {
                   const latest = projectResult.project.latestVersion;
-                  if (latest.id && latest.id !== mod.versionId) {
+                  if (isUpdateNeeded(mod, latest)) {
                     return {
                       modId: mod.id,
                       projectId: mod.projectId,
