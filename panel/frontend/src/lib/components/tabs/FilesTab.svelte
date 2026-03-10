@@ -1,8 +1,8 @@
 <script lang="ts">
-import { _ } from 'svelte-i18n';
 import { tick } from 'svelte';
+import { _ } from 'svelte-i18n';
 import Skeleton from '$lib/components/ui/Skeleton.svelte';
-import { downloadFile, uploadFiles, type UploadFileItem } from '$lib/services/api';
+import { downloadFile, type UploadFileItem, uploadFiles } from '$lib/services/api';
 import { emit } from '$lib/services/socketClient';
 import {
   closeEditor,
@@ -160,10 +160,7 @@ interface FileSystemFileEntryLike extends FileSystemEntryLike {
 }
 
 interface FileSystemDirectoryReaderLike {
-  readEntries: (
-    success: (entries: FileSystemEntryLike[]) => void,
-    error?: (err: DOMException) => void
-  ) => void;
+  readEntries: (success: (entries: FileSystemEntryLike[]) => void, error?: (err: DOMException) => void) => void;
 }
 
 interface FileSystemDirectoryEntryLike extends FileSystemEntryLike {
@@ -190,17 +187,14 @@ async function entryToUploadItems(entry: FileSystemEntryLike, parentPath = ''): 
   const entries = await new Promise<FileSystemEntryLike[]>((resolve, reject) => {
     const collected: FileSystemEntryLike[] = [];
     const readAll = (): void => {
-      reader.readEntries(
-        (batch) => {
-          if (batch.length === 0) {
-            resolve(collected);
-            return;
-          }
-          collected.push(...batch);
-          readAll();
-        },
-        reject
-      );
+      reader.readEntries((batch) => {
+        if (batch.length === 0) {
+          resolve(collected);
+          return;
+        }
+        collected.push(...batch);
+        readAll();
+      }, reject);
     };
     readAll();
   });
