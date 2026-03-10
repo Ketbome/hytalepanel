@@ -99,7 +99,7 @@ function isUpdateNeeded(mod: mods.InstalledMod, latest: { id: string; version: s
   if (latest.id && mod.versionId && latest.id === mod.versionId) {
     return false;
   }
-  
+
   const currentComparable = getComparableVersion(mod.versionName) ?? getComparableVersion(mod.fileName);
   const latestComparable = getComparableVersion(latest.version) ?? getComparableVersion(latest.fileName);
 
