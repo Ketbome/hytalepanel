@@ -1,4 +1,5 @@
-import { derived, writable } from 'svelte/store';
+import { derived, get, writable } from 'svelte/store';
+import { panelConfig } from './config';
 import { activeServerId } from './servers';
 
 export interface Route {
@@ -7,8 +8,9 @@ export interface Route {
 }
 
 function getBasePath(): string {
-  const config = (window as unknown as { __PANEL_CONFIG__?: { basePath?: string } }).__PANEL_CONFIG__;
-  return config?.basePath || '/';
+  const basePath = get(panelConfig).basePath || '';
+  if (!basePath || basePath === '/') return '/';
+  return basePath.replace(/\/+$/, '');
 }
 
 function parseRoute(pathname: string): Route {

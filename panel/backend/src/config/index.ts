@@ -2,6 +2,16 @@ import crypto from 'node:crypto';
 
 const defaultSecret = crypto.randomBytes(32).toString('hex');
 
+function normalizeBasePath(rawBasePath: string | undefined): string {
+  const trimmed = (rawBasePath || '').trim();
+  if (!trimmed) return '';
+
+  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  const withoutTrailingSlashes = withLeadingSlash.replace(/\/+$/, '');
+
+  return withoutTrailingSlashes === '/' ? '' : withoutTrailingSlashes;
+}
+
 export interface Config {
   timezone: string;
   container: {
@@ -51,7 +61,7 @@ const config: Config = {
   },
   server: {
     port: Number.parseInt(process.env.PANEL_PORT || '3000', 10),
-    basePath: (process.env.BASE_PATH || '').replace(/\/+$/, '') // Remove trailing slashes
+    basePath: normalizeBasePath(process.env.BASE_PATH)
   },
   docker: {
     socketPath: '/var/run/docker.sock'

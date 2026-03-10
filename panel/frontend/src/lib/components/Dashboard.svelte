@@ -3,6 +3,7 @@ import { _, locale } from 'svelte-i18n';
 import { deleteServer as apiDeleteServer, fetchServers, startServer, stopServer } from '$lib/services/api';
 import { joinServer } from '$lib/services/socketClient';
 import { logout } from '$lib/stores/auth';
+import { assetUrl } from '$lib/stores/config';
 import { type Server, servers, serversLoading } from '$lib/stores/servers';
 import { showToast } from '$lib/stores/ui';
 import CreateServerModal from './CreateServerModal.svelte';
@@ -101,7 +102,7 @@ async function handleLogout(): Promise<void> {
   <header class="mc-panel mb-8 !overflow-visible z-50">
     <div class="flex items-center justify-between px-6 py-4">
       <div class="flex items-center gap-4">
-        <img src="/images/logo.png" alt="HytalePanel" class="w-14 h-14 object-contain" />
+        <img src={assetUrl('/images/logo.png')} alt="HytalePanel" class="w-14 h-14 object-contain" />
         <div>
           <h1 class="font-display text-xl text-hytale-gold text-shadow-pixel tracking-wide">HYTALEPANEL</h1>
           <span class="font-mono text-base text-text-muted">{$_('serverPanel')}</span>
@@ -190,7 +191,7 @@ async function handleLogout(): Promise<void> {
       <!-- Empty state -->
       <div class="mc-panel">
         <div class="mc-panel-body flex flex-col items-center gap-6 py-12">
-          <img src="/images/hytale.png" alt="Hytale" class="w-24 h-24 opacity-60" />
+          <img src={assetUrl('/images/hytale.png')} alt="Hytale" class="w-24 h-24 opacity-60" />
           <div class="text-center">
             <h2 class="font-display text-lg text-hytale-gold mb-2">{$_('noServers')}</h2>
             <p class="font-mono text-text-muted">{$_('createServerHint')}</p>

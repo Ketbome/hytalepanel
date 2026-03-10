@@ -1,5 +1,6 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
+import { assetUrl } from '$lib/stores/config';
 import type { Server } from '$lib/stores/servers';
 import Button from './ui/Button.svelte';
 
@@ -25,7 +26,7 @@ const isRunning = $derived(server.status === 'running');
   <div class="mc-panel-header">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 bg-gradient-to-br from-dirt-light to-dirt-dark border-2 border-dirt-light border-r-dirt-dark border-b-dirt-dark flex items-center justify-center">
-        <img src="/images/favicon.ico" alt="Server" class="w-6 h-6" />
+        <img src={assetUrl('/images/favicon.ico')} alt="Server" class="w-6 h-6" />
       </div>
       <div>
         <h3 class="font-mono text-lg text-hytale-cream leading-tight">{server.name}</h3>

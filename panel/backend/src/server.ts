@@ -1,11 +1,11 @@
 import http from 'node:http';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import cookieParser from 'cookie-parser';
 import express, { type Router } from 'express';
 import { Server } from 'socket.io';
 
-import fs from 'node:fs';
 import config from './config/index.js';
 import { socketAuth } from './middleware/auth.js';
 import apiRoutes from './routes/api.js';
@@ -25,6 +25,7 @@ const server = http.createServer(app);
 const basePath = config.server.basePath;
 const socketPath = basePath ? `${basePath}/socket.io` : '/socket.io';
 const io = new Server(server, { path: socketPath });
+const baseHref = basePath ? `${basePath}/` : '/';
 
 // Needed so req.secure works behind reverse proxies
 app.set('trust proxy', 1);
@@ -33,6 +34,14 @@ app.use(cookieParser());
 
 // Create router for all panel routes
 const panelRouter = express.Router() as Router;
+
+function injectBaseHref(html: string, href: string): string {
+  const baseTag = `<base href="${href}">`;
+  if (/<base\s+href=/i.test(html)) {
+    return html.replace(/<base\s+href="[^"]*"\s*\/?>/i, baseTag);
+  }
+  return html.replace(/<head>/i, `<head>\n  ${baseTag}`);
+}
 
 // Expose config for frontend (base path, auth status)
 panelRouter.get('/panel-config', (_req, res) => {
@@ -51,12 +60,15 @@ if (process.env.NODE_ENV === 'production') {
   const indexFile = path.join(publicDist, 'index.html');
 
   if (fs.existsSync(indexFile)) {
-    panelRouter.use(express.static(publicDist));
+    const rawIndexHtml = fs.readFileSync(indexFile, 'utf8');
+    const indexHtml = injectBaseHref(rawIndexHtml, baseHref);
+
+    panelRouter.use(express.static(publicDist, { index: false }));
     // SPA fallback - serve index.html for all non-API routes
     panelRouter.use((req, res, next) => {
       if (req.method === 'GET' && req.accepts('html')) {
         res.setHeader('Content-Type', 'text/html');
-        res.sendFile(indexFile);
+        res.status(200).send(indexHtml);
       } else {
         next();
       }

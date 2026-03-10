@@ -3,7 +3,6 @@ import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { fileURLToPath } from "node:url";
 
 const basePath = process.env.BASE_PATH || "";
-const buildBase = basePath ? `${basePath}/` : "/";
 
 export default defineConfig({
   plugins: [svelte()],
@@ -56,7 +55,7 @@ export default defineConfig({
       },
     },
   },
-  base: buildBase, // Absolute base when no BASE_PATH to avoid nested-route asset resolution
+  base: "./",
   build: {
     outDir: "../public-dist",
     emptyOutDir: true,

@@ -12,6 +12,13 @@ export const panelConfig = writable<PanelConfig>({
   loaded: false
 });
 
+function getNormalizedBasePath(): string {
+  const config = get(panelConfig);
+  const base = config.basePath || '';
+  if (!base || base === '/') return '';
+  return base.replace(/\/+$/, '');
+}
+
 export async function loadPanelConfig(): Promise<void> {
   try {
     // Build all possible base paths from current URL
@@ -49,7 +56,12 @@ export async function loadPanelConfig(): Promise<void> {
 
 // Helper to build API URLs with base path
 export function apiUrl(path: string): string {
-  const config = get(panelConfig);
-  const base = config.basePath || '';
+  const base = getNormalizedBasePath();
   return `${base}${path}`;
+}
+
+export function assetUrl(path: string): string {
+  const base = getNormalizedBasePath();
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${base}${normalizedPath}`;
 }
