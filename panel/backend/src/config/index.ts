@@ -75,7 +75,7 @@ const config: Config = {
   },
   files: {
     basePath: '/opt/hytale',
-    maxUploadSize: 500 * 1024 * 1024,
+    maxUploadSize: 5 * 1024 * 1024 * 1024,
     editableExtensions: [
       '.json',
       '.yaml',

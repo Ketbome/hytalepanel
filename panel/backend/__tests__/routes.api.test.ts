@@ -5,30 +5,36 @@ import fs from "node:fs/promises";
 
 interface UploadResult {
   success: boolean;
-  fileName?: string;
+  uploadedCount?: number;
+  failedCount?: number;
+  errors?: string[];
 }
 
 interface DownloadResult {
   success: boolean;
   fileName?: string;
   localPath?: string;
+  isDirectory?: boolean;
+  tempPath?: string;
 }
 
-const mockUpload =
+const mockUploadMany =
   jest.fn<
     (
       dir: string,
-      name: string,
-      data: Buffer,
+      items: Array<{ fileName: string; fileBuffer: Buffer; relativePath?: string }>,
       serverId: string,
+      allowAllExtensions?: boolean
     ) => Promise<UploadResult>
   >();
 const mockDownload =
   jest.fn<(filePath: string, serverId: string) => Promise<DownloadResult>>();
+const mockCleanupTempDownload = jest.fn<(tempPath?: string) => Promise<void>>();
 
 jest.unstable_mockModule("../src/services/files.js", () => ({
-  upload: mockUpload,
+  uploadMany: mockUploadMany,
   download: mockDownload,
+  cleanupTempDownload: mockCleanupTempDownload,
 }));
 
 const express = (await import("express")).default;
@@ -66,21 +72,27 @@ describe("API Routes", () => {
     });
 
     test("uploads file successfully", async () => {
-      mockUpload.mockResolvedValue({ success: true, fileName: "test.txt" });
+      mockUploadMany.mockResolvedValue({ success: true, uploadedCount: 1, failedCount: 0, errors: [] });
 
       const res = await request(app)
         .post("/api/files/upload")
         .set("Authorization", `Bearer ${validToken}`)
-        .attach("file", Buffer.from("test"), "test.txt")
+        .attach("files", Buffer.from("test"), "test.txt")
+        .field("relativePaths", "test.txt")
         .field("targetDir", "/config")
         .field("serverId", "test-server-id");
 
       expect(res.status).toBe(200);
-      expect(mockUpload).toHaveBeenCalledWith(
+      expect(mockUploadMany).toHaveBeenCalledWith(
         "/config",
-        "test.txt",
-        expect.any(Buffer),
+        expect.arrayContaining([
+          expect.objectContaining({
+            fileName: "test.txt",
+            relativePath: "test.txt",
+          }),
+        ]),
         "test-server-id",
+        false,
       );
     });
 
@@ -88,7 +100,7 @@ describe("API Routes", () => {
       const res = await request(app)
         .post("/api/files/upload")
         .set("Authorization", `Bearer ${validToken}`)
-        .attach("file", Buffer.from("test"), "test.txt")
+        .attach("files", Buffer.from("test"), "test.txt")
         .field("targetDir", "/config");
 
       expect(res.status).toBe(400);
@@ -96,12 +108,12 @@ describe("API Routes", () => {
     });
 
     test("handles upload error", async () => {
-      mockUpload.mockRejectedValue(new Error("Upload failed"));
+      mockUploadMany.mockRejectedValue(new Error("Upload failed"));
 
       const res = await request(app)
         .post("/api/files/upload")
         .set("Authorization", `Bearer ${validToken}`)
-        .attach("file", Buffer.from("test"), "test.txt")
+        .attach("files", Buffer.from("test"), "test.txt")
         .field("serverId", "test-server-id");
 
       expect(res.status).toBe(500);
@@ -136,6 +148,7 @@ describe("API Routes", () => {
         success: true,
         fileName: "test.txt",
         localPath: tempFile,
+        isDirectory: false,
       });
 
       const res = await request(app)
@@ -159,6 +172,31 @@ describe("API Routes", () => {
         .query({ path: "/missing", serverId: "test-server-id" });
 
       expect(res.status).toBe(404);
+    });
+
+    test("downloads directory as zip", async () => {
+      const tempDir = path.join(os.tmpdir(), "hytale-test-download-dir");
+      await fs.mkdir(tempDir, { recursive: true });
+      const tempZip = path.join(tempDir, "folder.zip");
+      await fs.writeFile(tempZip, "zip-content");
+
+      mockDownload.mockResolvedValue({
+        success: true,
+        fileName: "folder.zip",
+        localPath: tempZip,
+        isDirectory: true,
+        tempPath: tempZip,
+      });
+
+      const res = await request(app)
+        .get("/api/files/download")
+        .set("Authorization", `Bearer ${validToken}`)
+        .query({ path: "/folder", serverId: "test-server-id" });
+
+      expect(res.status).toBe(200);
+      expect(res.headers["content-type"]).toContain("application/zip");
+
+      await fs.rm(tempDir, { recursive: true, force: true });
     });
   });
 });

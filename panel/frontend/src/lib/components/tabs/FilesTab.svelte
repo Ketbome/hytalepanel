@@ -1,7 +1,8 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
+import { tick } from 'svelte';
 import Skeleton from '$lib/components/ui/Skeleton.svelte';
-import { uploadFile } from '$lib/services/api';
+import { downloadFile, uploadFiles, type UploadFileItem } from '$lib/services/api';
 import { emit } from '$lib/services/socketClient';
 import {
   closeEditor,
@@ -20,9 +21,11 @@ import type { FileEntry } from '$lib/types';
 import { formatSize } from '$lib/utils/formatters';
 
 let fileInput: HTMLInputElement | undefined = $state();
+let folderInput: HTMLInputElement | undefined = $state();
 let editorContent = $state('');
 let createBackup = $state(true);
 let searchQuery = $state('');
+const supportsDirectoryUpload = typeof window !== 'undefined' && 'webkitdirectory' in HTMLInputElement.prototype;
 
 interface BreadcrumbPart {
   path: string;
@@ -103,50 +106,177 @@ function toggleUploadZone(): void {
   uploadState.update((s) => ({ ...s, isVisible: !s.isVisible }));
 }
 
+async function handleUploadFolderClick(): Promise<void> {
+  uploadState.update((s) => ({ ...s, isVisible: true }));
+  await tick();
+  folderInput?.click();
+}
+
 function handleDragOver(e: DragEvent): void {
   e.preventDefault();
 }
 
-function handleDrop(e: DragEvent): void {
+async function handleDrop(e: DragEvent): Promise<void> {
   e.preventDefault();
-  if (e.dataTransfer?.files) {
-    handleUploadFiles(e.dataTransfer.files);
+  if (!e.dataTransfer) return;
+
+  const uploadItems = await collectDroppedItems(e.dataTransfer);
+  if (uploadItems.length > 0) {
+    await handleUploadItems(uploadItems);
   }
 }
 
 function handleFileSelect(e: Event): void {
   const target = e.target as HTMLInputElement;
   if (target.files) {
-    handleUploadFiles(target.files);
+    handleUploadItems(toUploadItems(target.files));
     target.value = '';
   }
 }
 
-async function handleUploadFiles(files: FileList): Promise<void> {
+function handleFolderSelect(e: Event): void {
+  const target = e.target as HTMLInputElement;
+  if (target.files) {
+    handleUploadItems(toUploadItems(target.files));
+    target.value = '';
+  }
+}
+
+function toUploadItems(files: Iterable<File>): UploadFileItem[] {
+  return Array.from(files).map((file) => ({
+    file,
+    relativePath: file.webkitRelativePath || file.name
+  }));
+}
+
+interface FileSystemEntryLike {
+  isFile: boolean;
+  isDirectory: boolean;
+  name: string;
+}
+
+interface FileSystemFileEntryLike extends FileSystemEntryLike {
+  file: (success: (file: File) => void, error?: (err: DOMException) => void) => void;
+}
+
+interface FileSystemDirectoryReaderLike {
+  readEntries: (
+    success: (entries: FileSystemEntryLike[]) => void,
+    error?: (err: DOMException) => void
+  ) => void;
+}
+
+interface FileSystemDirectoryEntryLike extends FileSystemEntryLike {
+  createReader: () => FileSystemDirectoryReaderLike;
+}
+
+interface DataTransferItemWithEntry {
+  webkitGetAsEntry?: () => FileSystemEntryLike | null;
+}
+
+async function entryToUploadItems(entry: FileSystemEntryLike, parentPath = ''): Promise<UploadFileItem[]> {
+  if (entry.isFile) {
+    const fileEntry = entry as FileSystemFileEntryLike;
+    const file = await new Promise<File>((resolve, reject) => {
+      fileEntry.file(resolve, reject);
+    });
+    return [{ file, relativePath: parentPath ? `${parentPath}/${file.name}` : file.name }];
+  }
+
+  if (!entry.isDirectory) return [];
+
+  const dirEntry = entry as FileSystemDirectoryEntryLike;
+  const reader = dirEntry.createReader();
+  const entries = await new Promise<FileSystemEntryLike[]>((resolve, reject) => {
+    const collected: FileSystemEntryLike[] = [];
+    const readAll = (): void => {
+      reader.readEntries(
+        (batch) => {
+          if (batch.length === 0) {
+            resolve(collected);
+            return;
+          }
+          collected.push(...batch);
+          readAll();
+        },
+        reject
+      );
+    };
+    readAll();
+  });
+
+  const nextPath = parentPath ? `${parentPath}/${entry.name}` : entry.name;
+  const nested = await Promise.all(entries.map((child) => entryToUploadItems(child, nextPath)));
+  return nested.flat();
+}
+
+async function collectDroppedItems(dataTransfer: DataTransfer): Promise<UploadFileItem[]> {
+  const itemEntries = Array.from(dataTransfer.items || []);
+  const hasEntryApi = itemEntries.some((item) => {
+    const withEntry = item as unknown as DataTransferItemWithEntry;
+    return typeof withEntry.webkitGetAsEntry === 'function';
+  });
+
+  if (!hasEntryApi) {
+    return toUploadItems(dataTransfer.files);
+  }
+
+  const all: UploadFileItem[] = [];
+  for (const item of itemEntries) {
+    const withEntry = item as unknown as DataTransferItemWithEntry;
+    const entry = withEntry.webkitGetAsEntry?.();
+    if (!entry) continue;
+
+    try {
+      const items = await entryToUploadItems(entry);
+      all.push(...items);
+    } catch {
+      // Some OS-protected files may throw AccessDenied; skip and continue.
+    }
+  }
+
+  return all;
+}
+
+async function handleUploadItems(uploadItems: UploadFileItem[]): Promise<void> {
+  if (uploadItems.length === 0) {
+    showToast($_('uploadError'), 'error');
+    return;
+  }
+
   uploadState.set({
     isVisible: true,
     isUploading: true,
-    progress: 10,
-    text: `${$_('uploading')}...`
+    progress: 15,
+    text: $_('uploadBatchProgress', { values: { current: 0, total: uploadItems.length } })
   });
 
-  for (const file of files) {
-    uploadState.update((s) => ({
-      ...s,
-      text: `${$_('uploading')} ${file.name}...`
-    }));
-    try {
-      const result = await uploadFile(file, $currentPath, $activeServer!.id);
-      if (result.success) {
-        uploadState.update((s) => ({ ...s, progress: 100 }));
-        showToast(`${$_('uploaded')}: ${file.name}`);
-      } else {
-        showToast(`${$_('uploadFailed')}: ${result.error}`, 'error');
+  try {
+    const result = await uploadFiles(uploadItems, $currentPath, $activeServer!.id);
+    const total = uploadItems.length;
+    const uploadedCount = result.uploadedCount ?? (result.success ? total : 0);
+    const failedCount = result.failedCount ?? (result.success ? 0 : total);
+
+    uploadState.set({
+      isVisible: true,
+      isUploading: true,
+      progress: 100,
+      text: $_('uploadBatchProgress', { values: { current: uploadedCount, total } })
+    });
+
+    if (result.success) {
+      showToast($_('uploadBatchDone', { values: { uploaded: uploadedCount, total } }));
+    } else {
+      showToast($_('uploadBatchPartial', { values: { uploaded: uploadedCount, failed: failedCount } }), 'warning');
+      if (result.errors?.length) {
+        for (const error of result.errors.slice(0, 3)) {
+          showToast(`${$_('uploadError')}: ${error}`, 'error');
+        }
       }
-    } catch (e) {
-      const error = e as Error;
-      showToast(`${$_('uploadError')}: ${error.message}`, 'error');
     }
+  } catch (e) {
+    const error = e as Error;
+    showToast(`${$_('uploadError')}: ${error.message}`, 'error');
   }
 
   setTimeout(() => {
@@ -186,6 +316,14 @@ function handleEditorKeydown(e: KeyboardEvent): void {
 
 function isEditable(file: FileEntry): boolean {
   return file.editable;
+}
+
+async function handleDownload(file: FileEntry): Promise<void> {
+  const filePath = $currentPath === '/' ? `/${file.name}` : `${$currentPath}/${file.name}`;
+  const result = await downloadFile(filePath, $activeServer!.id);
+  if (!result.success) {
+    showToast(`${$_('downloadFailed')}: ${result.error}`, 'error');
+  }
 }
 </script>
 
@@ -241,6 +379,21 @@ function isEditable(file: FileEntry): boolean {
     >
       ⬆ {$_('upload')}
     </button>
+
+    {#if supportsDirectoryUpload}
+      <button 
+        class="px-3 py-2 font-mono text-sm border-3 transition-all
+               bg-info/30 border-info text-info
+               hover:bg-info hover:text-white
+               shadow-mc-btn active:shadow-mc-btn-pressed"
+        onclick={handleUploadFolderClick}
+      >
+        🗂 {$_('uploadFolder')}
+      </button>
+    {/if}
+
+    <input type="file" bind:this={fileInput} class="hidden" multiple onchange={handleFileSelect} />
+    <input type="file" bind:this={folderInput} class="hidden" webkitdirectory multiple onchange={handleFolderSelect} />
     
     <div class="flex-1 min-w-[150px]">
       <input
@@ -268,9 +421,11 @@ function isEditable(file: FileEntry): boolean {
       onkeydown={(e: KeyboardEvent) => e.key === 'Enter' && fileInput?.click()}
     >
       <div class="text-4xl mb-2">📤</div>
-      <div class="font-mono text-grass-light text-lg mb-1">{$_('dropFilesHere')}</div>
-      <div class="font-mono text-text-dim text-sm">{$_('uploadHint')}</div>
-      <input type="file" bind:this={fileInput} class="hidden" multiple onchange={handleFileSelect} />
+      <div class="font-mono text-grass-light text-lg mb-1">{$_('dropFilesFoldersHere')}</div>
+      <div class="font-mono text-text-dim text-sm">{$_('uploadHintExtended')}</div>
+      {#if !supportsDirectoryUpload}
+        <div class="mt-2 font-mono text-warning text-xs">{$_('folderUploadBrowserLimited')}</div>
+      {/if}
       
       {#if $uploadState.isUploading}
         <div class="mt-4 space-y-2">
@@ -292,7 +447,7 @@ function isEditable(file: FileEntry): boolean {
     <div class="flex items-center px-4 py-3 bg-panel-bg/50 border-b-2 border-panel-border font-mono text-sm text-text-dim">
       <span class="flex-1">{$_('name')}</span>
       <span class="w-24 text-right">{$_('size')}</span>
-      <span class="w-28 text-right">{$_('actions')}</span>
+      <span class="w-44 text-right">{$_('actions')}</span>
     </div>
     
     <!-- Body -->
@@ -311,7 +466,7 @@ function isEditable(file: FileEntry): boolean {
             <span class="font-mono text-wood-light group-hover:text-grass-light">..</span>
           </div>
           <span class="w-24 text-right font-mono text-text-dim">-</span>
-          <div class="w-28"></div>
+          <div class="w-44"></div>
         </div>
       {/if}
 
@@ -367,7 +522,15 @@ function isEditable(file: FileEntry): boolean {
             <span class="w-24 text-right font-mono text-text-dim text-sm">
               {file.isDirectory ? '-' : formatSize(file.size)}
             </span>
-            <div class="w-28 flex justify-end gap-2">
+            <div class="w-44 flex justify-end gap-2">
+              <button 
+                class="px-2 py-1 font-mono text-xs border-2 transition-all
+                       bg-panel-bg border-panel-border text-text-muted
+                       hover:bg-info hover:border-info hover:text-white"
+                onclick={(e: MouseEvent) => { e.stopPropagation(); handleDownload(file); }}
+              >
+                ⬇ {$_('downloadItem')}
+              </button>
               {#if isEditable(file)}
                 <button 
                   class="px-2 py-1 font-mono text-xs border-2 transition-all

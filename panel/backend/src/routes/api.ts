@@ -16,6 +16,12 @@ const upload = multer({
   limits: { fileSize: config.files.maxUploadSize }
 });
 
+function toRelativePaths(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map((item) => String(item));
+  if (typeof value === 'string') return [value];
+  return [];
+}
+
 // ==================== SERVERS API ====================
 
 router.get('/servers', async (_req, res) => {
@@ -279,30 +285,32 @@ router.get('/servers/:id/channels', async (req, res) => {
 
 // ==================== FILES API ====================
 
-router.post('/files/upload', upload.single('file'), async (req, res) => {
+router.post('/files/upload', upload.array('files'), async (req, res) => {
   try {
     const { targetDir, serverId } = req.body as {
       targetDir?: string;
       serverId: string;
     };
-    const file = req.file;
+    const uploadedFiles = (req.files as Express.Multer.File[]) || [];
+    const relativePaths = toRelativePaths((req.body as { relativePaths?: string | string[] }).relativePaths);
 
     if (!serverId) {
       res.status(400).json({ success: false, error: 'Server ID is required' });
       return;
     }
 
-    if (!file) {
+    if (uploadedFiles.length === 0) {
       res.status(400).json({ success: false, error: 'No file provided' });
       return;
     }
 
-    if (file.size > config.files.maxUploadSize) {
-      res.status(413).json({ success: false, error: 'File too large (max 500MB)' });
-      return;
-    }
-
-    const result = await files.upload(targetDir || '/', file.originalname, file.buffer, serverId);
+    const items = uploadedFiles.map((file, index) => ({
+      fileName: file.originalname,
+      fileBuffer: file.buffer,
+      relativePath: relativePaths[index] || file.originalname
+    }));
+    const containsFolderStructure = items.some((item) => item.relativePath.includes('/'));
+    const result = await files.uploadMany(targetDir || '/', items, serverId, containsFolderStructure);
     res.json(result);
   } catch (e) {
     res.status(500).json({ success: false, error: (e as Error).message });
@@ -334,10 +342,24 @@ router.get('/files/download', async (req, res) => {
     }
 
     res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
-    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Type', result.isDirectory ? 'application/zip' : 'application/octet-stream');
 
     const { createReadStream } = await import('node:fs');
     const stream = createReadStream(result.localPath);
+
+    const cleanup = async (): Promise<void> => {
+      await files.cleanupTempDownload(result.tempPath);
+    };
+
+    stream.on('error', async () => {
+      await cleanup();
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, error: 'Failed to stream download file' });
+      }
+    });
+    res.on('finish', cleanup);
+    res.on('close', cleanup);
+
     stream.pipe(res);
   } catch (e) {
     res.status(500).json({ success: false, error: (e as Error).message });

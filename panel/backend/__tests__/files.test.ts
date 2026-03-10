@@ -24,6 +24,9 @@ const {
   checkAuth,
   wipeData,
   listDirectory,
+  uploadMany,
+  download,
+  cleanupTempDownload,
 } = await import("../src/services/files.js");
 
 describe("Files Service", () => {
@@ -187,6 +190,85 @@ describe("Files Service", () => {
 
       expect(result.files[0].name).toBe("zzz");
       expect(result.files[0].isDirectory).toBe(true);
+    });
+  });
+
+  describe("uploadMany", () => {
+    test("uploads nested files and preserves folder structure", async () => {
+      const result = await uploadMany(
+        "/",
+        [
+          {
+            fileName: "config.json",
+            relativePath: "mods/configs/config.json",
+            fileBuffer: Buffer.from("{}"),
+          },
+          {
+            fileName: "readme.txt",
+            relativePath: "mods/readme.txt",
+            fileBuffer: Buffer.from("hello"),
+          },
+        ],
+        testServerId,
+        true,
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.uploadedCount).toBe(2);
+      expect(result.failedCount).toBe(0);
+
+      const uploadedConfig = await fs.readFile(
+        path.join(tempDir, "mods", "configs", "config.json"),
+        "utf-8",
+      );
+      expect(uploadedConfig).toBe("{}");
+    });
+
+    test("blocks path traversal in relative paths", async () => {
+      const result = await uploadMany(
+        "/",
+        [
+          {
+            fileName: "escape.txt",
+            relativePath: "../escape.txt",
+            fileBuffer: Buffer.from("x"),
+          },
+        ],
+        testServerId,
+        true,
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.uploadedCount).toBe(0);
+      expect(result.failedCount).toBe(1);
+      expect(result.errors[0]).toContain("Path traversal attempt detected");
+    });
+  });
+
+  describe("download", () => {
+    test("returns file path for file downloads", async () => {
+      const filePath = path.join(tempDir, "hello.txt");
+      await fs.writeFile(filePath, "hello");
+
+      const result = await download("/hello.txt", testServerId);
+      expect(result.success).toBe(true);
+      expect(result.isDirectory).toBe(false);
+      expect(result.fileName).toBe("hello.txt");
+      expect(result.localPath).toBe(filePath);
+    });
+
+    test("creates temp zip for directory downloads and cleans it up", async () => {
+      await fs.mkdir(path.join(tempDir, "world"), { recursive: true });
+      await fs.writeFile(path.join(tempDir, "world", "one.txt"), "1");
+
+      const result = await download("/world", testServerId);
+      expect(result.success).toBe(true);
+      expect(result.isDirectory).toBe(true);
+      expect(result.fileName).toBe("world.zip");
+      await expect(fs.access(result.localPath!)).resolves.toBeUndefined();
+
+      await cleanupTempDownload(result.tempPath);
+      await expect(fs.access(result.localPath!)).rejects.toThrow();
     });
   });
 });

@@ -3,6 +3,9 @@ import type { Server, ServerConfig } from '$lib/stores/servers';
 
 export interface UploadResponse {
   success: boolean;
+  uploadedCount?: number;
+  failedCount?: number;
+  errors?: string[];
   error?: string;
 }
 
@@ -23,14 +26,22 @@ export interface OperationResponse {
   error?: string;
 }
 
-export async function uploadFile(
-  file: File,
+export interface UploadFileItem {
+  file: File;
+  relativePath?: string;
+}
+
+export async function uploadFiles(
+  files: UploadFileItem[],
   targetDir: string,
   serverId: string,
   _onProgress?: (progress: number) => void
 ): Promise<UploadResponse> {
   const formData = new FormData();
-  formData.append('file', file);
+  for (const item of files) {
+    formData.append('files', item.file);
+    formData.append('relativePaths', item.relativePath || item.file.name);
+  }
   formData.append('targetDir', targetDir);
   formData.append('serverId', serverId);
 
@@ -41,6 +52,39 @@ export async function uploadFile(
   });
 
   return await response.json();
+}
+
+export async function downloadFile(filePath: string, serverId: string): Promise<OperationResponse> {
+  try {
+    const response = await fetch(
+      apiUrl(`/api/files/download?path=${encodeURIComponent(filePath)}&serverId=${encodeURIComponent(serverId)}`),
+      {
+        credentials: 'include'
+      }
+    );
+
+    if (!response.ok) {
+      const errorResponse = (await response.json()) as UploadResponse;
+      return { success: false, error: errorResponse.error || 'Download failed' };
+    }
+
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get('content-disposition');
+    const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
+    const filename = filenameMatch?.[1] || 'download.bin';
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: (e as Error).message };
+  }
 }
 
 // ==================== SERVERS API ====================

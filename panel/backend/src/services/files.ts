@@ -1,5 +1,8 @@
 import fs from 'node:fs/promises';
+import { createWriteStream } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import archiver from 'archiver';
 import config from '../config/index.js';
 import * as docker from './docker.js';
 import { getServerDataPath } from './servers.js';
@@ -55,6 +58,20 @@ export interface ReadResult extends OperationResult {
 export interface DownloadResult extends OperationResult {
   localPath?: string;
   fileName?: string;
+  isDirectory?: boolean;
+  tempPath?: string;
+}
+
+export interface UploadItemInput {
+  fileName: string;
+  fileBuffer: Buffer;
+  relativePath?: string;
+}
+
+export interface UploadBatchResult extends OperationResult {
+  uploadedCount: number;
+  failedCount: number;
+  errors: string[];
 }
 
 export interface ServerFilesStatus {
@@ -75,6 +92,20 @@ function getLocalPath(serverId: string, requestedPath: string): string {
     throw new Error('Path traversal attempt detected');
   }
   return fullPath;
+}
+
+function normalizeRelativeUploadPath(relativePath: string): string {
+  const normalized = path.normalize(relativePath.replace(/\\/g, '/'));
+  if (path.isAbsolute(normalized) || normalized.startsWith('..') || normalized.includes('/..')) {
+    throw new Error('Path traversal attempt detected');
+  }
+
+  const cleanPath = normalized.replace(/^\/+/, '');
+  if (!cleanPath || cleanPath === '.') {
+    throw new Error('Invalid upload path');
+  }
+
+  return cleanPath;
 }
 
 export function isAllowedUpload(filename: string): boolean {
@@ -272,16 +303,18 @@ export async function upload(
   targetDir: string,
   fileName: string,
   fileBuffer: Buffer,
-  serverId: string
+  serverId: string,
+  allowAllExtensions = false
 ): Promise<OperationResult & { fileName?: string }> {
   try {
     const localDirPath = getLocalPath(serverId, targetDir);
 
-    if (!isAllowedUpload(fileName)) {
+    if (!allowAllExtensions && !isAllowedUpload(fileName)) {
       throw new Error(`File type not allowed: ${path.extname(fileName)}`);
     }
 
     const fullPath = path.join(localDirPath, fileName);
+    await fs.mkdir(path.dirname(fullPath), { recursive: true });
     await fs.writeFile(fullPath, fileBuffer);
     return { success: true, fileName };
   } catch (e) {
@@ -289,13 +322,90 @@ export async function upload(
   }
 }
 
+export async function uploadMany(
+  targetDir: string,
+  items: UploadItemInput[],
+  serverId: string,
+  allowAllExtensions = false
+): Promise<UploadBatchResult> {
+  const errors: string[] = [];
+  let uploadedCount = 0;
+
+  for (const item of items) {
+    try {
+      const relativePath = normalizeRelativeUploadPath(item.relativePath || item.fileName);
+      const fullRelativePath = path.posix.join(targetDir, relativePath);
+      const parsedRelativePath = path.posix.parse(fullRelativePath);
+      const result = await upload(
+        parsedRelativePath.dir || '/',
+        parsedRelativePath.base,
+        item.fileBuffer,
+        serverId,
+        allowAllExtensions
+      );
+
+      if (!result.success) {
+        errors.push(`${relativePath}: ${result.error || 'Upload failed'}`);
+      } else {
+        uploadedCount += 1;
+      }
+    } catch (e) {
+      errors.push(`${item.relativePath || item.fileName}: ${(e as Error).message}`);
+    }
+  }
+
+  return {
+    success: errors.length === 0,
+    uploadedCount,
+    failedCount: errors.length,
+    errors
+  };
+}
+
 export async function download(filePath: string, serverId: string): Promise<DownloadResult> {
   try {
     const localPath = getLocalPath(serverId, filePath);
-    await fs.access(localPath);
-    return { success: true, localPath, fileName: path.basename(localPath) };
+    const stat = await fs.stat(localPath);
+
+    if (!stat.isDirectory()) {
+      return { success: true, localPath, fileName: path.basename(localPath), isDirectory: false };
+    }
+
+    const requestedFolderName = filePath === '/' ? 'server' : path.basename(localPath);
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'hytale-download-'));
+    const tempPath = path.join(tempDir, `${requestedFolderName}.zip`);
+
+    await new Promise<void>((resolve, reject) => {
+      const output = createWriteStream(tempPath);
+      const archive = archiver('zip', { zlib: { level: 6 } });
+
+      output.on('close', () => resolve());
+      output.on('error', reject);
+      archive.on('error', reject);
+
+      archive.pipe(output);
+      archive.directory(localPath, requestedFolderName);
+      archive.finalize();
+    });
+
+    return {
+      success: true,
+      localPath: tempPath,
+      tempPath,
+      fileName: `${requestedFolderName}.zip`,
+      isDirectory: true
+    };
   } catch (e) {
     return { success: false, error: (e as Error).message };
+  }
+}
+
+export async function cleanupTempDownload(tempPath?: string): Promise<void> {
+  if (!tempPath) return;
+  try {
+    await fs.rm(path.dirname(tempPath), { recursive: true, force: true });
+  } catch {
+    // Ignore cleanup errors
   }
 }
 
