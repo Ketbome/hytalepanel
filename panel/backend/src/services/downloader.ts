@@ -86,6 +86,7 @@ export async function downloadServerFiles(
 
     const stream = await exec.start({ Tty: true });
     let authRequiredDetected = false;
+    let authExpiredDetected = false;
     let streamFailureMessage: string | null = null;
 
     const syncServerState = async (): Promise<void> => {
@@ -105,6 +106,19 @@ export async function downloadServerFiles(
       stream.on('data', (chunk: Buffer) => {
         const text = chunk.toString('utf8');
         console.log('Download output:', text);
+        const lowered = text.toLowerCase();
+
+        if (lowered.includes('invalid_grant') || lowered.includes('refresh token expired')) {
+          authExpiredDetected = true;
+          streamFailureMessage =
+            'Authentication expired. Stored downloader credentials were cleared. Start download again to re-authenticate.';
+          socket.emit('download-status', {
+            status: 'error',
+            message: streamFailureMessage,
+            serverId
+          });
+          return;
+        }
 
         if (
           text.includes('oauth.accounts.hytale.com') ||
@@ -190,11 +204,21 @@ export async function downloadServerFiles(
                 ? 'Download finished without files. Complete authentication and retry.'
                 : 'Download finished without downloading server files.');
 
+            if (authExpiredDetected) {
+              try {
+                await docker.execCommand('rm -f /opt/hytale/.hytale-downloader-credentials.json', 30000, containerName);
+              } catch (clearError) {
+                console.warn('Failed to clear stale downloader credentials:', (clearError as Error).message);
+              }
+            }
+
             socket.emit('download-status', {
-              status: 'done',
-              message: authRequiredDetected
-                ? 'Download finished. Check if authentication was completed.'
-                : 'Download finished without downloading server files.',
+              status: streamFailureMessage ? 'error' : 'done',
+              message: streamFailureMessage
+                ? message
+                : authRequiredDetected
+                  ? 'Download finished. Check if authentication was completed.'
+                  : 'Download finished without downloading server files.',
               serverId
             });
 
