@@ -6,7 +6,7 @@ const mockExec = { start: jest.fn<() => Promise<unknown>>() };
 const mockContainer = { exec: jest.fn(() => Promise.resolve(mockExec)) } as unknown as Container;
 
 const mockGetContainer = jest.fn<() => Promise<Container | null>>();
-const mockExecCommand = jest.fn<(cmd: string, timeout?: number) => Promise<string>>();
+const mockExecCommand = jest.fn<(cmd: string, timeout?: number, containerName?: string) => Promise<string>>();
 const mockGetStatus = jest.fn<() => Promise<{ running: boolean; status: string }>>();
 const mockCheckServerFiles = jest.fn<() => Promise<{ hasJar: boolean; hasAssets: boolean; ready: boolean }>>();
 const mockCheckAuth = jest.fn<() => Promise<boolean>>();
@@ -126,6 +126,33 @@ describe('Downloader Service', () => {
       status: 'error',
       message: 'Authentication failed or expired. Try again.'
     }));
+  });
+
+  test('clears credentials and returns auth-expired error on invalid_grant', async () => {
+    mockExec.start.mockResolvedValue(createMockStream('oauth2: "invalid_grant" "The refresh token expired."'));
+
+    const result = await downloadServerFiles(mockSocket as unknown as Socket);
+
+    expect(result).toEqual({
+      success: false,
+      code: 'DOWNLOAD_FAILED',
+      error: 'Authentication expired. Stored downloader credentials were cleared. Start download again to re-authenticate.'
+    });
+
+    expect(mockExecCommand).toHaveBeenCalledWith(
+      'rm -f /opt/hytale/.hytale-downloader-credentials.json',
+      30000,
+      undefined
+    );
+
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      'download-status',
+      expect.objectContaining({
+        status: 'error',
+        message:
+          'Authentication expired. Stored downloader credentials were cleared. Start download again to re-authenticate.'
+      })
+    );
   });
 
   test('extracts files when zip found', async () => {
