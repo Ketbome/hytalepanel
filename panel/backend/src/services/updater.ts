@@ -143,7 +143,10 @@ export async function applyUpdate(
         message: 'Restarting server to apply update...',
         serverId
       });
-      await docker.restart(containerName);
+      const restartResult = await docker.restart(containerName);
+      if (!restartResult.success) {
+        throw new Error(restartResult.error || 'Failed to restart server after update');
+      }
 
       // Wait for restart to complete
       await new Promise((resolve) => setTimeout(resolve, 3000));

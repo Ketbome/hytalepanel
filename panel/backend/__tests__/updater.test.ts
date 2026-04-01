@@ -2,7 +2,7 @@ import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 import type { Socket } from "socket.io";
 
 const mockGetStatus = jest.fn<() => Promise<{ running: boolean }>>();
-const mockRestart = jest.fn<(containerName: string) => Promise<void>>();
+const mockRestart = jest.fn<(containerName: string) => Promise<{ success: boolean; error?: string }>>();
 const mockStop = jest.fn<() => Promise<void>>();
 const mockExecCommand =
   jest.fn<
@@ -47,7 +47,7 @@ describe("Updater Service", () => {
     jest.clearAllMocks();
     mockSocket = { emit: jest.fn() };
     mockGetStatus.mockResolvedValue({ running: true });
-    mockRestart.mockResolvedValue();
+    mockRestart.mockResolvedValue({ success: true });
     mockStop.mockResolvedValue();
     mockExecCommand.mockResolvedValue("{}");
     mockDownloadServerFiles.mockResolvedValue({ success: true });
@@ -148,6 +148,25 @@ describe("Updater Service", () => {
       expect(mockSocket.emit).toHaveBeenCalledWith("update:status", {
         status: "restarting",
         message: "Restarting server to apply update...",
+        serverId: "test-server",
+      });
+    });
+
+    test("fails update when restart fails", async () => {
+      mockGetStatus.mockResolvedValue({ running: true });
+      mockRestart.mockResolvedValue({ success: false, error: "Restart failed" });
+      mockExecCommand.mockImplementation((cmd: string) => {
+        if (cmd.includes("stat")) return Promise.resolve("1024");
+        if (cmd.includes("md5sum")) return Promise.resolve("abcd1234");
+        return Promise.resolve("{}");
+      });
+
+      const result = await applyUpdate(mockSocket as any, "test-container", "test-server");
+
+      expect(result).toEqual({ success: false, error: "Restart failed" });
+      expect(mockSocket.emit).toHaveBeenCalledWith("update:status", {
+        status: "error",
+        message: "Restart failed",
         serverId: "test-server",
       });
     });

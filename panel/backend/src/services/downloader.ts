@@ -17,6 +17,23 @@ export interface DownloadResult {
   error?: string;
 }
 
+function isAuthExpiredOutput(message: string): boolean {
+  const lowered = message.toLowerCase();
+  return lowered.includes('invalid_grant') || lowered.includes('refresh token expired');
+}
+
+function isAuthRequiredOutput(message: string): boolean {
+  return (
+    message.includes('oauth.accounts.hytale.com') ||
+    message.includes('user_code') ||
+    message.includes('Authorization code')
+  );
+}
+
+function isAuthForbiddenOutput(message: string): boolean {
+  return message.includes('403') || message.includes('Forbidden');
+}
+
 export async function downloadServerFiles(
   socket: Socket,
   containerName?: string,
@@ -106,9 +123,8 @@ export async function downloadServerFiles(
       stream.on('data', (chunk: Buffer) => {
         const text = chunk.toString('utf8');
         console.log('Download output:', text);
-        const lowered = text.toLowerCase();
 
-        if (lowered.includes('invalid_grant') || lowered.includes('refresh token expired')) {
+        if (isAuthExpiredOutput(text)) {
           authExpiredDetected = true;
           streamFailureMessage =
             'Authentication expired. Stored downloader credentials were cleared. Start download again to re-authenticate.';
@@ -120,18 +136,14 @@ export async function downloadServerFiles(
           return;
         }
 
-        if (
-          text.includes('oauth.accounts.hytale.com') ||
-          text.includes('user_code') ||
-          text.includes('Authorization code')
-        ) {
+        if (isAuthRequiredOutput(text)) {
           authRequiredDetected = true;
           socket.emit('download-status', {
             status: 'auth-required',
             message: text,
             serverId
           });
-        } else if (text.includes('403') || text.includes('Forbidden')) {
+        } else if (isAuthForbiddenOutput(text)) {
           streamFailureMessage = 'Authentication failed or expired. Try again.';
           socket.emit('download-status', {
             status: 'error',
