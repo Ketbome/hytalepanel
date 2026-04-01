@@ -275,3 +275,9 @@ docker build -t hytale-panel ./panel
 - Auto-downloader is **x64 only** (skipped on ARM64)
 - Server (Java) runs natively on ARM64
 - Users must manually copy `HytaleServer.jar` and `Assets.zip`
+
+## Version Source Of Truth
+
+- `config.json` is the canonical release version used by deployment/update flows.
+- For release-impacting changes, always bump `config.json.version`.
+- Keep package versions aligned when relevant (`panel/package.json`, `panel/backend/package.json`, `panel/frontend/package.json`), but `config.json` is the value that must never be skipped.

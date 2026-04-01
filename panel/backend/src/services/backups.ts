@@ -58,6 +58,28 @@ export interface BackupConfigValidationResult {
 // Active schedulers map
 const activeSchedulers = new Map<string, NodeJS.Timeout>();
 const activeBackupOperations = new Set<string>();
+const BACKUP_CREATION_TIMEOUT_MS = 45 * 60 * 1000;
+
+function isTempBackupFile(fileName: string): boolean {
+  return /^backup-.*\.zip\.tmp$/i.test(fileName);
+}
+
+async function cleanupStaleTempBackups(serverId: string): Promise<void> {
+  const backupsDir = getBackupsDir(serverId);
+  const files = await fs.readdir(backupsDir).catch(() => []);
+  const tempFiles = files.filter(isTempBackupFile);
+  if (tempFiles.length === 0) return;
+
+  for (const tempFile of tempFiles) {
+    const tempPath = path.join(backupsDir, tempFile);
+    try {
+      await fs.unlink(tempPath);
+      console.warn(`[Backups] Removed stale temp backup: ${tempFile}`);
+    } catch (e) {
+      console.warn(`[Backups] Failed to remove stale temp backup ${tempFile}: ${(e as Error).message}`);
+    }
+  }
+}
 
 function getBackupsDir(serverId: string): string {
   return path.join(getServersDir(), serverId, 'backups');
@@ -222,12 +244,14 @@ export async function createBackup(serverId: string): Promise<BackupResult> {
   }
 
   activeBackupOperations.add(serverId);
+  let tempPath = '';
   try {
     const backupsDir = getBackupsDir(serverId);
     const serverDir = getServerDataDir(serverId);
 
     // Ensure backups directory exists
     await fs.mkdir(backupsDir, { recursive: true });
+    await cleanupStaleTempBackups(serverId);
 
     // Check if server directory exists
     try {
@@ -239,16 +263,36 @@ export async function createBackup(serverId: string): Promise<BackupResult> {
     const filename = generateBackupFilename();
     const backupPath = path.join(backupsDir, filename);
     const tempFilename = `${filename}.tmp`;
-    const tempPath = path.join(backupsDir, tempFilename);
+    tempPath = path.join(backupsDir, tempFilename);
 
     // Create ZIP archive atomically: write to temp file then rename
     console.log(`[Backups] Creating backup (temp): ${tempPath}`);
     await new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const complete = (): void => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        resolve();
+      };
+      const fail = (error: Error): void => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        reject(error);
+      };
+
       const output = createWriteStream(tempPath);
       const archive = archiver('zip', { zlib: { level: 6 } });
+      const timeout = setTimeout(() => {
+        archive.abort();
+        output.destroy(new Error('backup creation timeout'));
+        fail(new Error('Backup creation timed out'));
+      }, BACKUP_CREATION_TIMEOUT_MS);
 
-      output.on('close', () => resolve());
-      archive.on('error', (err) => reject(err));
+      output.on('close', complete);
+      output.on('error', (err) => fail(err as Error));
+      archive.on('error', (err) => fail(err as Error));
 
       archive.pipe(output);
 
@@ -265,7 +309,7 @@ export async function createBackup(serverId: string): Promise<BackupResult> {
       archive.glob('*.yml', { cwd: serverDir });
       archive.glob('*.properties', { cwd: serverDir });
 
-      archive.finalize();
+      void archive.finalize();
     });
 
     // Move temp file to final name atomically
@@ -304,6 +348,9 @@ export async function createBackup(serverId: string): Promise<BackupResult> {
 
     return { success: true, backup };
   } catch (e) {
+    if (tempPath) {
+      await fs.rm(tempPath, { force: true }).catch(() => undefined);
+    }
     return { success: false, error: (e as Error).message };
   } finally {
     activeBackupOperations.delete(serverId);
@@ -593,13 +640,22 @@ export function startBackupScheduler(serverId: string, backupConfig: BackupConfi
   const intervalMs = backupConfig.intervalMinutes * 60 * 1000;
 
   const timer = setInterval(async () => {
-    console.log(`[Backups] Creating scheduled backup for ${serverId}`);
-    const result = await createBackup(serverId);
-    if (result.success) {
-      console.log(`[Backups] Scheduled backup created: ${result.backup?.filename}`);
-      await cleanupOldBackups(serverId, backupConfig);
-    } else {
-      console.error(`[Backups] Scheduled backup failed: ${result.error}`);
+    if (activeBackupOperations.has(serverId)) {
+      console.log(`[Backups] Skipping scheduled backup for ${serverId}: previous backup still in progress`);
+      return;
+    }
+
+    try {
+      console.log(`[Backups] Creating scheduled backup for ${serverId}`);
+      const result = await createBackup(serverId);
+      if (result.success) {
+        console.log(`[Backups] Scheduled backup created: ${result.backup?.filename}`);
+        await cleanupOldBackups(serverId, backupConfig);
+      } else {
+        console.error(`[Backups] Scheduled backup failed: ${result.error}`);
+      }
+    } catch (e) {
+      console.error(`[Backups] Scheduler error for ${serverId}:`, (e as Error).message);
     }
   }, intervalMs);
 
