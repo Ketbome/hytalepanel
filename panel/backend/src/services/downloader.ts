@@ -149,6 +149,7 @@ export async function downloadServerFiles(
 
       stream.on('end', () => {
         void (async () => {
+          if (resolved) return;
           try {
             console.log('Download stream ended');
 
