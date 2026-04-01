@@ -35,6 +35,12 @@ describe('Downloader Service', () => {
     mockGetStatus.mockResolvedValue({ running: true, status: 'running' });
     mockCheckServerFiles.mockResolvedValue({ hasJar: false, hasAssets: false, ready: false });
     mockCheckAuth.mockResolvedValue(false);
+    mockExecCommand.mockImplementation((cmd: string) => {
+      if (cmd.includes('NO_ZIP') || cmd.includes('ls /opt/hytale/.download-temp/hytale-game.zip')) {
+        return Promise.resolve('NO_ZIP');
+      }
+      return Promise.resolve('');
+    });
   });
 
   const createMockStream = (dataToEmit: string | null, triggerError = false) => ({
@@ -48,87 +54,112 @@ describe('Downloader Service', () => {
 
   test('emits semantic error when container is not running', async () => {
     mockGetStatus.mockResolvedValue({ running: false, status: 'exited' });
-    await downloadServerFiles(mockSocket as unknown as Socket);
-    expect(mockSocket.emit).toHaveBeenCalledWith('download-status', {
+    const result = await downloadServerFiles(mockSocket as unknown as Socket);
+
+    expect(result).toEqual({
+      success: false,
+      code: 'CONTAINER_NOT_RUNNING',
+      error: 'Server is offline. Start it from Control tab and try again.'
+    });
+    expect(mockSocket.emit).toHaveBeenCalledWith('download-status', expect.objectContaining({
       status: 'error',
       code: 'CONTAINER_NOT_RUNNING',
       message: 'Server is offline. Start it from Control tab and try again.'
-    });
+    }));
   });
 
   test('emits semantic error when container not found', async () => {
     mockGetContainer.mockResolvedValue(null);
-    await downloadServerFiles(mockSocket as unknown as Socket);
-    expect(mockSocket.emit).toHaveBeenCalledWith('download-status', {
+    const result = await downloadServerFiles(mockSocket as unknown as Socket);
+
+    expect(result).toEqual({
+      success: false,
+      code: 'CONTAINER_NOT_FOUND',
+      error: 'Server container was not found. Check your server setup.'
+    });
+    expect(mockSocket.emit).toHaveBeenCalledWith('download-status', expect.objectContaining({
       status: 'error',
       code: 'CONTAINER_NOT_FOUND',
       message: 'Server container was not found. Check your server setup.'
-    });
+    }));
   });
 
   test('emits starting status on begin', async () => {
     mockExec.start.mockResolvedValue(createMockStream(null));
-    mockExecCommand.mockResolvedValue('NO_ZIP');
 
-    await downloadServerFiles(mockSocket as unknown as Socket);
+    const result = await downloadServerFiles(mockSocket as unknown as Socket);
 
-    expect(mockSocket.emit).toHaveBeenCalledWith('download-status', {
+    expect(result.success).toBe(false);
+    expect(mockSocket.emit).toHaveBeenCalledWith('download-status', expect.objectContaining({
       status: 'starting',
       message: 'Starting download...'
-    });
+    }));
   });
 
   test('emits auth-required when OAuth URL or user_code detected', async () => {
     mockExec.start.mockResolvedValue(createMockStream('Visit oauth.accounts.hytale.com'));
-    mockExecCommand.mockResolvedValue('NO_ZIP');
 
-    await downloadServerFiles(mockSocket as unknown as Socket);
+    const result = await downloadServerFiles(mockSocket as unknown as Socket);
 
-    expect(mockSocket.emit).toHaveBeenCalledWith('download-status', {
+    expect(result).toEqual({
+      success: false,
+      code: 'DOWNLOAD_FAILED',
+      error: 'Download finished without files. Complete authentication and retry.'
+    });
+    expect(mockSocket.emit).toHaveBeenCalledWith('download-status', expect.objectContaining({
       status: 'auth-required',
       message: expect.stringContaining('oauth.accounts.hytale.com')
-    });
+    }));
   });
 
   test('emits error on 403 Forbidden', async () => {
     mockExec.start.mockResolvedValue(createMockStream('403 Forbidden'));
-    mockExecCommand.mockResolvedValue('NO_ZIP');
 
-    await downloadServerFiles(mockSocket as unknown as Socket);
+    const result = await downloadServerFiles(mockSocket as unknown as Socket);
 
-    expect(mockSocket.emit).toHaveBeenCalledWith('download-status', {
+    expect(result).toEqual({
+      success: false,
+      code: 'DOWNLOAD_FAILED',
+      error: 'Authentication failed or expired. Try again.'
+    });
+    expect(mockSocket.emit).toHaveBeenCalledWith('download-status', expect.objectContaining({
       status: 'error',
       message: 'Authentication failed or expired. Try again.'
-    });
+    }));
   });
 
   test('extracts files when zip found', async () => {
     mockExec.start.mockResolvedValue(createMockStream(null));
     mockExecCommand.mockImplementation((cmd: string) =>
-      cmd.includes('ls /tmp/hytale-game.zip')
-        ? Promise.resolve('/tmp/hytale-game.zip')
+      cmd.includes('ls /opt/hytale/.download-temp/hytale-game.zip')
+        ? Promise.resolve('/opt/hytale/.download-temp/hytale-game.zip')
         : Promise.resolve('')
     );
     mockCheckServerFiles.mockResolvedValue({ hasJar: true, hasAssets: true, ready: true });
 
-    await downloadServerFiles(mockSocket as unknown as Socket);
-    await new Promise(r => setTimeout(r, 50));
+    const result = await downloadServerFiles(mockSocket as unknown as Socket);
 
-    expect(mockSocket.emit).toHaveBeenCalledWith('download-status', {
+    expect(result).toEqual({ success: true });
+    expect(mockSocket.emit).toHaveBeenCalledWith('download-status', expect.objectContaining({
       status: 'extracting',
       message: 'Extracting files...'
-    });
+    }));
   });
 
   test('handles stream error', async () => {
     mockExec.start.mockResolvedValue(createMockStream(null, true));
 
-    await downloadServerFiles(mockSocket as unknown as Socket);
-    await new Promise(r => setTimeout(r, 50));
+    const result = await downloadServerFiles(mockSocket as unknown as Socket);
 
-    expect(mockSocket.emit).toHaveBeenCalledWith('download-status', {
-      status: 'error',
-      message: 'Stream failed'
+    expect(result).toEqual({
+      success: false,
+      code: 'DOWNLOAD_FAILED',
+      error: 'Stream failed'
     });
+    expect(mockSocket.emit).toHaveBeenCalledWith('download-status', expect.objectContaining({
+      status: 'error',
+      code: 'DOWNLOAD_FAILED',
+      message: 'Stream failed'
+    }));
   });
 });

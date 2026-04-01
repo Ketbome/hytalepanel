@@ -11,33 +11,49 @@ export interface DownloadStatus {
   serverId?: string;
 }
 
+export interface DownloadResult {
+  success: boolean;
+  code?: 'CONTAINER_NOT_RUNNING' | 'CONTAINER_NOT_FOUND' | 'DOWNLOAD_FAILED';
+  error?: string;
+}
+
 export async function downloadServerFiles(
   socket: Socket,
   containerName?: string,
   serverId?: string,
   _channel?: ReleaseChannel
-): Promise<void> {
+): Promise<DownloadResult> {
   try {
     const status = await docker.getStatus(containerName);
     if (!status.running) {
+      const message = 'Server is offline. Start it from Control tab and try again.';
       socket.emit('download-status', {
         status: 'error',
         code: 'CONTAINER_NOT_RUNNING',
-        message: 'Server is offline. Start it from Control tab and try again.',
+        message,
         serverId
       } satisfies DownloadStatus);
-      return;
+      return {
+        success: false,
+        code: 'CONTAINER_NOT_RUNNING',
+        error: message
+      };
     }
 
     const c = await docker.getContainer(containerName);
     if (!c) {
+      const message = 'Server container was not found. Check your server setup.';
       socket.emit('download-status', {
         status: 'error',
         code: 'CONTAINER_NOT_FOUND',
-        message: 'Server container was not found. Check your server setup.',
+        message,
         serverId
       } satisfies DownloadStatus);
-      return;
+      return {
+        success: false,
+        code: 'CONTAINER_NOT_FOUND',
+        error: message
+      };
     }
 
     socket.emit('download-status', {
@@ -69,107 +85,178 @@ export async function downloadServerFiles(
     });
 
     const stream = await exec.start({ Tty: true });
+    let authRequiredDetected = false;
+    let streamFailureMessage: string | null = null;
 
-    stream.on('data', (chunk: Buffer) => {
-      const text = chunk.toString('utf8');
-      console.log('Download output:', text);
+    const syncServerState = async (): Promise<void> => {
+      if (!serverId) return;
+      socket.emit('files', await files.checkServerFiles(serverId, containerName));
+      socket.emit('downloader-auth', await files.checkAuth(serverId, containerName));
+    };
 
-      if (
-        text.includes('oauth.accounts.hytale.com') ||
-        text.includes('user_code') ||
-        text.includes('Authorization code')
-      ) {
-        socket.emit('download-status', {
-          status: 'auth-required',
-          message: text,
-          serverId
-        });
-      } else if (text.includes('403') || text.includes('Forbidden')) {
+    const result = await new Promise<DownloadResult>((resolve) => {
+      let resolved = false;
+      const resolveOnce = (value: DownloadResult): void => {
+        if (resolved) return;
+        resolved = true;
+        resolve(value);
+      };
+
+      stream.on('data', (chunk: Buffer) => {
+        const text = chunk.toString('utf8');
+        console.log('Download output:', text);
+
+        if (
+          text.includes('oauth.accounts.hytale.com') ||
+          text.includes('user_code') ||
+          text.includes('Authorization code')
+        ) {
+          authRequiredDetected = true;
+          socket.emit('download-status', {
+            status: 'auth-required',
+            message: text,
+            serverId
+          });
+        } else if (text.includes('403') || text.includes('Forbidden')) {
+          streamFailureMessage = 'Authentication failed or expired. Try again.';
+          socket.emit('download-status', {
+            status: 'error',
+            message: streamFailureMessage,
+            serverId
+          });
+        } else {
+          socket.emit('download-status', {
+            status: 'output',
+            message: text,
+            serverId
+          });
+        }
+      });
+
+      stream.on('end', () => {
+        void (async () => {
+          try {
+            console.log('Download stream ended');
+
+            // Sync filesystem to ensure file is visible
+            await docker.execCommand('sync', 30000, containerName);
+
+            const checkZip = await docker.execCommand(
+              `ls ${zipPath} 2>/dev/null || echo 'NO_ZIP'`,
+              30000,
+              containerName
+            );
+
+            if (!checkZip.includes('NO_ZIP')) {
+              socket.emit('download-status', {
+                status: 'extracting',
+                message: 'Extracting files...',
+                serverId
+              });
+
+              await docker.execCommand(
+                `unzip -o ${zipPath} -d ${downloadPath}/extract 2>/dev/null || true`,
+                60000,
+                containerName
+              );
+              await docker.execCommand(
+                `find ${downloadPath}/extract -name 'HytaleServer.jar' -exec cp {} /opt/hytale/ \\; 2>/dev/null || true`,
+                30000,
+                containerName
+              );
+              await docker.execCommand(
+                `find ${downloadPath}/extract -name 'Assets.zip' -exec cp {} /opt/hytale/ \\; 2>/dev/null || true`,
+                30000,
+                containerName
+              );
+              await docker.execCommand(`rm -rf ${downloadPath}`, 30000, containerName);
+
+              await updater.recordDownload(containerName);
+
+              socket.emit('download-status', {
+                status: 'complete',
+                message: 'Download complete!',
+                serverId
+              });
+
+              await syncServerState();
+              resolveOnce({ success: true });
+              return;
+            }
+
+            const message =
+              streamFailureMessage ||
+              (authRequiredDetected
+                ? 'Download finished without files. Complete authentication and retry.'
+                : 'Download finished without downloading server files.');
+
+            socket.emit('download-status', {
+              status: 'done',
+              message: authRequiredDetected
+                ? 'Download finished. Check if authentication was completed.'
+                : 'Download finished without downloading server files.',
+              serverId
+            });
+
+            await syncServerState();
+            resolveOnce({
+              success: false,
+              code: 'DOWNLOAD_FAILED',
+              error: message
+            });
+          } catch (e) {
+            const message = (e as Error).message;
+            console.error('Download post-processing error:', e);
+            socket.emit('download-status', {
+              status: 'error',
+              code: 'DOWNLOAD_FAILED',
+              message,
+              serverId
+            });
+            resolveOnce({
+              success: false,
+              code: 'DOWNLOAD_FAILED',
+              error: message
+            });
+          }
+        })();
+      });
+
+      stream.on('error', (err: Error) => {
+        console.error('Download stream error:', err);
+        streamFailureMessage = err.message;
         socket.emit('download-status', {
           status: 'error',
-          message: 'Authentication failed or expired. Try again.',
+          code: 'DOWNLOAD_FAILED',
+          message: err.message,
           serverId
         });
-      } else {
-        socket.emit('download-status', {
-          status: 'output',
-          message: text,
-          serverId
+        resolveOnce({
+          success: false,
+          code: 'DOWNLOAD_FAILED',
+          error: err.message
         });
-      }
-    });
-
-    stream.on('end', async () => {
-      console.log('Download stream ended');
-
-      // Sync filesystem to ensure file is visible
-      await docker.execCommand('sync', 30000, containerName);
-
-      const checkZip = await docker.execCommand(`ls ${zipPath} 2>/dev/null || echo 'NO_ZIP'`, 30000, containerName);
-
-      if (!checkZip.includes('NO_ZIP')) {
-        socket.emit('download-status', {
-          status: 'extracting',
-          message: 'Extracting files...',
-          serverId
-        });
-
-        await docker.execCommand(
-          `unzip -o ${zipPath} -d ${downloadPath}/extract 2>/dev/null || true`,
-          60000,
-          containerName
-        );
-        await docker.execCommand(
-          `find ${downloadPath}/extract -name 'HytaleServer.jar' -exec cp {} /opt/hytale/ \\; 2>/dev/null || true`,
-          30000,
-          containerName
-        );
-        await docker.execCommand(
-          `find ${downloadPath}/extract -name 'Assets.zip' -exec cp {} /opt/hytale/ \\; 2>/dev/null || true`,
-          30000,
-          containerName
-        );
-        await docker.execCommand(`rm -rf ${downloadPath}`, 30000, containerName);
-
-        await updater.recordDownload(containerName);
-
-        socket.emit('download-status', {
-          status: 'complete',
-          message: 'Download complete!',
-          serverId
-        });
-      } else {
-        socket.emit('download-status', {
-          status: 'done',
-          message: 'Download finished. Check if authentication was completed.',
-          serverId
-        });
-      }
-
-      if (serverId) {
-        socket.emit('files', await files.checkServerFiles(serverId, containerName));
-        socket.emit('downloader-auth', await files.checkAuth(serverId, containerName));
-      }
-    });
-
-    stream.on('error', (err: Error) => {
-      console.error('Download stream error:', err);
-      socket.emit('download-status', {
-        status: 'error',
-        message: err.message,
-        serverId
       });
     });
+
+    return result;
   } catch (e) {
     console.error('Download error:', e);
     const message = (e as Error).message;
     const isContainerRunningIssue = message.includes('409') || message.toLowerCase().includes('not running');
+    const code = isContainerRunningIssue ? 'CONTAINER_NOT_RUNNING' : 'DOWNLOAD_FAILED';
 
     socket.emit('download-status', {
       status: 'error',
-      code: isContainerRunningIssue ? 'CONTAINER_NOT_RUNNING' : 'DOWNLOAD_FAILED',
+      code,
       message: isContainerRunningIssue ? 'Server is offline. Start it from Control tab and try again.' : message,
       serverId
     });
+
+    return {
+      success: false,
+      code,
+      error: isContainerRunningIssue ? 'Server is offline. Start it from Control tab and try again.' : message
+    };
   }
 }

@@ -121,7 +121,10 @@ export async function applyUpdate(
       message: 'Downloading update...',
       serverId
     });
-    await downloader.downloadServerFiles(socket, containerName, serverId, channel);
+    const downloadResult = await downloader.downloadServerFiles(socket, containerName, serverId, channel);
+    if (!downloadResult.success) {
+      throw new Error(downloadResult.error || 'Server update download failed');
+    }
 
     // Update metadata
     const jarInfo = await getJarInfo(containerName);

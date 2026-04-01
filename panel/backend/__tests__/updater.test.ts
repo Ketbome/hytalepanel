@@ -10,7 +10,12 @@ const mockExecCommand =
   >();
 const mockDownloadServerFiles =
   jest.fn<
-    (socket: Socket, containerName: string, serverId: string, channel?: 'stable' | 'pre-release') => Promise<void>
+    (
+      socket: Socket,
+      containerName: string,
+      serverId: string,
+      channel?: 'stable' | 'pre-release'
+    ) => Promise<{ success: boolean; error?: string }>
   >();
 const mockCheckServerFiles =
   jest.fn<
@@ -45,7 +50,7 @@ describe("Updater Service", () => {
     mockRestart.mockResolvedValue();
     mockStop.mockResolvedValue();
     mockExecCommand.mockResolvedValue("{}");
-    mockDownloadServerFiles.mockResolvedValue();
+    mockDownloadServerFiles.mockResolvedValue({ success: true });
     mockCheckServerFiles.mockResolvedValue({
       hasJar: true,
       hasAssets: true,
@@ -113,8 +118,7 @@ describe("Updater Service", () => {
     });
 
     test("handles download errors gracefully", async () => {
-      const error = new Error("Download failed");
-      mockDownloadServerFiles.mockRejectedValue(error);
+      mockDownloadServerFiles.mockResolvedValue({ success: false, error: "Download failed" });
 
       const result = await applyUpdate(
         mockSocket as any,
