@@ -96,7 +96,10 @@ function getComparableVersion(value: string): string | null {
 }
 
 function getComparableFileName(value: string): string | null {
-  const cleaned = value.replace(/\.(jar|zip|disabled)$/gi, '').trim().toLowerCase();
+  const cleaned = value
+    .replace(/\.(jar|zip|disabled)$/gi, '')
+    .trim()
+    .toLowerCase();
   if (!cleaned) return null;
 
   const withoutNamePrefix = cleaned.replace(/^v(?=[a-z])/, '');
@@ -104,7 +107,10 @@ function getComparableFileName(value: string): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
-export function isUpdateNeeded(mod: mods.InstalledMod, latest: { id: string; version: string; fileName: string }): boolean {
+export function isUpdateNeeded(
+  mod: mods.InstalledMod,
+  latest: { id: string; version: string; fileName: string }
+): boolean {
   if (latest.id && mod.versionId && latest.id === mod.versionId) {
     return false;
   }
