@@ -95,8 +95,23 @@ function getComparableVersion(value: string): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
-function isUpdateNeeded(mod: mods.InstalledMod, latest: { id: string; version: string; fileName: string }): boolean {
+function getComparableFileName(value: string): string | null {
+  const cleaned = value.replace(/\.(jar|zip|disabled)$/gi, '').trim().toLowerCase();
+  if (!cleaned) return null;
+
+  const withoutNamePrefix = cleaned.replace(/^v(?=[a-z])/, '');
+  const normalized = withoutNamePrefix.replaceAll(/[^a-z0-9]/g, '');
+  return normalized.length > 0 ? normalized : null;
+}
+
+export function isUpdateNeeded(mod: mods.InstalledMod, latest: { id: string; version: string; fileName: string }): boolean {
   if (latest.id && mod.versionId && latest.id === mod.versionId) {
+    return false;
+  }
+
+  const currentFileComparable = getComparableFileName(mod.fileName);
+  const latestFileComparable = getComparableFileName(latest.fileName);
+  if (currentFileComparable && latestFileComparable && currentFileComparable === latestFileComparable) {
     return false;
   }
 
