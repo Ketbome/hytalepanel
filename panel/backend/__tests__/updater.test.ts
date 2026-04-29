@@ -211,5 +211,21 @@ describe("Updater Service", () => {
       expect(result.success).toBe(false);
       expect(result.error).toBeTruthy();
     });
+
+    test("returns semantic error when server is not running", async () => {
+      mockGetStatus.mockResolvedValue({ running: false });
+
+      const result = await checkForUpdate("test-server", "test-container");
+
+      expect(result).toEqual({
+        success: false,
+        lastUpdate: null,
+        daysSinceUpdate: null,
+        hasFiles: false,
+        code: "CONTAINER_NOT_RUNNING",
+        error: "Server is offline. Start it from Control tab and try again.",
+      });
+      expect(mockCheckServerFiles).not.toHaveBeenCalled();
+    });
   });
 });

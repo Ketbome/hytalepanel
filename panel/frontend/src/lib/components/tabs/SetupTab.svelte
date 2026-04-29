@@ -22,6 +22,10 @@ function handleDownload(): void {
 }
 
 function checkForUpdate(): void {
+  if (!$serverStatus.running) {
+    showToast($_('downloadRequiresRunningServer'), 'warning');
+    return;
+  }
   updateInfo.update((u) => ({ ...u, isChecking: true }));
   emit('update:check');
 }
@@ -69,7 +73,7 @@ function formatLastUpdate(lastUpdate: string | null, daysSince: number | null): 
 
 // Check for update info on mount
 $effect(() => {
-  if ($filesReady.ready && !$updateInfo.lastUpdate && !$updateInfo.isChecking) {
+  if ($serverStatus.running && $filesReady.ready && !$updateInfo.lastUpdate && !$updateInfo.isChecking) {
     checkForUpdate();
   }
 });
@@ -286,7 +290,7 @@ $effect(() => {
                  disabled:opacity-50 disabled:cursor-not-allowed
                  shadow-mc-btn active:shadow-mc-btn-pressed"
           onclick={checkForUpdate}
-          disabled={$updateInfo.isChecking || $updateInfo.isUpdating}
+          disabled={!$serverStatus.running || $updateInfo.isChecking || $updateInfo.isUpdating}
         >
           🔍 {$_('checkUpdate')}
         </button>

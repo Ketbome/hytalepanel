@@ -16,6 +16,7 @@ export interface UpdateCheckResult {
   lastUpdate: string | null;
   daysSinceUpdate: number | null;
   hasFiles: boolean;
+  code?: 'CONTAINER_NOT_RUNNING';
   error?: string;
 }
 
@@ -69,6 +70,18 @@ async function getJarInfo(containerName?: string): Promise<{ size: number; hash:
 
 export async function checkForUpdate(serverId: string, containerName?: string): Promise<UpdateCheckResult> {
   try {
+    const status = await docker.getStatus(containerName);
+    if (!status.running) {
+      return {
+        success: false,
+        lastUpdate: null,
+        daysSinceUpdate: null,
+        hasFiles: false,
+        code: 'CONTAINER_NOT_RUNNING',
+        error: 'Server is offline. Start it from Control tab and try again.'
+      };
+    }
+
     const filesStatus = await files.checkServerFiles(serverId, containerName);
     const metadata = await getMetadata(containerName);
 

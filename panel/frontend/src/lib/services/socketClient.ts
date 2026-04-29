@@ -517,13 +517,33 @@ export function connectSocket(): Socket {
   // Server update events
   socketInstance.on(
     'update:check-result',
-    (result: { success: boolean; lastUpdate: string | null; daysSinceUpdate: number | null; error?: string }) => {
-      updateInfo.update((u) => ({
-        ...u,
-        isChecking: false,
-        lastUpdate: result.lastUpdate,
-        daysSinceUpdate: result.daysSinceUpdate
-      }));
+    (result: {
+      success: boolean;
+      lastUpdate: string | null;
+      daysSinceUpdate: number | null;
+      code?: string;
+      error?: string;
+    }) => {
+      updateInfo.update((u) =>
+        result.success
+          ? {
+              ...u,
+              isChecking: false,
+              lastUpdate: result.lastUpdate,
+              daysSinceUpdate: result.daysSinceUpdate
+            }
+          : {
+              ...u,
+              isChecking: false
+            }
+      );
+
+      if (!result.success) {
+        const message = result.code === 'CONTAINER_NOT_RUNNING' ? get(_)('downloadRequiresRunningServer') : result.error;
+        if (message) {
+          showToast(message, result.code === 'CONTAINER_NOT_RUNNING' ? 'warning' : 'error');
+        }
+      }
     }
   );
 
