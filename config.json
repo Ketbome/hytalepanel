@@ -1,5 +1,5 @@
 {
-  "version": "1.5.3",
+  "version": "1.5.4",
   "title": "HytalePanel",
   "description": "Docker image for Hytale dedicated server with optimized JVM settings"
 }

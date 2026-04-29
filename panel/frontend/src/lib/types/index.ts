@@ -186,6 +186,18 @@ export interface ModUpdate {
   manualOnly?: boolean;
 }
 
+export interface UncheckedMod {
+  modId: string;
+  projectTitle: string;
+  reason:
+    | 'local_mod'
+    | 'missing_project_id'
+    | 'modtale_api_not_configured'
+    | 'curseforge_api_not_configured'
+    | 'unknown_provider'
+    | 'provider_lookup_failed';
+}
+
 export interface ModSearchResult {
   success: boolean;
   projects?: ModProject[];
@@ -204,6 +216,7 @@ export interface ModUpdatesResult {
   success: boolean;
   updates?: ModUpdate[];
   uncheckedMods?: number;
+  uncheckedModDetails?: UncheckedMod[];
   error?: string;
 }
 

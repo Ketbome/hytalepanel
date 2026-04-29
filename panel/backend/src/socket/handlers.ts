@@ -65,6 +65,14 @@ interface ServerContext {
   containerName: string | null;
 }
 
+type UncheckedModReason =
+  | 'local_mod'
+  | 'missing_project_id'
+  | 'modtale_api_not_configured'
+  | 'curseforge_api_not_configured'
+  | 'unknown_provider'
+  | 'provider_lookup_failed';
+
 function normalizeSearchText(value: string): string {
   return value.toLowerCase().replaceAll(/[^a-z0-9]/g, '');
 }
@@ -105,6 +113,18 @@ function getComparableFileName(value: string): string | null {
   const withoutNamePrefix = cleaned.replace(/^v(?=[a-z])/, '');
   const normalized = withoutNamePrefix.replaceAll(/[^a-z0-9]/g, '');
   return normalized.length > 0 ? normalized : null;
+}
+
+function addUncheckedMod(
+  uncheckedMods: Map<string, { modId: string; projectTitle: string; reason: UncheckedModReason }>,
+  mod: mods.InstalledMod,
+  reason: UncheckedModReason
+): void {
+  uncheckedMods.set(mod.id, {
+    modId: mod.id,
+    projectTitle: mod.projectTitle,
+    reason
+  });
 }
 
 export function isUpdateNeeded(
@@ -782,23 +802,27 @@ export function setupSocketHandlers(io: Server): void {
 
         const hasModtaleApi = modtale.isConfigured();
         const hasCurseforgeApi = curseforge.isConfigured();
-        const uncheckedModIds = new Set<string>();
+        const uncheckedMods = new Map<string, { modId: string; projectTitle: string; reason: UncheckedModReason }>();
 
         for (const mod of listResult.mods) {
-          if (!mod.projectId || mod.providerId === 'local') {
-            uncheckedModIds.add(mod.id);
+          if (mod.providerId === 'local') {
+            addUncheckedMod(uncheckedMods, mod, 'local_mod');
+            continue;
+          }
+          if (!mod.projectId) {
+            addUncheckedMod(uncheckedMods, mod, 'missing_project_id');
             continue;
           }
           if (mod.providerId === 'modtale' && !hasModtaleApi) {
-            uncheckedModIds.add(mod.id);
+            addUncheckedMod(uncheckedMods, mod, 'modtale_api_not_configured');
             continue;
           }
           if (mod.providerId === 'curseforge' && !hasCurseforgeApi) {
-            uncheckedModIds.add(mod.id);
+            addUncheckedMod(uncheckedMods, mod, 'curseforge_api_not_configured');
             continue;
           }
           if (mod.providerId !== 'modtale' && mod.providerId !== 'curseforge') {
-            uncheckedModIds.add(mod.id);
+            addUncheckedMod(uncheckedMods, mod, 'unknown_provider');
           }
         }
 
@@ -837,11 +861,11 @@ export function setupSocketHandlers(io: Server): void {
                     };
                   }
                 } else {
-                  uncheckedModIds.add(mod.id);
+                  addUncheckedMod(uncheckedMods, mod, 'provider_lookup_failed');
                 }
               } catch (e) {
                 console.error(`[Mods] Error checking Modtale updates for ${mod.projectTitle}:`, (e as Error).message);
-                uncheckedModIds.add(mod.id);
+                addUncheckedMod(uncheckedMods, mod, 'provider_lookup_failed');
               }
               return null;
             })
@@ -873,14 +897,14 @@ export function setupSocketHandlers(io: Server): void {
                     };
                   }
                 } else {
-                  uncheckedModIds.add(mod.id);
+                  addUncheckedMod(uncheckedMods, mod, 'provider_lookup_failed');
                 }
               } catch (e) {
                 console.error(
                   `[Mods] Error checking CurseForge updates for ${mod.projectTitle}:`,
                   (e as Error).message
                 );
-                uncheckedModIds.add(mod.id);
+                addUncheckedMod(uncheckedMods, mod, 'provider_lookup_failed');
               }
               return null;
             })
@@ -891,7 +915,8 @@ export function setupSocketHandlers(io: Server): void {
         socket.emit('mods:check-updates-result', {
           success: true,
           updates: allUpdates,
-          uncheckedMods: uncheckedModIds.size
+          uncheckedMods: uncheckedMods.size,
+          uncheckedModDetails: Array.from(uncheckedMods.values())
         });
       } catch (e) {
         socket.emit('mods:check-updates-result', {

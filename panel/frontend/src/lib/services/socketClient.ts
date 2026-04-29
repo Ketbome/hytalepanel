@@ -58,6 +58,7 @@ import type {
   ModProject,
   ModSearchResult,
   ModUpdatesResult,
+  UncheckedMod,
   ServerStatus
 } from '$lib/types';
 
@@ -70,6 +71,35 @@ let dlStartTime: number | null = null;
 let dlTimer: ReturnType<typeof setInterval> | null = null;
 let routeUnsubscribe: (() => void) | null = null;
 let lastJoinedServerId: string | null = null;
+
+type Translate = (key: string, options?: { values?: Record<string, string | number> }) => string;
+
+function getUncheckedModReasonLabel(t: Translate, reason: UncheckedMod['reason']): string {
+  switch (reason) {
+    case 'local_mod':
+      return t('uncheckedReasonLocalMod');
+    case 'missing_project_id':
+      return t('uncheckedReasonMissingProjectId');
+    case 'modtale_api_not_configured':
+      return t('uncheckedReasonModtaleApi');
+    case 'curseforge_api_not_configured':
+      return t('uncheckedReasonCurseforgeApi');
+    case 'unknown_provider':
+      return t('uncheckedReasonUnknownProvider');
+    case 'provider_lookup_failed':
+      return t('uncheckedReasonLookupFailed');
+  }
+}
+
+function formatUncheckedModsMessage(t: Translate, uncheckedMods: UncheckedMod[]): string {
+  const details = uncheckedMods.map((mod) => `${mod.projectTitle}: ${getUncheckedModReasonLabel(t, mod.reason)}`).join('; ');
+  return t('noUpdatesUncheckedDetails', {
+    values: {
+      count: uncheckedMods.length,
+      details
+    }
+  });
+}
 
 export function connectSocket(): Socket {
   if (socketInstance?.connected) {
@@ -370,7 +400,7 @@ export function connectSocket(): Socket {
       if (result.updates && result.updates.length > 0) {
         showToast(t('updatesAvailable', { values: { count: result.updates.length } }));
       } else if ((result.uncheckedMods || 0) > 0) {
-        showToast(t('noUpdatesUnchecked', { values: { count: result.uncheckedMods || 0 } }), 'warning');
+        showToast(formatUncheckedModsMessage(t, result.uncheckedModDetails || []), 'warning');
       } else {
         showToast(t('noUpdates'));
       }
