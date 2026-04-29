@@ -58,8 +58,8 @@ import type {
   ModProject,
   ModSearchResult,
   ModUpdatesResult,
-  UncheckedMod,
-  ServerStatus
+  ServerStatus,
+  UncheckedMod
 } from '$lib/types';
 
 export const socket = writable<Socket | null>(null);
@@ -92,7 +92,9 @@ function getUncheckedModReasonLabel(t: Translate, reason: UncheckedMod['reason']
 }
 
 function formatUncheckedModsMessage(t: Translate, uncheckedMods: UncheckedMod[]): string {
-  const details = uncheckedMods.map((mod) => `${mod.projectTitle}: ${getUncheckedModReasonLabel(t, mod.reason)}`).join('; ');
+  const details = uncheckedMods
+    .map((mod) => `${mod.projectTitle}: ${getUncheckedModReasonLabel(t, mod.reason)}`)
+    .join('; ');
   return t('noUpdatesUncheckedDetails', {
     values: {
       count: uncheckedMods.length,
@@ -539,7 +541,8 @@ export function connectSocket(): Socket {
       );
 
       if (!result.success) {
-        const message = result.code === 'CONTAINER_NOT_RUNNING' ? get(_)('downloadRequiresRunningServer') : result.error;
+        const message =
+          result.code === 'CONTAINER_NOT_RUNNING' ? get(_)('downloadRequiresRunningServer') : result.error;
         if (message) {
           showToast(message, result.code === 'CONTAINER_NOT_RUNNING' ? 'warning' : 'error');
         }
