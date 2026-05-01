@@ -121,4 +121,50 @@ describe('Mods Service Offline Filesystem Mode', () => {
 
     await expect(fs.stat(modFile)).rejects.toThrow();
   });
+
+  test('update replaces an existing local mod file when provider metadata changes', async () => {
+    const serverId = 'srv-replace-local';
+    const context = { serverId, containerName: 'hytale-srv-replace-local' };
+
+    const localInstall = await mods.installMod(
+      Buffer.from('old-mod-bytes'),
+      {
+        providerId: 'local',
+        projectTitle: 'Lootr',
+        versionName: '0.0.9',
+        fileName: 'v0.0.9.jar'
+      },
+      context
+    );
+
+    expect(localInstall.success).toBe(true);
+    expect(localInstall.mod).toBeDefined();
+
+    const updateInstall = await mods.installMod(
+      Buffer.from('new-mod-bytes'),
+      {
+        replaceModId: localInstall.mod!.id,
+        providerId: 'curseforge',
+        projectId: 'lootr-project',
+        projectTitle: 'Lootr',
+        versionId: 'lootr-version-110',
+        versionName: '0.1.10',
+        fileName: 'vLootr-0.1.10.jar'
+      },
+      context
+    );
+
+    expect(updateInstall.success).toBe(true);
+    expect(updateInstall.mod?.id).toBe(localInstall.mod!.id);
+
+    const modsDir = path.join(getServerPath(serverId), 'mods');
+    await expect(fs.stat(path.join(modsDir, 'v0.0.9.jar'))).rejects.toThrow();
+    expect(await fs.stat(path.join(modsDir, 'vLootr-0.1.10.jar'))).toBeDefined();
+
+    const listResult = await mods.listInstalledMods(context);
+    expect(listResult.success).toBe(true);
+    expect(listResult.mods).toHaveLength(1);
+    expect(listResult.mods[0]?.fileName).toBe('vLootr-0.1.10.jar');
+    expect(listResult.mods[0]?.providerId).toBe('curseforge');
+  });
 });

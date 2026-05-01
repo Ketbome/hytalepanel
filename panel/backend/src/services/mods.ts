@@ -35,6 +35,7 @@ export interface ModsData {
 }
 
 export interface ModMetadata {
+  replaceModId?: string;
   providerId?: string;
   projectId?: string;
   projectSlug?: string | null;
@@ -435,9 +436,13 @@ export async function installMod(
     const result = await loadMods(backend);
     const modsData = result.data;
 
-    const existingIndex = modsData.mods.findIndex(
-      (m) => m.providerId === metadata.providerId && m.projectId === metadata.projectId
-    );
+    const existingIndexById = metadata.replaceModId
+      ? modsData.mods.findIndex((m) => m.id === metadata.replaceModId)
+      : -1;
+    const existingIndex =
+      existingIndexById >= 0
+        ? existingIndexById
+        : modsData.mods.findIndex((m) => m.providerId === metadata.providerId && m.projectId === metadata.projectId);
 
     const modEntry: InstalledMod = {
       id: existingIndex >= 0 ? modsData.mods[existingIndex].id : modId,

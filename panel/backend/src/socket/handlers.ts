@@ -971,6 +971,7 @@ export function setupSocketHandlers(io: Server): void {
       const installResult = await mods.installMod(
         downloadResult.buffer,
         {
+          replaceModId: mod.id,
           providerId: mod.providerId,
           projectId: mod.projectId || undefined,
           projectSlug: mod.projectSlug,
