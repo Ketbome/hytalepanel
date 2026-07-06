@@ -5,7 +5,7 @@ Docker-based web panel for managing multiple Hytale dedicated servers.
 ![Panel Preview](docs/public/images/dashboard.png)
 
 <p align="center">
-  <sub>If this project is useful to you and you'd like to support its development (or others like MinePanel), any help is appreciated:</sub>
+  <sub>If this project is useful to you and you'd like to support its development (or others like <a href="https://minepanel.ketbome.com/">MinePanel</a>), any help is appreciated:</sub>
   <br><br>
   <a href="https://buymeacoffee.com/pims2711y" target="_blank">
     <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="150" height="40">
@@ -84,6 +84,12 @@ CURSEFORGE_API_KEY='$2a$10$your-key-here'
 | ------- | -------- |
 | Game    | 5520/UDP |
 | Panel   | 3000/TCP |
+
+## Related Projects
+
+Part of the same self-hosted game-server ecosystem:
+
+- **[Minepanel — Minecraft Server Manager](https://minepanel.ketbome.com/)** — Docker-based web panel for Minecraft Java & Bedrock servers, docs at **[minepanel.ketbome.com](https://minepanel.ketbome.com/)** ([GitHub](https://github.com/Ketbome/minepanel)).
 
 ## Contributing
 

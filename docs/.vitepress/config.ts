@@ -282,7 +282,10 @@ export default defineConfig({
         name: title,
         url: siteUrl,
         logo: `${siteUrl}/images/hytale.png`,
-        sameAs: ["https://github.com/ketbome/hytalepanel"],
+        sameAs: [
+          "https://github.com/ketbome/hytalepanel",
+          "https://minepanel.ketbome.com/",
+        ],
       }),
     ],
 
@@ -346,6 +349,7 @@ export default defineConfig({
         nav: [
           { text: "Guide", link: "/guide/getting-started" },
           { text: "Reference", link: "/reference/environment" },
+          { text: "Minepanel", link: "https://minepanel.ketbome.com/" },
         ],
         sidebar: {
           "/guide/": guideSidebar("en"),
@@ -372,6 +376,7 @@ export default defineConfig({
         nav: [
           { text: "Guía", link: "/es/guide/getting-started" },
           { text: "Referencia", link: "/es/reference/environment" },
+          { text: "Minepanel", link: "https://minepanel.ketbome.com/" },
         ],
         sidebar: {
           "/es/guide/": guideSidebar("es"),
@@ -398,6 +403,7 @@ export default defineConfig({
         nav: [
           { text: "Посібник", link: "/uk/guide/getting-started" },
           { text: "Довідник", link: "/uk/reference/environment" },
+          { text: "Minepanel", link: "https://minepanel.ketbome.com/" },
         ],
         sidebar: {
           "/uk/guide/": guideSidebar("uk"),
