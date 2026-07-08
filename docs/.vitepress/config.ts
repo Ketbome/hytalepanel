@@ -137,6 +137,16 @@ export default defineConfig({
   ignoreDeadLinks: [/^https?:\/\/localhost/],
 
   head: [
+    // Analytics: Umami
+    [
+      "script",
+      {
+        defer: "",
+        src: "https://umami.ketbome.com/script.js",
+        "data-website-id": "6da06ae5-55af-4782-a1dd-9f1d909cfa91",
+      },
+    ],
+
     // Performance: Preload critical fonts (adjust if using custom fonts)
     // ['link', { rel: 'preload', href: '/fonts/font.woff2', as: 'font', type: 'font/woff2', crossorigin: '' }],
 
