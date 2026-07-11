@@ -1,5 +1,5 @@
 # Production Dockerfile with pnpm
-FROM node:25-alpine AS base
+FROM node:24-alpine AS base
 RUN npm install -g pnpm
 WORKDIR /app
 
@@ -28,7 +28,7 @@ COPY backend/package.json backend/pnpm-lock.yaml* ./
 RUN pnpm install --prod
 
 # Final production image
-FROM node:25-alpine
+FROM node:24-alpine
 WORKDIR /app
 
 # Install docker CLI and tzdata for timezone support

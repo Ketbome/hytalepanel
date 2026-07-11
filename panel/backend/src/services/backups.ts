@@ -1,7 +1,7 @@
 import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import archiver from 'archiver';
+import { ZipArchive } from 'archiver';
 import Extract from 'extract-zip';
 import config from '../config/index.js';
 
@@ -283,7 +283,7 @@ export async function createBackup(serverId: string): Promise<BackupResult> {
       };
 
       const output = createWriteStream(tempPath);
-      const archive = archiver('zip', { zlib: { level: 6 } });
+      const archive = new ZipArchive({ zlib: { level: 6 } });
       const timeout = setTimeout(() => {
         archive.abort();
         output.destroy(new Error('backup creation timeout'));

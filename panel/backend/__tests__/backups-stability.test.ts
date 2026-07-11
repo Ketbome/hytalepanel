@@ -2,7 +2,7 @@ import { createWriteStream } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import archiver from 'archiver';
+import { ZipArchive } from 'archiver';
 import { afterEach, beforeEach, describe, expect, jest, test } from '@jest/globals';
 
 jest.unstable_mockModule('../src/config/index.js', () => ({
@@ -30,7 +30,7 @@ describe('Backups Stability', () => {
   async function createZip(filePath: string, entries: Record<string, string>): Promise<void> {
     await new Promise<void>((resolve, reject) => {
       const output = createWriteStream(filePath);
-      const archive = archiver('zip', { zlib: { level: 6 } });
+      const archive = new ZipArchive({ zlib: { level: 6 } });
 
       output.on('close', () => resolve());
       output.on('error', reject);

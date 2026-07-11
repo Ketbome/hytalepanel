@@ -208,7 +208,7 @@ jest.unstable_mockModule('node:fs', () => {
 });
 
 jest.unstable_mockModule('archiver', () => ({
-  default: archiverMockFactory
+  ZipArchive: archiverMockFactory
 }));
 
 jest.unstable_mockModule('extract-zip', () => ({

@@ -2,7 +2,7 @@ import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import archiver from 'archiver';
+import { ZipArchive } from 'archiver';
 import config from '../config/index.js';
 import * as docker from './docker.js';
 import { getServerDataPath } from './servers.js';
@@ -377,7 +377,7 @@ export async function download(filePath: string, serverId: string): Promise<Down
 
     await new Promise<void>((resolve, reject) => {
       const output = createWriteStream(tempPath);
-      const archive = archiver('zip', { zlib: { level: 6 } });
+      const archive = new ZipArchive({ zlib: { level: 6 } });
 
       output.on('close', () => resolve());
       output.on('error', reject);
