@@ -97,7 +97,7 @@ const rowAction =
     {:else if files.length === 0 && searchQuery}
       <div class="px-4 py-8 text-center">
         <div class="text-3xl mb-2">🔍</div>
-        <div class="text-text-dim">No files match "{searchQuery}"</div>
+        <div class="text-text-dim">{$_('noFilesMatch', { values: { query: searchQuery } })}</div>
       </div>
     {:else}
       {#each files as file}

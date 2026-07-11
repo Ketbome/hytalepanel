@@ -25,17 +25,17 @@ const isRunning = $derived(server.status === 'running');
   <!-- Header -->
   <div class="mc-panel-header">
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 bg-gradient-to-br from-dirt-light to-dirt-dark border-2 border-dirt-light border-r-dirt-dark border-b-dirt-dark flex items-center justify-center">
+      <div class="w-10 h-10 rounded-lg bg-panel-lighter border border-panel-border-light flex items-center justify-center">
         <img src={assetUrl('/images/favicon.ico')} alt="Server" class="w-6 h-6" />
       </div>
-      <div>
-        <h3 class="font-mono text-lg text-hytale-cream leading-tight">{server.name}</h3>
-        <p class="font-mono text-sm text-text-dim">:{server.port}/UDP</p>
+      <div class="normal-case tracking-normal">
+        <h3 class="font-sans text-base font-semibold text-hytale-cream leading-tight">{server.name}</h3>
+        <p class="text-xs text-text-dim">:{server.port}/UDP</p>
       </div>
     </div>
     <div class="flex items-center gap-2">
-      <span 
-        class="w-3 h-3"
+      <span
+        class="w-2.5 h-2.5 rounded-full"
         class:bg-grass={isRunning}
         class:glow-grass={isRunning}
         class:animate-pulse={isRunning}
@@ -48,10 +48,10 @@ const isRunning = $derived(server.status === 'running');
   </div>
 
   <!-- Config info -->
-  <div class="px-5 py-4 border-b-2 border-panel-bg">
+  <div class="px-5 py-4 border-b border-panel-border">
     <div class="grid grid-cols-2 gap-4">
       <div class="flex flex-col gap-1">
-        <span class="font-mono text-xs text-text-dim uppercase tracking-wide">Container</span>
+        <span class="text-xs text-text-dim uppercase tracking-wide">{$_('container')}</span>
         <span class="font-mono text-sm text-text truncate">{server.containerName}</span>
       </div>
       <div class="flex flex-col gap-1">

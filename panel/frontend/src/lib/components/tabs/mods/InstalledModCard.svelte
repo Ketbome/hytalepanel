@@ -62,7 +62,7 @@ async function uninstall(): Promise<void> {
         {mod.enabled ? '● Enabled' : '○ Disabled'}
       </span>
       {#if mod.isLocal}
-        <span class="px-1.5 py-0.5 text-xs rounded bg-panel-bg border border-panel-border">Local</span>
+        <span class="px-1.5 py-0.5 text-xs rounded bg-panel-bg border border-panel-border">{$_('modLocal')}</span>
       {/if}
     </div>
   </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+import { _ } from 'svelte-i18n';
 import { authError, checkDefaults, isUsingDefaults, login } from '$lib/stores/auth';
 import Brand from './Brand.svelte';
 import Button from './ui/Button.svelte';
@@ -47,8 +48,8 @@ async function handleSubmit(e: SubmitEvent): Promise<void> {
           {/if}
 
           <div class="flex flex-col gap-2">
-            <label class="font-mono text-base text-text-muted uppercase tracking-wide" for="username">
-              Username
+            <label class="text-sm text-text-muted uppercase tracking-wide" for="username">
+              {$_('username')}
             </label>
             <Input
               id="username"
@@ -60,8 +61,8 @@ async function handleSubmit(e: SubmitEvent): Promise<void> {
           </div>
 
           <div class="flex flex-col gap-2">
-            <label class="font-mono text-base text-text-muted uppercase tracking-wide" for="password">
-              Password
+            <label class="text-sm text-text-muted uppercase tracking-wide" for="password">
+              {$_('password')}
             </label>
             <Input
               id="password"
@@ -76,10 +77,10 @@ async function handleSubmit(e: SubmitEvent): Promise<void> {
             <Button type="submit" variant="primary" disabled={isLoggingIn}>
               {#if isLoggingIn}
                 <span class="mc-spinner !w-5 !h-5 !border-2"></span>
-                <span>CONNECTING...</span>
+                <span>{$_('loginConnecting')}</span>
               {:else}
                 <span>⏵</span>
-                <span>PLAY</span>
+                <span>{$_('loginSubmit')}</span>
               {/if}
             </Button>
           </div>
@@ -89,8 +90,8 @@ async function handleSubmit(e: SubmitEvent): Promise<void> {
 
     <!-- Footer decoration -->
     <div class="mt-6 text-center">
-      <p class="font-mono text-sm text-text-dim">
-        Powered by <span class="text-hytale-gold">HytalePanel</span>
+      <p class="text-sm text-text-dim">
+        {$_('poweredBy')} <span class="text-hytale-gold">HytalePanel</span>
       </p>
     </div>
   </div>

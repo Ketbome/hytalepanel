@@ -1,4 +1,5 @@
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
+import { _ } from 'svelte-i18n';
 import type { AuthStatus, DefaultsCheck, LoginResponse } from '$lib/types';
 import { apiUrl } from './config';
 
@@ -40,7 +41,7 @@ export async function login(username: string, password: string): Promise<boolean
   authError.set(null);
 
   if (!username || !password) {
-    authError.set('Enter username and password');
+    authError.set(get(_)('errEnterCredentials'));
     return false;
   }
 
@@ -63,10 +64,10 @@ export async function login(username: string, password: string): Promise<boolean
       }
       return true;
     }
-    authError.set(data.error || 'Login failed');
+    authError.set(data.error || get(_)('errLoginFailed'));
     return false;
   } catch {
-    authError.set('Connection error');
+    authError.set(get(_)('errConnection'));
     return false;
   }
 }

@@ -171,7 +171,7 @@ $effect(() => {
   {#if $downloadProgress.active || $downloadProgress.percentage > 0}
     <div class="p-4 bg-panel-light border-4 border-grass/50 animate-fade-in">
       <!-- Progress Header -->
-      <div class="flex items-center justify-between mb-3 font-mono text-sm">
+      <div class="flex items-center justify-between mb-3 font-mono text-sm" aria-live="polite">
         <span class="text-grass-light">{$downloadProgress.status}</span>
         <span class="text-text-dim">{$downloadProgress.time}</span>
       </div>

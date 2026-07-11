@@ -54,7 +54,7 @@ function handleUploadFolderClick(): void {
     {/if}
 
     <div class="flex-1 min-w-[150px]">
-      <Input type="text" class="!py-2 !text-sm" placeholder="Search files..." aria-label="Search files" bind:value={searchQuery} />
+      <Input type="text" class="!py-2 !text-sm" placeholder={$_('searchFiles')} aria-label={$_('searchFiles')} bind:value={searchQuery} />
     </div>
   </div>
 

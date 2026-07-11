@@ -129,11 +129,11 @@ async function handleSubmit(): Promise<void> {
     <div class="flex flex-wrap gap-3 text-sm">
       <label class="flex items-center gap-2 cursor-pointer">
         <input type="checkbox" bind:checked={autoDownload} class="w-4 h-4 accent-hytale-orange" />
-        <span>Auto Download</span>
+        <span>{$_('autoDownloadFiles')}</span>
       </label>
       <label class="flex items-center gap-2 cursor-pointer">
         <input type="checkbox" bind:checked={useG1gc} class="w-4 h-4 accent-hytale-orange" />
-        <span>Use G1GC</span>
+        <span>{$_('useG1GC')}</span>
       </label>
       <label class="flex items-center gap-2 cursor-pointer" title={$_('machineIdHint')}>
         <input type="checkbox" bind:checked={useMachineId} class="w-4 h-4 accent-hytale-orange" />
@@ -142,7 +142,7 @@ async function handleSubmit(): Promise<void> {
     </div>
 
     <Button class="w-full justify-start" size="small" onclick={() => (showAdvanced = !showAdvanced)}>
-      {showAdvanced ? '▼' : '▶'} Docker Compose Preview
+      {showAdvanced ? '▼' : '▶'} {$_('composePreview')}
     </Button>
 
     {#if showAdvanced}

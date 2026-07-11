@@ -21,7 +21,7 @@ import { changePage, searchMods, switchProvider } from './modActions';
 
 <!-- Provider Toggle -->
 <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-panel-light border border-panel-border">
-  <span class="text-sm text-text-dim mr-2">Provider:</span>
+  <span class="text-sm text-text-dim mr-2">{$_('providerLabel')}</span>
   <button
     type="button"
     class="flex items-center gap-2 px-4 py-2 text-sm rounded-lg border transition-colors

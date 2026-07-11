@@ -86,14 +86,13 @@ $effect(() => {
 </script>
 
 <div class="machine-id-card" class:expanded={isExpanded}>
-  <div 
-    class="card-header-btn" 
-    onclick={() => isExpanded = !isExpanded}
-    role="button"
-    tabindex="0"
-    onkeydown={(e) => e.key === 'Enter' && (isExpanded = !isExpanded)}
-  >
-    <div class="header-left">
+  <div class="card-header-btn">
+    <button
+      type="button"
+      class="header-left"
+      aria-expanded={isExpanded}
+      onclick={() => (isExpanded = !isExpanded)}
+    >
       <span class="expand-icon">{isExpanded ? '▼' : '▶'}</span>
       <h4>{$_('machineIdTitle')}</h4>
       {#if status && !isExpanded}
@@ -101,15 +100,8 @@ $effect(() => {
           {status.valid ? '✓' : '⚠'}
         </span>
       {/if}
-    </div>
-    <Button
-      size="small"
-      onclick={(e) => {
-        e.stopPropagation();
-        checkStatus();
-      }}
-      disabled={checking}
-    >
+    </button>
+    <Button size="small" onclick={() => checkStatus()} disabled={checking}>
       {checking ? $_('checking') : $_('refresh')}
     </Button>
   </div>
@@ -205,6 +197,13 @@ $effect(() => {
     align-items: center;
     gap: 8px;
     flex: 1;
+    background: transparent;
+    border: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    padding: 0;
   }
 
   .expand-icon {

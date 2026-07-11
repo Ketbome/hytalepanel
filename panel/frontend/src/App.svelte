@@ -1,4 +1,5 @@
 <script lang="ts">
+import { _ } from 'svelte-i18n';
 import Console from '$lib/components/Console.svelte';
 import Dashboard from '$lib/components/Dashboard.svelte';
 import Header from '$lib/components/Header.svelte';
@@ -64,14 +65,14 @@ function handleKeydown(e: KeyboardEvent): void {
   <div class="fixed inset-0 flex items-center justify-center bg-panel-bg">
     <div class="flex flex-col items-center gap-4 animate-fade-in">
       <div class="mc-spinner"></div>
-      <span class="font-mono text-text-muted">Loading config...</span>
+      <span class="text-text-muted">{$_('loading')}...</span>
     </div>
   </div>
 {:else if $isLoading}
   <div class="fixed inset-0 flex items-center justify-center bg-panel-bg">
     <div class="flex flex-col items-center gap-4 animate-fade-in">
       <div class="mc-spinner"></div>
-      <span class="font-mono text-text-muted">Loading...</span>
+      <span class="text-text-muted">{$_('loading')}...</span>
     </div>
   </div>
 {:else if !$isAuthenticated}
@@ -79,15 +80,16 @@ function handleKeydown(e: KeyboardEvent): void {
 {:else if $isOnDashboard}
   <Dashboard />
 {:else if $currentRoute.serverId}
-  <div 
-    class="max-w-[1600px] mx-auto p-5 h-screen flex flex-col animate-fade-in"
+  <div
+    class="max-w-[1600px] mx-auto p-3 sm:p-5 h-screen flex flex-col animate-fade-in"
     class:sidebar-collapsed={$sidebarHidden}
   >
     <Header />
-    <div 
-      class="flex-1 grid gap-5 min-h-0"
+    <div
+      class="flex-1 grid gap-3 sm:gap-5 min-h-0 grid-rows-[minmax(200px,40vh)_1fr] lg:grid-rows-1"
       class:grid-cols-1={$panelExpanded}
       class:lg:grid-cols-[1fr_550px]={!$panelExpanded && !$sidebarHidden}
+      class:!grid-rows-1={$panelExpanded || $sidebarHidden}
     >
       <main class="min-h-0 flex flex-col relative" class:hidden={$panelExpanded}>
         <Console />
@@ -119,7 +121,7 @@ function handleKeydown(e: KeyboardEvent): void {
   <div class="fixed inset-0 flex items-center justify-center bg-panel-bg">
     <div class="flex flex-col items-center gap-4 animate-fade-in">
       <div class="mc-spinner"></div>
-      <span class="font-mono text-text-muted">Loading route...</span>
+      <span class="text-text-muted">{$_('loading')}...</span>
     </div>
   </div>
 {/if}
