@@ -1,6 +1,6 @@
 # Production Dockerfile with pnpm
 FROM node:24-alpine AS base
-RUN npm install -g pnpm
+RUN npm install -g pnpm@10
 WORKDIR /app
 
 # Build frontend

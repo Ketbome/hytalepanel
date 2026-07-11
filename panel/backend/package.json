@@ -46,5 +46,8 @@
     "ts-jest": "^29.4.11",
     "tsx": "^4.23.0",
     "typescript": "^5.9.0"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": ["cpu-features", "protobufjs", "ssh2"]
   }
 }
