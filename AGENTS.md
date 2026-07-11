@@ -94,7 +94,7 @@ hytale-server/
 
 ### Backend
 
-- **Node.js 25** (Alpine)
+- **Node.js 24 LTS** (Alpine)
 - **Express 5** + **Socket.IO 4**
 - **TypeScript 5.9** (strict mode)
 - **pnpm** package manager
@@ -104,9 +104,9 @@ hytale-server/
 ### Frontend
 
 - **Svelte 5** with runes
-- **Vite 6** bundler
+- **Vite 8** bundler + **Tailwind CSS 4** (CSS-first config via `@theme` in `src/app.css`)
 - **TypeScript** strict mode
-- **svelte-i18n** for translations
+- **svelte-i18n** for translations (en, es, uk, br)
 - **Biome** + **Knip** for code quality
 
 ## Coding Patterns
@@ -203,7 +203,7 @@ import * as docker from "./services/docker.js";
 - ✅ Keep functions small and focused
 - ✅ Return consistent response objects
 - ✅ Use existing patterns in the codebase
-- ✅ Preserve the retro UI style
+- ✅ Follow the design system: dark hosting-panel aesthetic, design tokens in `src/app.css` (`@theme`), Hytale orange/gold as the only accent, Unbounded for display text, Sofia Sans for UI, JetBrains Mono for console/code
 - ✅ Update translations when adding UI text
 - ✅ Run `pnpm check` before committing
 

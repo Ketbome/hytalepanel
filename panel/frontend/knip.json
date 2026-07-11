@@ -2,5 +2,6 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "project": ["src/**/*.{ts,svelte}"],
   "ignore": ["src/lib/*/index.ts"],
+  "ignoreDependencies": ["tailwindcss"],
   "ignoreExportsUsedInFile": true
 }

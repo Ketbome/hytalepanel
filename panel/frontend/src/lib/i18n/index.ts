@@ -12,9 +12,6 @@ function setLangAttribute(lang: string): void {
   if (document.body) {
     document.body.setAttribute('data-lang', lang);
   }
-  // Also set CSS variable directly
-  const fontUi = lang === 'uk' ? "'8bit Operator', monospace" : "'VT323', monospace";
-  document.documentElement.style.setProperty('--font-ui', fontUi);
 }
 
 export async function initI18n(): Promise<void> {
