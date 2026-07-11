@@ -129,6 +129,7 @@ export default defineConfig({
   description: description.en,
   cleanUrls: true,
   lastUpdated: true,
+  appearance: "dark",
 
   sitemap: {
     hostname: siteUrl,
@@ -150,8 +151,12 @@ export default defineConfig({
     // Performance: Preload critical fonts (adjust if using custom fonts)
     // ['link', { rel: 'preload', href: '/fonts/font.woff2', as: 'font', type: 'font/woff2', crossorigin: '' }],
 
-    // Performance: DNS prefetch for external resources
-    ["link", { rel: "dns-prefetch", href: "https://fonts.googleapis.com" }],
+    // Performance: preconnect for theme fonts (loaded from theme/custom.css)
+    ["link", { rel: "preconnect", href: "https://fonts.googleapis.com" }],
+    [
+      "link",
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossorigin: "" },
+    ],
 
     // Performance: Preload LCP image (hero logo)
     [
@@ -194,7 +199,7 @@ export default defineConfig({
           "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
       },
     ],
-    ["meta", { name: "theme-color", content: "#3eaf7c" }],
+    ["meta", { name: "theme-color", content: "#f0a13c" }],
     [
       "meta",
       { name: "viewport", content: "width=device-width, initial-scale=1.0" },
