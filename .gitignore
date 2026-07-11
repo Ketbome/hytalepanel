@@ -4,6 +4,8 @@ server/Assets.zip
 server/*.aot
 server/
 dist/
+.agents/
+.claude/
 
 # Server data
 data/
