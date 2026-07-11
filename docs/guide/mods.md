@@ -8,8 +8,8 @@ The panel supports two mod repositories:
 
 | Provider | Website | Features |
 |----------|---------|----------|
-| **Modtale** | [modtale.net](https://modtale.net) | Dedicated Hytale mod repository |
-| **CurseForge** | [curseforge.com/hytale](https://curseforge.com/hytale) | Large multi-game platform |
+| **Modtale** | [modtale.net](https://modtale.net) | Community-run Hytale mod repository |
+| **CurseForge** | [curseforge.com/hytale](https://curseforge.com/hytale) | Official Hytale mod platform (Hypixel Studios partnership) |
 
 You can use one or both providers. The panel automatically detects which mods come from each provider.
 

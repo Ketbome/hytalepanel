@@ -17,8 +17,9 @@ Docker-based web panel for managing multiple Hytale dedicated servers.
 - 🖥️ **Multi-Server Management** - Create and manage multiple servers from one panel
 - 📜 **Real-time Console** - Live logs with WebSocket
 - 📁 **File Manager** - Upload, edit, delete server files
-- 🔧 **Mod Manager** - Install mods from [Modtale](https://modtale.net) or [CurseForge](https://curseforge.com/hytale)
-- 🔄 **Auto-Updates** - Track and update server files with one click
+- 🔧 **Mod Manager** - Install mods from [CurseForge](https://curseforge.com/hytale) (official Hytale platform) or [Modtale](https://modtale.net)
+- 🔄 **Auto-Updates** - Real version checks against the official `hytale-downloader`, one-click updates
+- 🧪 **Release Channels** - Run each server on the `stable` or `pre-release` patchline
 - 🔐 **Authentication** - JWT auth with SSO support
 - 🌍 **Multi-language** - English, Spanish, Ukrainian, Brazilian Portuguese
 
@@ -55,6 +56,9 @@ docker compose up -d
 ```
 
 **Default login:** `admin` / `admin` — **Change this!**
+
+> [!NOTE]
+> Hytale is in **Early Access** (since January 2026). Server files are fetched with the official `hytale-downloader` and require signing in with your Hytale account (OAuth device flow, shown in the panel's Setup tab).
 
 ## Configuration
 

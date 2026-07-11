@@ -161,6 +161,10 @@ Credenciales por defecto:
 
 ¡Tu servidor ya está funcionando!
 
+::: info Cuenta de Hytale requerida
+Los archivos del servidor se descargan con el `hytale-downloader` oficial, que requiere iniciar sesión con una **cuenta de Hytale** (Early Access). En la primera descarga, la pestaña Setup muestra un enlace y un código de dispositivo: abre el enlace en cualquier navegador, ingresa el código y la descarga continúa automáticamente. Las credenciales se guardan en el volumen del servidor, así que solo inicias sesión una vez.
+:::
+
 ## Configuración Multi-Servidor
 
 Puedes crear múltiples servidores, cada uno con:

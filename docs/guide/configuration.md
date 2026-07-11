@@ -13,6 +13,17 @@ All configuration is done through environment variables in your `.env` file.
 | `SERVER_EXTRA_ARGS` | -       | Extra arguments for the server      |
 | `TZ`                | `UTC`   | Timezone for logs                   |
 
+## Release Channels
+
+Each server can follow one of the official `hytale-downloader` patchlines, selectable in the panel's **Config** tab:
+
+| Channel       | Description                                        |
+| ------------- | -------------------------------------------------- |
+| `stable`      | Production-ready builds (default, recommended)     |
+| `pre-release` | Latest features and updates, may contain bugs      |
+
+The **Setup** tab's update check compares the installed server version against the latest version available on the server's channel (via `hytale-downloader -print-version`), so "Update available" reflects the real remote version instead of file age.
+
 ## Panel Configuration
 
 | Variable             | Default  | Description                            |
