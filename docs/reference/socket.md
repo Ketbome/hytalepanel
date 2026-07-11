@@ -396,6 +396,46 @@ socket.emit("mods:classifications");
 
 **Response:** `mods:classifications-result`
 
+## Server Update Events
+
+### update:check
+
+Check whether a newer server build is available on the server's release channel. The backend runs `hytale-downloader -print-version` inside the container and compares it against the installed version.
+
+**Emit:**
+
+```typescript
+socket.emit("update:check");
+```
+
+**Response:** `update:check-result`
+
+```typescript
+socket.on("update:check-result", (result) => {
+  // {
+  //   success: true,
+  //   lastUpdate: "2026-07-01T12:00:00.000Z",
+  //   daysSinceUpdate: 10,
+  //   hasFiles: true,
+  //   currentVersion: "2026.06.01-def5678",
+  //   latestVersion: "2026.07.01-abc1234",
+  //   updateAvailable: true // null when versions cannot be determined
+  // }
+});
+```
+
+### update:apply
+
+Download the latest build for the server's release channel and restart the server if it was running.
+
+**Emit:**
+
+```typescript
+socket.emit("update:apply");
+```
+
+**Response:** `update:status` events (`downloading`, `restarting`, `complete`, `error`)
+
 ## Backup Events (v1.4.0+)
 
 ### backup:create

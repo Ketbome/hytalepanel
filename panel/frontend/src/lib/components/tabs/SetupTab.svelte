@@ -1,6 +1,8 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
+import Button from '$lib/components/ui/Button.svelte';
 import { emit } from '$lib/services/socketClient';
+import { confirmDialog } from '$lib/stores/confirm';
 import {
   downloaderAuth,
   downloadProgress,
@@ -30,8 +32,8 @@ function checkForUpdate(): void {
   emit('update:check');
 }
 
-function applyUpdate(): void {
-  if (confirm($_('confirmUpdate'))) {
+async function applyUpdate(): Promise<void> {
+  if (await confirmDialog($_('confirmUpdate'))) {
     updateInfo.update((u) => ({
       ...u,
       isUpdating: true,
@@ -85,7 +87,7 @@ $effect(() => {
               {$filesReady.ready ? 'border-grass' : $isCheckingFiles ? 'border-hytale-gold' : 'border-error/70'}">
     <div class="flex items-center gap-3">
       {#if $isCheckingFiles}
-        <span class="w-6 h-6 border-4 border-t-grass border-r-grass/30 border-b-grass/30 border-l-grass/30 rounded-full animate-spin"></span>
+        <span class="w-6 h-6 border-4 border-t-grass border-r-grass/30 border-b-grass/30 border-l-grass/30 animate-spin"></span>
         <span class="font-mono text-text-muted">{$_('checking')}</span>
       {:else}
         <span class="text-2xl">{$filesReady.ready ? '✓' : '⚠'}</span>
@@ -94,18 +96,15 @@ $effect(() => {
         </span>
       {/if}
     </div>
-    <button
-      class="px-3 py-2 font-mono text-sm border-3 transition-all
-             bg-panel-bg border-panel-border text-text-muted
-             hover:bg-panel-lighter hover:text-text hover:border-grass/50
-             disabled:opacity-50 disabled:cursor-not-allowed
-             shadow-mc-btn active:shadow-mc-btn-pressed"
+    <Button
+      size="small"
       onclick={recheckFiles}
       disabled={$isCheckingFiles || $downloadProgress.active}
       title={$_('recheckFiles')}
+      aria-label={$_('recheckFiles')}
     >
       ↻
-    </button>
+    </Button>
   </div>
 
   <!-- File Checks -->
@@ -132,7 +131,7 @@ $effect(() => {
   <div class="flex items-center gap-3 p-3 bg-panel-light border-3 transition-all
               {$downloaderAuth ? 'border-grass/50 bg-grass/5' : $isCheckingFiles ? 'border-hytale-gold/50' : 'border-stone'}">
     {#if $isCheckingFiles}
-      <span class="w-5 h-5 border-3 border-t-grass border-r-grass/30 border-b-grass/30 border-l-grass/30 rounded-full animate-spin"></span>
+      <span class="w-5 h-5 border-3 border-t-grass border-r-grass/30 border-b-grass/30 border-l-grass/30 animate-spin"></span>
       <span class="font-mono text-sm text-text-muted">{$_('checking')}</span>
     {:else}
       <span class="text-xl">{$downloaderAuth ? '🔑' : '🔒'}</span>
@@ -172,7 +171,7 @@ $effect(() => {
   {#if $downloadProgress.active || $downloadProgress.percentage > 0}
     <div class="p-4 bg-panel-light border-4 border-grass/50 animate-fade-in">
       <!-- Progress Header -->
-      <div class="flex items-center justify-between mb-3 font-mono text-sm">
+      <div class="flex items-center justify-between mb-3 font-mono text-sm" aria-live="polite">
         <span class="text-grass-light">{$downloadProgress.status}</span>
         <span class="text-text-dim">{$downloadProgress.time}</span>
       </div>
@@ -233,22 +232,19 @@ $effect(() => {
   {/if}
 
   <!-- Download Button -->
-  <button
-    class="w-full px-6 py-4 font-mono text-lg border-4 transition-all
-           bg-grass border-grass-dark text-panel-bg
-           hover:bg-grass-light hover:border-grass
-           disabled:opacity-50 disabled:cursor-not-allowed
-           shadow-mc-btn active:shadow-mc-btn-pressed active:translate-y-0.5"
+  <Button
+    variant="primary"
+    class="w-full !py-4 !text-base"
     onclick={handleDownload}
     disabled={$downloadProgress.active && $downloadProgress.status !== 'waitingAuth'}
   >
     {#if $downloadProgress.active}
-      <span class="inline-block w-5 h-5 border-3 border-t-panel-bg border-r-panel-bg/30 border-b-panel-bg/30 border-l-panel-bg/30 rounded-full animate-spin mr-2"></span>
+      <span class="inline-block w-5 h-5 border-2 border-current border-t-transparent animate-spin mr-2"></span>
       {$downloadProgress.status}
     {:else}
       {$filesReady.ready ? '⟳ ' + $_('redownload') : '⬇ ' + $_('downloadFiles')}
     {/if}
-  </button>
+  </Button>
   <p class="font-mono text-sm text-center text-text-dim">{$_('downloadHint')}</p>
   {#if !$serverStatus.running}
     <p class="font-mono text-xs text-center text-warning">{$_('downloadStartServerHint')}</p>
@@ -262,17 +258,40 @@ $effect(() => {
       </h3>
       
       <!-- Update Info -->
-      <div class="flex items-center justify-between mb-3 p-3 bg-panel-bg/50 border-2 border-panel-border">
-        <span class="font-mono text-sm text-text-dim">{$_('lastUpdate')}:</span>
+      <div class="flex items-center justify-between mb-3 p-3 rounded-lg bg-panel-bg/50 border border-panel-border">
+        <span class="text-sm text-text-dim">{$_('lastUpdate')}:</span>
         <div class="flex items-center gap-2">
-          <span class="font-mono text-sm text-text">
+          <span class="text-sm text-text">
             {formatLastUpdate($updateInfo.lastUpdate, $updateInfo.daysSinceUpdate)}
           </span>
           {#if $updateInfo.isChecking}
-            <span class="w-4 h-4 border-3 border-t-grass border-r-grass/30 border-b-grass/30 border-l-grass/30 rounded-full animate-spin"></span>
+            <span class="w-4 h-4 border-2 border-hytale-orange border-t-transparent animate-spin"></span>
           {/if}
         </div>
       </div>
+
+      <!-- Version Info -->
+      {#if $updateInfo.currentVersion || $updateInfo.latestVersion}
+        <div class="flex flex-col gap-2 mb-3 p-3 rounded-lg bg-panel-bg/50 border border-panel-border text-sm" aria-live="polite">
+          {#if $updateInfo.currentVersion}
+            <div class="flex items-center justify-between">
+              <span class="text-text-dim">{$_('installedVersion')}:</span>
+              <span class="font-code text-text">{$updateInfo.currentVersion}</span>
+            </div>
+          {/if}
+          {#if $updateInfo.latestVersion}
+            <div class="flex items-center justify-between">
+              <span class="text-text-dim">{$_('latestVersionLabel')}:</span>
+              <span class="font-code text-text">{$updateInfo.latestVersion}</span>
+            </div>
+          {/if}
+          {#if $updateInfo.updateAvailable === true}
+            <span class="mc-badge mc-badge-warning self-start">⬆ {$_('updateAvailable')}</span>
+          {:else if $updateInfo.updateAvailable === false}
+            <span class="mc-badge mc-badge-success self-start">✓ {$_('upToDate')}</span>
+          {/if}
+        </div>
+      {/if}
       
       <!-- Update Status -->
       {#if $updateInfo.isUpdating}
@@ -283,28 +302,21 @@ $effect(() => {
       
       <!-- Update Actions -->
       <div class="flex gap-3">
-        <button
-          class="flex-1 px-4 py-3 font-mono text-sm border-3 transition-all
-                 bg-panel-bg border-panel-border text-text-muted
-                 hover:bg-panel-lighter hover:text-text hover:border-grass/50
-                 disabled:opacity-50 disabled:cursor-not-allowed
-                 shadow-mc-btn active:shadow-mc-btn-pressed"
+        <Button
+          class="flex-1"
           onclick={checkForUpdate}
           disabled={!$serverStatus.running || $updateInfo.isChecking || $updateInfo.isUpdating}
         >
           🔍 {$_('checkUpdate')}
-        </button>
-        <button
-          class="flex-1 px-4 py-3 font-mono text-sm border-3 transition-all
-                 bg-hytale-gold/30 border-hytale-gold/70 text-hytale-gold
-                 hover:bg-hytale-gold hover:text-panel-bg
-                 disabled:opacity-50 disabled:cursor-not-allowed
-                 shadow-mc-btn active:shadow-mc-btn-pressed"
+        </Button>
+        <Button
+          variant="warning"
+          class="flex-1"
           onclick={applyUpdate}
           disabled={$updateInfo.isUpdating || $downloadProgress.active}
         >
           ⚡ {$_('forceUpdate')}
-        </button>
+        </Button>
       </div>
       <p class="mt-3 font-mono text-xs text-center text-text-dim">{$_('updateHint')}</p>
     </div>

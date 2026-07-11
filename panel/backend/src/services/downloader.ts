@@ -38,7 +38,7 @@ export async function downloadServerFiles(
   socket: Socket,
   containerName?: string,
   serverId?: string,
-  _channel?: ReleaseChannel
+  channel?: ReleaseChannel
 ): Promise<DownloadResult> {
   try {
     const status = await docker.getStatus(containerName);
@@ -89,10 +89,7 @@ export async function downloadServerFiles(
 
     await docker.execCommand(`mkdir -p ${downloadPath}`, 30000, containerName);
 
-    // Prepare channel flag for future use
-    // When hytale-downloader supports channels, uncomment this:
-    // const channelFlag = channel === 'pre-release' ? '--channel=pre-release' : '';
-    const channelFlag = ''; // TODO: Enable when downloader supports it
+    const channelFlag = channel === 'pre-release' ? '-patchline pre-release' : '';
 
     const exec = await c.exec({
       Cmd: ['sh', '-c', `cd /opt/hytale && hytale-downloader ${channelFlag} -download-path ${zipPath} 2>&1`],
@@ -197,7 +194,7 @@ export async function downloadServerFiles(
               );
               await docker.execCommand(`rm -rf ${downloadPath}`, 30000, containerName);
 
-              await updater.recordDownload(containerName);
+              await updater.recordDownload(containerName, channel);
 
               socket.emit('download-status', {
                 status: 'complete',

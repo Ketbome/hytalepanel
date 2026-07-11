@@ -1,7 +1,7 @@
 # Development Dockerfile with hot reload
-FROM node:25-alpine
+FROM node:24-alpine
 
-RUN npm install -g pnpm
+RUN npm install -g pnpm@10
 
 # Install docker CLI and tzdata for timezone support
 RUN apk add --no-cache docker-cli docker-cli-compose tzdata

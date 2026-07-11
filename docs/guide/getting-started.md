@@ -160,6 +160,10 @@ Default credentials:
 
 Your server is now running!
 
+::: info Hytale account required
+Server files are downloaded with the official `hytale-downloader`, which requires signing in with a **Hytale account** (Early Access). On the first download the Setup tab shows a link and a device code — open the link in any browser, enter the code, and the download continues automatically. Credentials are stored in the server volume, so you only log in once.
+:::
+
 ## Multi-Server Setup
 
 You can create multiple servers, each with:

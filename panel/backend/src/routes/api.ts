@@ -252,8 +252,7 @@ router.get('/servers/:id/channels', async (req, res) => {
       return;
     }
 
-    // Define available release channels
-    // Future: Query Hytale API for real-time availability
+    // Official hytale-downloader patchlines (-patchline flag)
     const channels: ReleaseChannelInfo[] = [
       {
         id: 'stable',

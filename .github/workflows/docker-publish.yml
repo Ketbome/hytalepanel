@@ -32,16 +32,35 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Read version from config.json
+      - name: Resolve version from config.json
         id: config
         run: |
-          VERSION=$(jq -r '.version' config.json)
+          BASE=$(jq -r '.version' config.json)
           TITLE=$(jq -r '.title' config.json)
           DESCRIPTION=$(jq -r '.description' config.json)
+
+          git fetch --tags --quiet
+
+          if [[ "$BASE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            # Full x.y.z pinned in config.json: use it as-is
+            VERSION="$BASE"
+          elif [[ "$BASE" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            # major.minor in config.json: next patch is derived from existing v<base>.* tags
+            LAST_PATCH=$(git tag -l "v${BASE}.*" | sed -E "s/^v${BASE}\.([0-9]+)$/\1/" | grep -E '^[0-9]+$' | sort -n | tail -1)
+            if [ -z "$LAST_PATCH" ]; then
+              VERSION="${BASE}.0"
+            else
+              VERSION="${BASE}.$((LAST_PATCH + 1))"
+            fi
+          else
+            echo "::error::config.json version '$BASE' must be x.y or x.y.z"
+            exit 1
+          fi
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "title=$TITLE" >> $GITHUB_OUTPUT
           echo "description=$DESCRIPTION" >> $GITHUB_OUTPUT
-          echo "Version: $VERSION"
+          echo "Resolved version: $VERSION (base: $BASE)"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -60,7 +79,8 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          # PRs only validate amd64 (no push); arm64 via QEMU runs on real publishes
+          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ketbom/hytale-server:${{ steps.config.outputs.version }}
@@ -76,7 +96,8 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./panel
-          platforms: linux/amd64,linux/arm64
+          # PRs only validate amd64 (no push); arm64 via QEMU runs on real publishes
+          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ketbom/hytale-panel:${{ steps.config.outputs.version }}

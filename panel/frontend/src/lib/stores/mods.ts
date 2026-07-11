@@ -29,3 +29,5 @@ export const apiConfigured = writable<boolean>(false); // Legacy - based on modt
 export const cfApiConfigured = writable<boolean>(false); // Legacy - based on curseforge
 export const currentProvider = writable<ModProvider>('modtale');
 export const isModsLoading = writable<boolean>(false);
+export const searchQuery = writable<string>('');
+export const classificationFilter = writable<string>('');

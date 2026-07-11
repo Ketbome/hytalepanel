@@ -8,8 +8,8 @@
 
 | Провайдер      | Веб-сайт                                               | Особливості                              |
 | -------------- | ------------------------------------------------------ | ---------------------------------------- |
-| **Modtale**    | [modtale.net](https://modtale.net)                     | Спеціалізований репозиторій модів Hytale |
-| **CurseForge** | [curseforge.com/hytale](https://curseforge.com/hytale) | Велика мультиігрова платформа            |
+| **Modtale**    | [modtale.net](https://modtale.net)                     | Ком'юніті-репозиторій модів Hytale |
+| **CurseForge** | [curseforge.com/hytale](https://curseforge.com/hytale) | Офіційна платформа модів Hytale (партнерство з Hypixel Studios)            |
 
 Можна використовувати один або обидва провайдери. Панель автоматично визначає, з якого провайдера кожен мод.
 

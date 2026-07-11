@@ -8,9 +8,12 @@ export const toasts = writable<Toast[]>([]);
 
 let toastId = 0;
 
+const TOAST_MAX_LENGTH = 220;
+
 export function showToast(message: string, type: ToastType = ''): void {
   const id = ++toastId;
-  toasts.update((t) => [...t, { id, message, type }]);
+  const text = message.length > TOAST_MAX_LENGTH ? `${message.slice(0, TOAST_MAX_LENGTH)}…` : message;
+  toasts.update((t) => [...t, { id, message: text, type }]);
 
   setTimeout(() => {
     toasts.update((t) => t.filter((toast) => toast.id !== id));

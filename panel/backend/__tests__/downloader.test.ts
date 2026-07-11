@@ -96,6 +96,27 @@ describe('Downloader Service', () => {
     }));
   });
 
+  test('passes -patchline pre-release to hytale-downloader for pre-release channel', async () => {
+    mockExec.start.mockResolvedValue(createMockStream(null));
+
+    await downloadServerFiles(mockSocket as unknown as Socket, undefined, undefined, 'pre-release');
+
+    expect(mockContainer.exec).toHaveBeenCalledWith(
+      expect.objectContaining({
+        Cmd: ['sh', '-c', expect.stringContaining('-patchline pre-release')]
+      })
+    );
+  });
+
+  test('omits -patchline flag for stable channel', async () => {
+    mockExec.start.mockResolvedValue(createMockStream(null));
+
+    await downloadServerFiles(mockSocket as unknown as Socket, undefined, undefined, 'stable');
+
+    const execArgs = (mockContainer.exec as jest.Mock).mock.calls[0][0] as { Cmd: string[] };
+    expect(execArgs.Cmd[2]).not.toContain('-patchline');
+  });
+
   test('emits auth-required when OAuth URL or user_code detected', async () => {
     mockExec.start.mockResolvedValue(createMockStream('Visit oauth.accounts.hytale.com'));
 

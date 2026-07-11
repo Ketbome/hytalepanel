@@ -132,16 +132,26 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
   if (!response.ok) {
     const errorText = await response.text();
-    let error: { message?: string };
-    try {
-      error = JSON.parse(errorText);
-    } catch {
-      error = { message: `HTTP ${response.status}: ${response.statusText}` };
-    }
-    throw new Error(error.message || errorText);
+    throw new Error(parseApiError(errorText, response.status, response.statusText));
   }
 
   return response.json() as Promise<T>;
+}
+
+// Modtale errors are problem+json: { detail, title, status, properties: { message } }
+function parseApiError(errorText: string, status: number, statusText: string): string {
+  const fallback = `HTTP ${status}: ${statusText}`;
+  try {
+    const error = JSON.parse(errorText) as {
+      message?: string;
+      detail?: string;
+      title?: string;
+      properties?: { message?: string };
+    };
+    return error.message || error.detail || error.properties?.message || error.title || fallback;
+  } catch {
+    return errorText ? `${fallback} - ${errorText.substring(0, 120)}` : fallback;
+  }
 }
 
 interface ApiVersion {
@@ -344,7 +354,7 @@ export async function downloadVersion(projectId: string, versionNumber: string):
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[Modtale] Download error: ${errorText}`);
-      throw new Error(`Download failed: HTTP ${response.status} - ${errorText.substring(0, 200)}`);
+      throw new Error(`Download failed: ${parseApiError(errorText, response.status, response.statusText)}`);
     }
 
     const arrayBuffer = await response.arrayBuffer();

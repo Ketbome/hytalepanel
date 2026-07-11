@@ -1,27 +1,159 @@
-/* ===== FONTS ===== */
-@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import "tailwindcss";
 
-/* Tailwind v3 imports */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* ===== DESIGN TOKENS ===== */
+@theme {
+  /* Fonts */
+  --font-display: "Unbounded", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Sofia Sans", ui-sans-serif, system-ui, sans-serif;
+  /* Legacy alias: pixel-era markup uses `font-mono` for UI text. Kept as the UI face until usages are migrated. */
+  --font-mono: "Sofia Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-@font-face {
-  font-family: "8bit Operator";
-  src: url("./assets/fonts/8bitoperator_jve.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
+  /* Brand */
+  --color-hytale-orange: #f0a13c;
+  --color-hytale-gold: #dfae3f;
+  --color-hytale-cream: #f4ecdd;
+
+  /* Surfaces */
+  --color-panel-bg: #171410;
+  --color-panel-light: #1f1b15;
+  --color-panel-lighter: #292319;
+  --color-panel-border: #2e2820;
+  --color-panel-border-light: #40382b;
+
+  /* Text */
+  --color-text: #f0e9db;
+  --color-text-muted: #b3a78f;
+  --color-text-dim: #8a7f6b;
+
+  /* Semantic */
+  --color-success: #5cb356;
+  --color-warning: #dfae3f;
+  --color-error: #e35d5d;
+  --color-info: #5da5d8;
+
+  /* Legacy palette names (pixel era) mapped to the modern ramp.
+     grass = green / stone = neutral / dirt & wood = warm neutrals. */
+  --color-grass-light: #82d47c;
+  --color-grass: #5cb356;
+  --color-grass-dark: #3f8a3c;
+  --color-stone-light: #8d857a;
+  --color-stone: #6b645a;
+  --color-stone-dark: #4a453e;
+  --color-dirt-light: #a08865;
+  --color-dirt: #7d6a4e;
+  --color-dirt-dark: #57493a;
+  --color-wood-light: #c09a68;
+  --color-wood: #97794f;
+  --color-wood-dark: #6d5638;
+
+  /* Angular, blocky corners — Hytale is a voxel game, keep edges near-square */
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 6px;
+
+  /* Shadows (legacy names, modern values) */
+  --shadow-mc-btn: 0 1px 2px rgb(0 0 0 / 0.35);
+  --shadow-mc-btn-pressed: inset 0 1px 3px rgb(0 0 0 / 0.35);
+  --shadow-mc-panel: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 8px 24px rgb(0 0 0 / 0.35);
+  --shadow-pixel: 0 8px 24px rgb(0 0 0 / 0.4);
+  --shadow-pixel-sm: 0 2px 8px rgb(0 0 0 / 0.35);
+
+  /* Motion */
+  --animate-spin: spin 0.8s linear infinite;
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-slide-up: slide-up 0.3s ease-out;
+  --animate-slide-down: slide-down 0.3s ease-out;
+  --animate-bounce-in: bounce-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-pulse: pulse 2s ease-in-out infinite;
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes slide-up {
+    from {
+      transform: translateY(8px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  @keyframes slide-down {
+    from {
+      transform: translateY(-8px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  @keyframes bounce-in {
+    0% {
+      transform: scale(0.96);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.01);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
 }
 
 /* ===== BASE LAYER ===== */
 @layer base {
-  *,
-  *::before,
-  *::after {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  /* Aliases for component <style> blocks (legacy var names, previously undefined) */
+  :root {
+    --accent: var(--color-hytale-orange);
+    --accent-dark: #c87f22;
+    --hytale-orange: var(--color-hytale-orange);
+    --warning: var(--color-warning);
+    --success: var(--color-success);
+    --error: var(--color-error);
+    --text: var(--color-text);
+    --text-dim: var(--color-text-dim);
+    --bg: var(--color-panel-bg);
+    --bg-dark: #100e0b;
+    --border: var(--color-panel-border);
+    --mc-bg: var(--color-panel-light);
+    --mc-bg-dark: var(--color-panel-bg);
+    --mc-darker: #100e0b;
+    --mc-border: var(--color-panel-border);
+    --mc-border-light: var(--color-panel-border-light);
+    --mc-text: var(--color-text);
+    --mc-text-secondary: var(--color-text-muted);
+    --mc-text-muted: var(--color-text-dim);
+    --mc-red: var(--color-error);
+    --mc-red-dark: #a33c3c;
+    --mc-green: var(--color-success);
+    --mc-green-dark: #3f8a3c;
   }
 
   html {
@@ -31,33 +163,24 @@
   }
 
   body {
-    font-family: "VT323", monospace;
-    font-size: 1.125rem;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
     line-height: 1.5;
-    background: linear-gradient(180deg, #1a150f 0%, #2a2018 100%);
-    color: theme("colors.text.DEFAULT");
+    background-color: #0e0c09;
+    /* Subtle 24px voxel grid under a warm glow */
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgb(240 161 60 / 0.06), transparent),
+      repeating-linear-gradient(0deg, transparent 0 23px, rgb(240 233 219 / 0.015) 23px 24px),
+      repeating-linear-gradient(90deg, transparent 0 23px, rgb(240 233 219 / 0.015) 23px 24px),
+      linear-gradient(180deg, #121009 0%, #0e0c09 100%);
+    background-attachment: fixed;
+    color: var(--color-text);
     min-height: 100vh;
-  }
-
-  /* Dirt/stone texture overlay */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='16' height='16' fill='transparent'/%3E%3Crect x='0' y='0' width='4' height='4' fill='%23000' opacity='0.05'/%3E%3Crect x='8' y='4' width='4' height='4' fill='%23fff' opacity='0.02'/%3E%3Crect x='4' y='8' width='4' height='4' fill='%23000' opacity='0.03'/%3E%3Crect x='12' y='12' width='4' height='4' fill='%23fff' opacity='0.02'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: -1;
-  }
-
-  /* Ukrainian locale font override */
-  html[data-lang="uk"],
-  body[data-lang="uk"] {
-    font-family: "8bit Operator", monospace;
   }
 
   /* Focus states */
   *:focus-visible {
-    outline: 3px solid theme("colors.hytale.gold");
+    outline: 2px solid var(--color-hytale-orange);
     outline-offset: 2px;
   }
 
@@ -74,176 +197,160 @@
 
   /* Scrollbar styling */
   ::-webkit-scrollbar {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
   }
 
   ::-webkit-scrollbar-track {
-    background: theme("colors.panel.bg");
-    border: 2px solid theme("colors.panel.border");
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(
-      180deg,
-      theme("colors.dirt.light") 0%,
-      theme("colors.dirt.dark") 100%
-    );
-    border: 2px solid theme("colors.dirt.dark");
+    background: var(--color-panel-border-light);
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(
-      180deg,
-      theme("colors.dirt.DEFAULT") 0%,
-      theme("colors.dirt.dark") 100%
-    );
+    background: var(--color-stone);
+    background-clip: padding-box;
   }
 
   /* Selection */
   ::selection {
-    background: theme("colors.grass.DEFAULT");
-    color: white;
+    background: var(--color-hytale-orange);
+    color: #1d1508;
   }
 }
 
 /* ===== COMPONENT LAYER ===== */
 @layer components {
-  /* ===== MINECRAFT BUTTON ===== */
+  /* ===== BUTTON ===== */
   .mc-btn {
     @apply relative inline-flex items-center justify-center gap-2;
-    @apply px-5 py-3 font-mono text-lg;
-    @apply border-4 cursor-pointer select-none;
-    @apply transition-all duration-100;
-
-    /* Default stone button */
-    background: linear-gradient(180deg, #7a7a7a 0%, #5a5a5a 50%, #4a4a4a 100%);
-    border-color: #8a8a8a #3a3a3a #3a3a3a #8a8a8a;
-    color: theme("colors.text.DEFAULT");
-    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
-    image-rendering: pixelated;
+    @apply px-4 py-2.5 text-sm font-semibold;
+    @apply rounded-lg border cursor-pointer select-none;
+    @apply transition-colors duration-150;
+    background: var(--color-panel-light);
+    border-color: var(--color-panel-border-light);
+    color: var(--color-text);
+    box-shadow: var(--shadow-mc-btn);
   }
 
   .mc-btn:hover:not(:disabled) {
-    background: linear-gradient(180deg, #8a8a8a 0%, #6a6a6a 50%, #5a5a5a 100%);
-    color: theme("colors.hytale.gold");
+    background: var(--color-panel-lighter);
+    border-color: var(--color-stone);
   }
 
   .mc-btn:active:not(:disabled) {
-    border-color: #3a3a3a #8a8a8a #8a8a8a #3a3a3a;
-    padding-top: 0.875rem;
-    padding-bottom: 0.625rem;
+    box-shadow: var(--shadow-mc-btn-pressed);
+    transform: translateY(1px);
   }
 
   .mc-btn:disabled {
     @apply opacity-50 cursor-not-allowed;
-    filter: grayscale(0.5);
   }
 
-  /* Primary - Grass/Green */
+  /* Primary - accent */
   .mc-btn-primary {
-    background: linear-gradient(180deg, #7bb342 0%, #5d8731 50%, #486b26 100%);
-    border-color: #8bc34a #3a5a1a #3a5a1a #8bc34a;
+    background: linear-gradient(180deg, #f5ad4e 0%, #ec9c30 100%);
+    border-color: #c87f22;
+    color: #241708;
   }
 
   .mc-btn-primary:hover:not(:disabled) {
-    background: linear-gradient(180deg, #8bc34a 0%, #6d9741 50%, #587b36 100%);
+    background: linear-gradient(180deg, #f8b75f 0%, #f0a13c 100%);
+    border-color: #dd9330;
   }
 
-  /* Danger - Redstone */
+  /* Danger */
   .mc-btn-danger {
-    background: linear-gradient(180deg, #c54545 0%, #a83232 50%, #8a2525 100%);
-    border-color: #d55 #6a1a1a #6a1a1a #d55;
+    background: color-mix(in srgb, var(--color-error) 16%, var(--color-panel-light));
+    border-color: color-mix(in srgb, var(--color-error) 45%, transparent);
+    color: #f4b8b8;
   }
 
   .mc-btn-danger:hover:not(:disabled) {
-    background: linear-gradient(180deg, #d55555 0%, #b84242 50%, #9a3535 100%);
+    background: color-mix(in srgb, var(--color-error) 28%, var(--color-panel-light));
+    border-color: var(--color-error);
+    color: #ffd0d0;
   }
 
-  /* Warning - Gold */
+  /* Warning */
   .mc-btn-warning {
-    background: linear-gradient(180deg, #e8a93c 0%, #d4a534 50%, #b8922a 100%);
-    border-color: #f5c04a #9a7a1a #9a7a1a #f5c04a;
-    color: #2a2018;
-    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.3);
+    background: color-mix(in srgb, var(--color-warning) 16%, var(--color-panel-light));
+    border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
+    color: #ecd9a3;
   }
 
   .mc-btn-warning:hover:not(:disabled) {
-    background: linear-gradient(180deg, #f5b94c 0%, #e4b544 50%, #c8a23a 100%);
+    background: color-mix(in srgb, var(--color-warning) 28%, var(--color-panel-light));
+    border-color: var(--color-warning);
+    color: #f7e7b8;
   }
 
-  /* Wood button */
+  /* Wood: legacy secondary variant */
   .mc-btn-wood {
-    background: linear-gradient(180deg, #b8956a 0%, #8b6b4a 50%, #6b4f36 100%);
-    border-color: #c8a57a #5a3f26 #5a3f26 #c8a57a;
+    background: color-mix(in srgb, var(--color-wood) 22%, var(--color-panel-light));
+    border-color: color-mix(in srgb, var(--color-wood-light) 40%, transparent);
+    color: #e7d3b4;
   }
 
   .mc-btn-wood:hover:not(:disabled) {
-    background: linear-gradient(180deg, #c8a57a 0%, #9b7b5a 50%, #7b5f46 100%);
+    background: color-mix(in srgb, var(--color-wood) 34%, var(--color-panel-light));
+    border-color: var(--color-wood-light);
   }
 
   /* Small button */
   .mc-btn-sm {
-    @apply px-3 py-2 text-base;
-    border-width: 3px;
+    @apply px-3 py-1.5 text-xs rounded-md;
   }
 
-  /* ===== MINECRAFT PANEL/CARD ===== */
+  /* ===== PANEL/CARD ===== */
   .mc-panel {
-    @apply relative overflow-hidden;
-    background: linear-gradient(
-      180deg,
-      theme("colors.panel.lighter") 0%,
-      theme("colors.panel.bg") 100%
-    );
-    border: 4px solid;
-    border-color: theme("colors.panel.border-light") theme("colors.panel.bg")
-      theme("colors.panel.bg") theme("colors.panel.border-light");
-    box-shadow:
-      inset 0 0 0 1px rgba(0, 0, 0, 0.3),
-      4px 4px 0 rgba(0, 0, 0, 0.3);
+    @apply relative overflow-hidden rounded-xl border;
+    background: var(--color-panel-bg);
+    border-color: var(--color-panel-border);
+    box-shadow: var(--shadow-mc-panel);
   }
 
   .mc-panel-header {
-    @apply px-5 py-3;
-    @apply font-mono text-lg;
+    @apply px-5 py-3.5;
     @apply flex items-center justify-between gap-4;
-    background: linear-gradient(
-      180deg,
-      theme("colors.panel.border") 0%,
-      theme("colors.panel.light") 100%
-    );
-    border-bottom: 3px solid theme("colors.panel.bg");
-    color: theme("colors.hytale.gold");
-    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: var(--color-panel-light);
+    border-bottom: 1px solid var(--color-panel-border);
+    color: var(--color-hytale-gold);
   }
 
   .mc-panel-body {
     @apply p-5;
   }
 
-  /* ===== MINECRAFT INPUT ===== */
+  /* ===== INPUT ===== */
   .mc-input {
-    @apply w-full px-4 py-3;
-    @apply font-mono text-lg;
-    @apply border-4;
-    background: #1a150f;
-    border-color: #0a0805 #3a3027 #3a3027 #0a0805;
-    color: theme("colors.text.DEFAULT");
-    box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.5);
+    @apply w-full px-3.5 py-2.5 text-sm;
+    @apply rounded-lg border;
+    background: #100e0b;
+    border-color: var(--color-panel-border-light);
+    color: var(--color-text);
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
   }
 
   .mc-input::placeholder {
-    color: theme("colors.text.dim");
+    color: var(--color-text-dim);
   }
 
   .mc-input:focus {
     @apply outline-none;
-    border-color: theme("colors.grass.DEFAULT") theme("colors.grass.dark")
-      theme("colors.grass.dark") theme("colors.grass.DEFAULT");
-    box-shadow:
-      inset 2px 2px 4px rgba(0, 0, 0, 0.5),
-      0 0 0 2px rgba(93, 135, 49, 0.3);
+    border-color: var(--color-hytale-orange);
+    box-shadow: 0 0 0 3px rgb(240 161 60 / 0.15);
   }
 
   /* ===== STATUS INDICATORS ===== */
@@ -253,220 +360,155 @@
 
   .status-online::before {
     content: "";
-    @apply w-3 h-3 rounded-sm;
-    background: theme("colors.grass.DEFAULT");
-    box-shadow:
-      0 0 8px theme("colors.grass.DEFAULT"),
-      0 0 16px theme("colors.grass.light");
+    @apply w-2 h-2;
+    background: var(--color-success);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--color-success) 70%, transparent);
     animation: pulse 2s ease-in-out infinite;
   }
 
   .status-offline::before {
-    background: theme("colors.error");
+    background: var(--color-error);
     box-shadow: none;
     animation: none;
   }
 
   /* ===== TAB BUTTON ===== */
   .mc-tab {
-    @apply relative px-4 py-2.5;
-    @apply font-mono text-base;
-    @apply border-3 cursor-pointer;
-    background: linear-gradient(
-      180deg,
-      theme("colors.panel.light") 0%,
-      theme("colors.panel.bg") 100%
-    );
-    border-color: theme("colors.panel.border") theme("colors.panel.bg")
-      theme("colors.panel.bg") theme("colors.panel.border");
-    color: theme("colors.text.muted");
-    transition: all 0.15s;
+    @apply relative px-3.5 py-2 text-sm font-medium;
+    @apply rounded-lg border border-transparent cursor-pointer;
+    background: transparent;
+    color: var(--color-text-muted);
+    transition:
+      color 0.15s,
+      background-color 0.15s,
+      border-color 0.15s;
   }
 
   .mc-tab:hover {
-    color: theme("colors.hytale.cream");
-    background: linear-gradient(
-      180deg,
-      theme("colors.panel.lighter") 0%,
-      theme("colors.panel.light") 100%
-    );
+    color: var(--color-text);
+    background: var(--color-panel-light);
   }
 
   .mc-tab.active {
-    background: linear-gradient(
-      180deg,
-      theme("colors.dirt.light") 0%,
-      theme("colors.dirt.DEFAULT") 100%
-    );
-    border-color: theme("colors.dirt.light") theme("colors.dirt.dark")
-      theme("colors.dirt.dark") theme("colors.dirt.light");
-    color: theme("colors.hytale.gold");
+    background: color-mix(in srgb, var(--color-hytale-orange) 12%, transparent);
+    border-color: color-mix(in srgb, var(--color-hytale-orange) 35%, transparent);
+    color: var(--color-hytale-gold);
   }
 
   /* ===== TOOLTIP ===== */
   .mc-tooltip {
-    @apply absolute z-50 px-3 py-2;
-    @apply font-mono text-sm;
-    @apply pointer-events-none;
-    background: linear-gradient(180deg, #2a0f3d 0%, #1a0a28 100%);
-    border: 2px solid #5a2a7a;
-    color: white;
-    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+    @apply absolute z-50 px-3 py-2 text-xs;
+    @apply rounded-md border pointer-events-none;
+    background: #26211a;
+    border-color: var(--color-panel-border-light);
+    color: var(--color-text);
+    box-shadow: var(--shadow-pixel-sm);
   }
 
   /* ===== BADGE ===== */
   .mc-badge {
     @apply inline-flex items-center gap-1.5;
-    @apply px-2.5 py-1 text-sm font-mono;
-    @apply border-2;
-    background: theme("colors.panel.light");
-    border-color: theme("colors.panel.border-light") theme("colors.panel.bg")
-      theme("colors.panel.bg") theme("colors.panel.border-light");
+    @apply px-2.5 py-0.5 text-xs font-medium;
+    @apply rounded-sm border;
+    background: var(--color-panel-light);
+    border-color: var(--color-panel-border-light);
+    color: var(--color-text-muted);
   }
 
   .mc-badge-success {
-    background: theme("colors.grass.dark");
-    border-color: theme("colors.grass.light") theme("colors.grass.dark")
-      theme("colors.grass.dark") theme("colors.grass.light");
-    color: white;
+    background: color-mix(in srgb, var(--color-success) 15%, transparent);
+    border-color: color-mix(in srgb, var(--color-success) 40%, transparent);
+    color: var(--color-grass-light);
   }
 
   .mc-badge-warning {
-    background: theme("colors.hytale.gold");
-    border-color: theme("colors.hytale.orange") theme("colors.dirt.dark")
-      theme("colors.dirt.dark") theme("colors.hytale.orange");
-    color: #2a2018;
+    background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+    border-color: color-mix(in srgb, var(--color-warning) 40%, transparent);
+    color: var(--color-hytale-gold);
   }
 
   .mc-badge-error {
-    background: theme("colors.error");
-    border-color: #c54545 #6a1a1a #6a1a1a #c54545;
-    color: white;
+    background: color-mix(in srgb, var(--color-error) 15%, transparent);
+    border-color: color-mix(in srgb, var(--color-error) 40%, transparent);
+    color: #f4a3a3;
   }
 
   /* ===== PROGRESS BAR ===== */
   .mc-progress {
-    @apply relative h-6 overflow-hidden;
-    background: #1a150f;
-    border: 3px solid;
-    border-color: #0a0805 #3a3027 #3a3027 #0a0805;
+    @apply relative h-2.5 overflow-hidden rounded-sm;
+    background: #100e0b;
+    border: 1px solid var(--color-panel-border);
   }
 
   .mc-progress-bar {
     @apply h-full transition-all duration-300;
-    background: linear-gradient(
-      180deg,
-      theme("colors.grass.light") 0%,
-      theme("colors.grass.DEFAULT") 50%,
-      theme("colors.grass.dark") 100%
-    );
-    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+    background: linear-gradient(90deg, var(--color-hytale-gold) 0%, var(--color-hytale-orange) 100%);
   }
 
   /* ===== DIVIDER ===== */
   .mc-divider {
-    @apply my-4 h-1;
+    @apply my-4;
+    height: 1px;
     background: linear-gradient(
       90deg,
       transparent 0%,
-      theme("colors.panel.border") 20%,
-      theme("colors.panel.border-light") 50%,
-      theme("colors.panel.border") 80%,
+      var(--color-panel-border-light) 20%,
+      var(--color-panel-border-light) 80%,
       transparent 100%
     );
   }
 
   /* ===== LOADING SPINNER ===== */
+  /* Spinning block instead of a circle — voxel wink */
   .mc-spinner {
-    @apply w-10 h-10;
-    border: 4px solid theme("colors.panel.border");
-    border-top-color: theme("colors.grass.DEFAULT");
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    @apply w-8 h-8 rounded-sm;
+    border: 3px solid var(--color-panel-border-light);
+    border-top-color: var(--color-hytale-orange);
+    animation: spin 1.1s steps(8) infinite;
   }
 
   /* ===== DROPDOWN/SELECT ===== */
   .mc-select {
-    @apply w-full px-4 py-3;
-    @apply font-mono text-lg;
-    @apply border-4 cursor-pointer;
-    @apply appearance-none;
-    background: linear-gradient(
-      180deg,
-      theme("colors.panel.lighter") 0%,
-      theme("colors.panel.light") 100%
-    );
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23f5e6c8' d='M4 6l4 4 4-4z'/%3E%3C/svg%3E");
+    @apply w-full px-3.5 py-2.5 text-sm;
+    @apply rounded-lg border cursor-pointer appearance-none;
+    background-color: #100e0b;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23b3a78f' d='M4 6l4 4 4-4z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 12px center;
-    border-color: theme("colors.panel.border-light") theme("colors.panel.bg")
-      theme("colors.panel.bg") theme("colors.panel.border-light");
-    color: theme("colors.text.DEFAULT");
+    border-color: var(--color-panel-border-light);
+    color: var(--color-text);
     padding-right: 40px;
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
   }
 
   .mc-select:focus {
     @apply outline-none;
-    border-color: theme("colors.grass.DEFAULT") theme("colors.grass.dark")
-      theme("colors.grass.dark") theme("colors.grass.DEFAULT");
+    border-color: var(--color-hytale-orange);
+    box-shadow: 0 0 0 3px rgb(240 161 60 / 0.15);
   }
 
   .mc-select option {
-    background: theme("colors.panel.bg");
-    color: theme("colors.text.DEFAULT");
+    background: var(--color-panel-bg);
+    color: var(--color-text);
     padding: 8px;
   }
 }
 
-/* ===== UTILITY LAYER ===== */
-@layer utilities {
-  /* Pixel perfect borders */
-  .border-pixel {
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-  }
+/* ===== CUSTOM UTILITIES ===== */
+@utility text-shadow-pixel {
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+}
 
-  /* Text shadows */
-  .text-shadow-pixel {
-    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
-  }
+@utility text-shadow-glow {
+  text-shadow: 0 0 8px currentColor;
+}
 
-  .text-shadow-glow {
-    text-shadow: 0 0 8px currentColor;
-  }
+@utility glow-grass {
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-success) 60%, transparent);
+}
 
-  /* Minecraft-style glow */
-  .glow-grass {
-    box-shadow:
-      0 0 12px theme("colors.grass.DEFAULT"),
-      0 0 24px rgba(93, 135, 49, 0.5);
-  }
-
-  .glow-gold {
-    box-shadow:
-      0 0 12px theme("colors.hytale.gold"),
-      0 0 24px rgba(212, 165, 52, 0.5);
-  }
-
-  /* Animation delays */
-  .animation-delay-100 {
-    animation-delay: 100ms;
-  }
-  .animation-delay-200 {
-    animation-delay: 200ms;
-  }
-  .animation-delay-300 {
-    animation-delay: 300ms;
-  }
-  .animation-delay-400 {
-    animation-delay: 400ms;
-  }
-  .animation-delay-500 {
-    animation-delay: 500ms;
-  }
-
-  /* Border width 3 */
-  .border-3 {
-    border-width: 3px;
-  }
+@utility glow-gold {
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-hytale-gold) 60%, transparent);
 }

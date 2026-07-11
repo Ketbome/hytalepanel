@@ -1,6 +1,8 @@
 <script lang="ts">
 import { tick } from 'svelte';
 import { _ } from 'svelte-i18n';
+import Button from '$lib/components/ui/Button.svelte';
+import Input from '$lib/components/ui/Input.svelte';
 import { emit } from '$lib/services/socketClient';
 import {
   addLog,
@@ -264,80 +266,28 @@ $effect(() => {
 <div class="mc-panel h-full flex flex-col">
   <div class="mc-panel-header">
     <span>{$_('console')}</span>
-    <div class="flex items-center gap-1 ml-auto">
-      <button 
-        class="px-2 py-1 text-xs font-mono border-2 transition-all"
-        class:bg-panel-light={filterType !== 'all'}
-        class:border-panel-border={filterType !== 'all'}
-        class:text-text-dim={filterType !== 'all'}
-        class:bg-dirt={filterType === 'all'}
-        class:border-dirt-light={filterType === 'all'}
-        class:text-hytale-gold={filterType === 'all'}
-        onclick={() => filterType = 'all'}
-        title="All logs"
-      >
-        All
-      </button>
-      <button 
-        class="px-2 py-1 text-xs font-mono border-2 transition-all"
-        class:bg-panel-light={filterType !== 'info'}
-        class:border-panel-border={filterType !== 'info'}
-        class:text-text-dim={filterType !== 'info'}
-        class:bg-info={filterType === 'info'}
-        class:border-info={filterType === 'info'}
-        class:text-white={filterType === 'info'}
-        onclick={() => filterType = 'info'}
-        title="Info logs"
-      >
-        Info
-      </button>
-      <button 
-        class="px-2 py-1 text-xs font-mono border-2 transition-all"
-        class:bg-panel-light={filterType !== 'warn'}
-        class:border-panel-border={filterType !== 'warn'}
-        class:text-text-dim={filterType !== 'warn'}
-        class:bg-warning={filterType === 'warn'}
-        class:border-warning={filterType === 'warn'}
-        class:text-panel-bg={filterType === 'warn'}
-        onclick={() => filterType = 'warn'}
-        title="Warning logs"
-      >
-        Warn
-      </button>
-      <button 
-        class="px-2 py-1 text-xs font-mono border-2 transition-all"
-        class:bg-panel-light={filterType !== 'error'}
-        class:border-panel-border={filterType !== 'error'}
-        class:text-text-dim={filterType !== 'error'}
-        class:bg-error={filterType === 'error'}
-        class:border-error={filterType === 'error'}
-        class:text-white={filterType === 'error'}
-        onclick={() => filterType = 'error'}
-        title="Error logs"
-      >
-        Error
-      </button>
-      <button 
-        class="px-2 py-1 text-xs font-mono border-2 transition-all"
-        class:bg-panel-light={filterType !== 'cmd'}
-        class:border-panel-border={filterType !== 'cmd'}
-        class:text-text-dim={filterType !== 'cmd'}
-        class:bg-grass={filterType === 'cmd'}
-        class:border-grass-light={filterType === 'cmd'}
-        class:text-white={filterType === 'cmd'}
-        onclick={() => filterType = 'cmd'}
-        title="Command logs"
-      >
-        Cmd
-      </button>
+    <div class="flex items-center gap-1 ml-auto" role="group" aria-label="Log filters">
+      {#each [['all', 'All', 'All logs'], ['info', 'Info', 'Info logs'], ['warn', 'Warn', 'Warning logs'], ['error', 'Error', 'Error logs'], ['cmd', 'Cmd', 'Command logs']] as [type, label, title]}
+        <button
+          type="button"
+          class="px-2 py-1 text-xs font-medium rounded-md border transition-colors"
+          class:bg-transparent={filterType !== type}
+          class:border-transparent={filterType !== type}
+          class:text-text-dim={filterType !== type}
+          class:bg-panel-lighter={filterType === type}
+          class:border-panel-border-light={filterType === type}
+          class:text-hytale-gold={filterType === type}
+          aria-pressed={filterType === type}
+          onclick={() => (filterType = type as typeof filterType)}
+          {title}
+        >
+          {label}
+        </button>
+      {/each}
     </div>
-    <button 
-      class="mc-btn mc-btn-sm mc-btn-danger !px-2 !py-1 ml-2"
-      title={$_('clearConsole')} 
-      onclick={handleClear}
-    >
+    <Button size="small" variant="danger" class="!px-2 !py-1 ml-2" title={$_('clearConsole')} aria-label={$_('clearConsole')} onclick={handleClear}>
       ✕
-    </button>
+    </Button>
   </div>
   
   <!-- Console output -->
@@ -381,11 +331,12 @@ $effect(() => {
   <div class="p-3 border-t-2 border-panel-border bg-panel-light">
     <div class="flex gap-3">
       <div class="flex-1 relative">
-        <input
+        <Input
           type="text"
-          class="mc-input !py-2"
+          class="!py-2"
           placeholder={$serverStatus.running ? $_('enterCommand') : $_('offline')}
           autocomplete="off"
+          aria-label={$_('enterCommand')}
           bind:value={cmdInput}
           oninput={handleInput}
           onkeydown={handleKeydown}
@@ -408,13 +359,9 @@ $effect(() => {
           </div>
         {/if}
       </div>
-      <button 
-        class="mc-btn mc-btn-primary"
-        onclick={sendCommand} 
-        disabled={!$serverStatus.running}
-      >
+      <Button variant="primary" onclick={sendCommand} disabled={!$serverStatus.running}>
         {$_('send')}
-      </button>
+      </Button>
     </div>
   </div>
 </div>

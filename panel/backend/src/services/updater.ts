@@ -9,6 +9,7 @@ export interface UpdateMetadata {
   jarSize: number | null;
   jarHash: string | null;
   assetsSize: number | null;
+  installedVersion?: string | null;
 }
 
 export interface UpdateCheckResult {
@@ -16,6 +17,9 @@ export interface UpdateCheckResult {
   lastUpdate: string | null;
   daysSinceUpdate: number | null;
   hasFiles: boolean;
+  currentVersion?: string | null;
+  latestVersion?: string | null;
+  updateAvailable?: boolean | null;
   code?: 'CONTAINER_NOT_RUNNING';
   error?: string;
 }
@@ -42,6 +46,33 @@ async function saveMetadata(metadata: UpdateMetadata, containerName?: string): P
   const json = JSON.stringify(metadata, null, 2);
   const escaped = json.replaceAll("'", String.raw`'\'`);
   await docker.execCommand(`echo '${escaped}' > ${METADATA_PATH}`, 30000, containerName);
+}
+
+function patchlineFlag(channel?: servers.ReleaseChannel): string {
+  return channel === 'pre-release' ? '-patchline pre-release' : '';
+}
+
+// Queries the official downloader for the version currently available on the patchline.
+async function getRemoteVersion(containerName?: string, channel?: servers.ReleaseChannel): Promise<string | null> {
+  try {
+    const output = await docker.execCommand(
+      `hytale-downloader -print-version -skip-update-check ${patchlineFlag(channel)} 2>/dev/null | tail -n 1`,
+      60000,
+      containerName
+    );
+    const version = output.trim();
+    // Versions look like 2026.01.13-50e69c385; reject auth prompts or errors
+    if (!version || version.length > 64 || /\s/.test(version)) return null;
+    return version;
+  } catch {
+    return null;
+  }
+}
+
+async function getServerChannel(serverId?: string): Promise<servers.ReleaseChannel> {
+  if (!serverId) return 'stable';
+  const result = await servers.getServer(serverId);
+  return result.success && result.server ? result.server.config.releaseChannel || 'stable' : 'stable';
 }
 
 async function getJarInfo(containerName?: string): Promise<{ size: number; hash: string } | null> {
@@ -84,6 +115,9 @@ export async function checkForUpdate(serverId: string, containerName?: string): 
 
     const filesStatus = await files.checkServerFiles(serverId, containerName);
     const metadata = await getMetadata(containerName);
+    const channel = await getServerChannel(serverId);
+    const latestVersion = await getRemoteVersion(containerName, channel);
+    const currentVersion = metadata?.installedVersion || null;
 
     let daysSinceUpdate: number | null = null;
     if (metadata?.lastDownloadAt) {
@@ -96,7 +130,10 @@ export async function checkForUpdate(serverId: string, containerName?: string): 
       success: true,
       lastUpdate: metadata?.lastDownloadAt || null,
       daysSinceUpdate,
-      hasFiles: filesStatus.ready
+      hasFiles: filesStatus.ready,
+      currentVersion,
+      latestVersion,
+      updateAvailable: latestVersion && currentVersion ? latestVersion !== currentVersion : null
     };
   } catch (e) {
     return {
@@ -120,13 +157,7 @@ export async function applyUpdate(
     const wasRunning = status.running;
 
     // Get server config to determine release channel
-    let channel: 'stable' | 'pre-release' = 'stable';
-    if (serverId) {
-      const serverResult = await servers.getServer(serverId);
-      if (serverResult.success && serverResult.server) {
-        channel = serverResult.server.config.releaseChannel || 'stable';
-      }
-    }
+    const channel = await getServerChannel(serverId);
 
     // Download new files FIRST (requires container running, not server)
     socket.emit('update:status', {
@@ -139,15 +170,7 @@ export async function applyUpdate(
       throw new Error(downloadResult.error || 'Server update download failed');
     }
 
-    // Update metadata
-    const jarInfo = await getJarInfo(containerName);
-    const metadata: UpdateMetadata = {
-      lastDownloadAt: new Date().toISOString(),
-      jarSize: jarInfo?.size || null,
-      jarHash: jarInfo?.hash || null,
-      assetsSize: null // Could be added later
-    };
-    await saveMetadata(metadata, containerName);
+    // Metadata is recorded by the downloader on success (recordDownload)
 
     // Restart server to apply changes if it was running
     if (wasRunning) {
@@ -181,14 +204,17 @@ export async function applyUpdate(
   }
 }
 
-export async function recordDownload(containerName?: string): Promise<void> {
+export async function recordDownload(containerName?: string, channel?: servers.ReleaseChannel): Promise<void> {
   try {
     const jarInfo = await getJarInfo(containerName);
+    // Right after a successful download, the remote version IS the installed version
+    const installedVersion = await getRemoteVersion(containerName, channel);
     const metadata: UpdateMetadata = {
       lastDownloadAt: new Date().toISOString(),
       jarSize: jarInfo?.size || null,
       jarHash: jarInfo?.hash || null,
-      assetsSize: null
+      assetsSize: null,
+      installedVersion
     };
     await saveMetadata(metadata, containerName);
   } catch {

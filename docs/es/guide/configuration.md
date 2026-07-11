@@ -13,6 +13,17 @@ Toda la configuración se realiza mediante variables de entorno en tu archivo `.
 | `SERVER_EXTRA_ARGS` | -           | Argumentos extra para el servidor |
 | `TZ`                | `UTC`       | Zona horaria para logs            |
 
+## Canales de Release
+
+Cada servidor puede seguir una de las patchlines oficiales de `hytale-downloader`, seleccionable en la pestaña **Config** del panel:
+
+| Canal         | Descripción                                          |
+| ------------- | ---------------------------------------------------- |
+| `stable`      | Builds de producción (por defecto, recomendado)      |
+| `pre-release` | Últimas novedades, puede contener bugs               |
+
+La verificación de actualizaciones de la pestaña **Setup** compara la versión instalada con la última disponible en el canal del servidor (vía `hytale-downloader -print-version`), por lo que "Actualización disponible" refleja la versión remota real y no la antigüedad de los archivos.
+
 ## Configuración del Panel
 
 | Variable             | Por defecto | Descripción             |

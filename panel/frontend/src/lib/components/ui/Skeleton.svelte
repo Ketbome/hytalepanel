@@ -15,15 +15,11 @@ const typeClasses = {
   circle: 'aspect-square'
 };
 
-const baseClasses = 'bg-panel-light border-2 border-panel-border animate-pulse';
+const baseClasses = 'bg-panel-light border border-panel-border rounded-lg animate-pulse';
 
-const classes = $derived(() => {
-  return `${baseClasses} ${typeClasses[type]} ${className}`.trim();
-});
+const classes = $derived(`${baseClasses} ${typeClasses[type]} ${className}`.trim());
 
-const style = $derived(() => {
-  return [height && `height: ${height}`, width && `width: ${width}`].filter(Boolean).join('; ');
-});
+const style = $derived([height && `height: ${height}`, width && `width: ${width}`].filter(Boolean).join('; '));
 </script>
 
-<div class={classes()} style={style()}></div>
+<div class={classes} {style}></div>
