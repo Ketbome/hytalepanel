@@ -279,5 +279,6 @@ docker build -t hytale-panel ./panel
 ## Version Source Of Truth
 
 - `config.json` is the canonical release version used by deployment/update flows.
-- For release-impacting changes, always bump `config.json.version`.
-- Keep package versions aligned when relevant (`panel/package.json`, `panel/backend/package.json`, `panel/frontend/package.json`), but `config.json` is the value that must never be skipped.
+- `config.json.version` holds `major.minor` (e.g. `1.6`); the docker-publish workflow derives the next patch automatically from existing `v<major>.<minor>.*` git tags (first push → `v1.6.0`, next → `v1.6.1`, ...). A full `x.y.z` value pins that exact version instead.
+- Bump the `major.minor` in `config.json` only for release-impacting feature changes; routine pushes to `main` self-increment the patch.
+- Keep package versions aligned to the same `major.minor` when relevant (`panel/package.json`, `panel/backend/package.json`, `panel/frontend/package.json`).
