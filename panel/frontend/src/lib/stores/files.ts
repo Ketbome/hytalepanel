@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import type { EditorState, FileEntry, FileType, UploadState } from '$lib/types';
+import type { EditorState, FileEntry, UploadState } from '$lib/types';
 
 export const currentPath = writable<string>('/');
 export const fileList = writable<FileEntry[]>([]);
@@ -19,22 +19,6 @@ export const uploadState = writable<UploadState>({
   progress: 0,
   text: ''
 });
-
-export const FILE_ICONS: Record<FileType, string> = {
-  folder: 'DIR',
-  java: 'JAR',
-  archive: 'ZIP',
-  json: 'JSON',
-  yaml: 'YML',
-  config: 'CFG',
-  text: 'TXT',
-  log: 'LOG',
-  image: 'IMG',
-  script: 'SCR',
-  data: 'DAT',
-  audio: 'SND',
-  file: 'FILE'
-};
 
 export function openEditor(filePath: string): void {
   editorState.set({
