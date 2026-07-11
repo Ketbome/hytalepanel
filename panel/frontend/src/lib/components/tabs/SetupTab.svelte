@@ -258,17 +258,40 @@ $effect(() => {
       </h3>
       
       <!-- Update Info -->
-      <div class="flex items-center justify-between mb-3 p-3 bg-panel-bg/50 border-2 border-panel-border">
-        <span class="font-mono text-sm text-text-dim">{$_('lastUpdate')}:</span>
+      <div class="flex items-center justify-between mb-3 p-3 rounded-lg bg-panel-bg/50 border border-panel-border">
+        <span class="text-sm text-text-dim">{$_('lastUpdate')}:</span>
         <div class="flex items-center gap-2">
-          <span class="font-mono text-sm text-text">
+          <span class="text-sm text-text">
             {formatLastUpdate($updateInfo.lastUpdate, $updateInfo.daysSinceUpdate)}
           </span>
           {#if $updateInfo.isChecking}
-            <span class="w-4 h-4 border-3 border-t-grass border-r-grass/30 border-b-grass/30 border-l-grass/30 rounded-full animate-spin"></span>
+            <span class="w-4 h-4 border-2 border-hytale-orange border-t-transparent rounded-full animate-spin"></span>
           {/if}
         </div>
       </div>
+
+      <!-- Version Info -->
+      {#if $updateInfo.currentVersion || $updateInfo.latestVersion}
+        <div class="flex flex-col gap-2 mb-3 p-3 rounded-lg bg-panel-bg/50 border border-panel-border text-sm" aria-live="polite">
+          {#if $updateInfo.currentVersion}
+            <div class="flex items-center justify-between">
+              <span class="text-text-dim">{$_('installedVersion')}:</span>
+              <span class="font-code text-text">{$updateInfo.currentVersion}</span>
+            </div>
+          {/if}
+          {#if $updateInfo.latestVersion}
+            <div class="flex items-center justify-between">
+              <span class="text-text-dim">{$_('latestVersionLabel')}:</span>
+              <span class="font-code text-text">{$updateInfo.latestVersion}</span>
+            </div>
+          {/if}
+          {#if $updateInfo.updateAvailable === true}
+            <span class="mc-badge mc-badge-warning self-start">⬆ {$_('updateAvailable')}</span>
+          {:else if $updateInfo.updateAvailable === false}
+            <span class="mc-badge mc-badge-success self-start">✓ {$_('upToDate')}</span>
+          {/if}
+        </div>
+      {/if}
       
       <!-- Update Status -->
       {#if $updateInfo.isUpdating}

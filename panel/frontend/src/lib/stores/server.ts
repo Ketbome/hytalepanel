@@ -30,6 +30,9 @@ export const downloadProgress = writable<DownloadProgress>({
 export interface UpdateInfo {
   lastUpdate: string | null;
   daysSinceUpdate: number | null;
+  currentVersion: string | null;
+  latestVersion: string | null;
+  updateAvailable: boolean | null;
   isChecking: boolean;
   isUpdating: boolean;
   updateStatus: string;
@@ -38,6 +41,9 @@ export interface UpdateInfo {
 export const updateInfo = writable<UpdateInfo>({
   lastUpdate: null,
   daysSinceUpdate: null,
+  currentVersion: null,
+  latestVersion: null,
+  updateAvailable: null,
   isChecking: false,
   isUpdating: false,
   updateStatus: ''

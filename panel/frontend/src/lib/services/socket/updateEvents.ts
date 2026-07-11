@@ -8,6 +8,9 @@ type UpdateCheckResult = {
   success: boolean;
   lastUpdate: string | null;
   daysSinceUpdate: number | null;
+  currentVersion?: string | null;
+  latestVersion?: string | null;
+  updateAvailable?: boolean | null;
   code?: string;
   error?: string;
 };
@@ -20,7 +23,10 @@ export function registerUpdateEvents(socket: Socket): void {
             ...u,
             isChecking: false,
             lastUpdate: result.lastUpdate,
-            daysSinceUpdate: result.daysSinceUpdate
+            daysSinceUpdate: result.daysSinceUpdate,
+            currentVersion: result.currentVersion ?? null,
+            latestVersion: result.latestVersion ?? null,
+            updateAvailable: result.updateAvailable ?? null
           }
         : {
             ...u,

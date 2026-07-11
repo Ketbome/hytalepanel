@@ -202,6 +202,67 @@ describe("Updater Service", () => {
       expect(result.daysSinceUpdate).toBeNull();
     });
 
+    test("reports update available when remote version differs from installed", async () => {
+      mockExecCommand.mockImplementation((cmd: string) => {
+        if (cmd.includes("-print-version")) return Promise.resolve("2026.07.01-abc1234\n");
+        if (cmd.includes(".update-metadata.json")) {
+          return Promise.resolve(
+            JSON.stringify({
+              lastDownloadAt: new Date("2026-06-01").toISOString(),
+              jarSize: 1024,
+              jarHash: "abc123",
+              assetsSize: null,
+              installedVersion: "2026.06.01-def5678",
+            }),
+          );
+        }
+        return Promise.resolve("{}");
+      });
+
+      const result = await checkForUpdate("test-server", "test-container");
+
+      expect(result.success).toBe(true);
+      expect(result.currentVersion).toBe("2026.06.01-def5678");
+      expect(result.latestVersion).toBe("2026.07.01-abc1234");
+      expect(result.updateAvailable).toBe(true);
+    });
+
+    test("reports up to date when versions match", async () => {
+      mockExecCommand.mockImplementation((cmd: string) => {
+        if (cmd.includes("-print-version")) return Promise.resolve("2026.07.01-abc1234\n");
+        if (cmd.includes(".update-metadata.json")) {
+          return Promise.resolve(
+            JSON.stringify({
+              lastDownloadAt: new Date("2026-07-01").toISOString(),
+              jarSize: 1024,
+              jarHash: "abc123",
+              assetsSize: null,
+              installedVersion: "2026.07.01-abc1234",
+            }),
+          );
+        }
+        return Promise.resolve("{}");
+      });
+
+      const result = await checkForUpdate("test-server", "test-container");
+
+      expect(result.updateAvailable).toBe(false);
+    });
+
+    test("leaves updateAvailable null when remote version cannot be determined", async () => {
+      mockExecCommand.mockImplementation((cmd: string) => {
+        // Downloader prompting for auth instead of printing a version
+        if (cmd.includes("-print-version")) return Promise.resolve("Visit oauth.accounts.hytale.com to log in\n");
+        return Promise.resolve("{}");
+      });
+
+      const result = await checkForUpdate("test-server", "test-container");
+
+      expect(result.success).toBe(true);
+      expect(result.latestVersion).toBeNull();
+      expect(result.updateAvailable).toBeNull();
+    });
+
     test("returns error on failure", async () => {
       mockExecCommand.mockRejectedValue(new Error("Failed to read"));
       mockCheckServerFiles.mockRejectedValue(new Error("Failed"));
