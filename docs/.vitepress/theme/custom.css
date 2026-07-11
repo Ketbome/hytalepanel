@@ -88,10 +88,31 @@
   letter-spacing: 0.01em;
 }
 
-/* Rounded, bordered UI pieces to match the panel's cards */
+/* Angular, blocky corners across the default theme — voxel-game identity */
 .vp-doc div[class*="language-"],
-.vp-doc .custom-block {
-  border-radius: 12px;
+.vp-doc .custom-block,
+.VPFeature,
+.VPNavBarSearchButton,
+.DocSearch-Button {
+  border-radius: 4px !important;
+}
+
+.VPButton {
+  border-radius: 3px !important;
+}
+
+.VPBadge,
+.vp-doc :not(pre) > code {
+  border-radius: 2px !important;
+}
+
+/* Square the dark-mode switch */
+.VPSwitch {
+  border-radius: 4px !important;
+}
+
+.VPSwitch .check {
+  border-radius: 2px !important;
 }
 
 .dark .vp-doc div[class*="language-"] {

@@ -189,7 +189,7 @@ async function handleLogout(): Promise<void> {
       <!-- FAB -->
       <Button
         variant="primary"
-        class="fixed bottom-8 right-8 w-14 h-14 !rounded-full !p-0 text-2xl shadow-pixel hover:scale-110 transition-transform"
+        class="fixed bottom-8 right-8 w-14 h-14 !p-0 text-2xl shadow-pixel hover:scale-110 transition-transform"
         onclick={() => (showCreateModal = true)}
         title={$_('createServer')}
         aria-label={$_('createServer')}

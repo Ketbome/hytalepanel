@@ -156,7 +156,7 @@ async function handleSubmit(): Promise<void> {
       </Button>
       <Button type="submit" variant="primary" disabled={isCreating}>
         {#if isCreating}
-          <span class="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+          <span class="inline-block w-4 h-4 border-2 border-current border-t-transparent animate-spin"></span>
         {:else}
           {$_('create')}
         {/if}

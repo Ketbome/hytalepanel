@@ -203,7 +203,7 @@ import * as docker from "./services/docker.js";
 - ✅ Keep functions small and focused
 - ✅ Return consistent response objects
 - ✅ Use existing patterns in the codebase
-- ✅ Follow the design system: dark hosting-panel aesthetic, design tokens in `src/app.css` (`@theme`), Hytale orange/gold as the only accent, Unbounded for display text, Sofia Sans for UI, JetBrains Mono for console/code
+- ✅ Follow the design system: dark hosting-panel aesthetic with a blocky/voxel character — near-square corners (2-6px radii via `--radius-*` tokens, no pills or circles; status dots and toggles are square), design tokens in `src/app.css` (`@theme`), Hytale orange/gold as the only accent, Unbounded for display text, Sofia Sans for UI, JetBrains Mono for console/code
 - ✅ Update translations when adding UI text
 - ✅ Run `pnpm check` before committing
 

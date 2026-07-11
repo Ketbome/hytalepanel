@@ -35,7 +35,7 @@ const isRunning = $derived(server.status === 'running');
     </div>
     <div class="flex items-center gap-2">
       <span
-        class="w-2.5 h-2.5 rounded-full"
+        class="w-2.5 h-2.5"
         class:bg-grass={isRunning}
         class:glow-grass={isRunning}
         class:animate-pulse={isRunning}

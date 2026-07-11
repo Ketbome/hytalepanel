@@ -7,7 +7,7 @@ const { size = 'md' }: { size?: 'md' | 'lg' } = $props();
 
 <div class="flex items-center {size === 'lg' ? 'gap-4' : 'gap-3'}">
   <img
-    src={assetUrl('/images/logo.png')}
+    src={assetUrl('/images/hytale.png')}
     alt="HytalePanel"
     class="object-contain {size === 'lg' ? 'w-16 h-16' : 'w-11 h-11'}"
   />

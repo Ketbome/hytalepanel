@@ -33,7 +33,7 @@ import { changePage, searchMods, switchProvider } from './modActions';
     onclick={() => switchProvider('modtale')}
     title={$modtaleStatus.valid ? 'Modtale API ready' : $modtaleStatus.configured ? 'API key invalid' : 'API key not configured'}
   >
-    <span class="w-2 h-2 rounded-full {$modtaleStatus.valid ? 'bg-success' : $modtaleStatus.configured ? 'bg-error' : 'bg-stone'}"></span>
+    <span class="w-2 h-2 {$modtaleStatus.valid ? 'bg-success' : $modtaleStatus.configured ? 'bg-error' : 'bg-stone'}"></span>
     Modtale
   </button>
   <button
@@ -47,7 +47,7 @@ import { changePage, searchMods, switchProvider } from './modActions';
     onclick={() => switchProvider('curseforge')}
     title={$curseforgeStatus.valid ? 'CurseForge API ready' : $curseforgeStatus.configured ? 'API key invalid' : 'API key not configured'}
   >
-    <span class="w-2 h-2 rounded-full {$curseforgeStatus.valid ? 'bg-success' : $curseforgeStatus.configured ? 'bg-error' : 'bg-stone'}"></span>
+    <span class="w-2 h-2 {$curseforgeStatus.valid ? 'bg-success' : $curseforgeStatus.configured ? 'bg-error' : 'bg-stone'}"></span>
     CurseForge
   </button>
 </div>

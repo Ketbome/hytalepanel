@@ -3,6 +3,7 @@ server/HytaleServer.jar
 server/Assets.zip
 server/*.aot
 server/
+dist/
 
 # Server data
 data/

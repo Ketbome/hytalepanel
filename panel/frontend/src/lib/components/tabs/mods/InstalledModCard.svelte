@@ -88,7 +88,7 @@ async function uninstall(): Promise<void> {
     {/if}
     <button
       type="button"
-      class="w-11 h-6 rounded-full border transition-colors relative
+      class="w-11 h-6 rounded-sm border transition-colors relative
              {mod.enabled ? 'bg-success/70 border-success' : 'bg-panel-bg border-panel-border-light'}"
       role="switch"
       aria-checked={mod.enabled}
@@ -96,7 +96,7 @@ async function uninstall(): Promise<void> {
       title={mod.enabled ? $_('disable') : $_('enable')}
     >
       <span
-        class="absolute top-0.5 w-4.5 h-4.5 rounded-full bg-text transition-all {mod.enabled ? 'right-0.5' : 'left-0.5'}"
+        class="absolute top-0.5 w-4.5 h-4.5 rounded-xs bg-text transition-all {mod.enabled ? 'right-0.5' : 'left-0.5'}"
       ></span>
     </button>
     <Button size="small" variant="danger" onclick={uninstall} aria-label={$_('confirmUninstall')}>✕</Button>

@@ -78,7 +78,7 @@ function changeLanguage(lang: string): void {
       {/if}
       
       {#if $activeServer}
-        <img src={assetUrl('/images/logo.png')} alt="HytalePanel" class="w-11 h-11 object-contain" />
+        <img src={assetUrl('/images/hytale.png')} alt="HytalePanel" class="w-11 h-11 object-contain" />
         <div>
           <h1 class="font-display text-sm text-hytale-gold tracking-wide">{$activeServer.name}</h1>
           <p class="text-sm text-text-dim">:{$activeServer.port}/UDP</p>

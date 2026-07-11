@@ -87,7 +87,7 @@ $effect(() => {
               {$filesReady.ready ? 'border-grass' : $isCheckingFiles ? 'border-hytale-gold' : 'border-error/70'}">
     <div class="flex items-center gap-3">
       {#if $isCheckingFiles}
-        <span class="w-6 h-6 border-4 border-t-grass border-r-grass/30 border-b-grass/30 border-l-grass/30 rounded-full animate-spin"></span>
+        <span class="w-6 h-6 border-4 border-t-grass border-r-grass/30 border-b-grass/30 border-l-grass/30 animate-spin"></span>
         <span class="font-mono text-text-muted">{$_('checking')}</span>
       {:else}
         <span class="text-2xl">{$filesReady.ready ? '✓' : '⚠'}</span>
@@ -131,7 +131,7 @@ $effect(() => {
   <div class="flex items-center gap-3 p-3 bg-panel-light border-3 transition-all
               {$downloaderAuth ? 'border-grass/50 bg-grass/5' : $isCheckingFiles ? 'border-hytale-gold/50' : 'border-stone'}">
     {#if $isCheckingFiles}
-      <span class="w-5 h-5 border-3 border-t-grass border-r-grass/30 border-b-grass/30 border-l-grass/30 rounded-full animate-spin"></span>
+      <span class="w-5 h-5 border-3 border-t-grass border-r-grass/30 border-b-grass/30 border-l-grass/30 animate-spin"></span>
       <span class="font-mono text-sm text-text-muted">{$_('checking')}</span>
     {:else}
       <span class="text-xl">{$downloaderAuth ? '🔑' : '🔒'}</span>
@@ -239,7 +239,7 @@ $effect(() => {
     disabled={$downloadProgress.active && $downloadProgress.status !== 'waitingAuth'}
   >
     {#if $downloadProgress.active}
-      <span class="inline-block w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></span>
+      <span class="inline-block w-5 h-5 border-2 border-current border-t-transparent animate-spin mr-2"></span>
       {$downloadProgress.status}
     {:else}
       {$filesReady.ready ? '⟳ ' + $_('redownload') : '⬇ ' + $_('downloadFiles')}
@@ -265,7 +265,7 @@ $effect(() => {
             {formatLastUpdate($updateInfo.lastUpdate, $updateInfo.daysSinceUpdate)}
           </span>
           {#if $updateInfo.isChecking}
-            <span class="w-4 h-4 border-2 border-hytale-orange border-t-transparent rounded-full animate-spin"></span>
+            <span class="w-4 h-4 border-2 border-hytale-orange border-t-transparent animate-spin"></span>
           {/if}
         </div>
       </div>

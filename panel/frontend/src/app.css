@@ -47,6 +47,14 @@
   --color-wood: #97794f;
   --color-wood-dark: #6d5638;
 
+  /* Angular, blocky corners — Hytale is a voxel game, keep edges near-square */
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 6px;
+
   /* Shadows (legacy names, modern values) */
   --shadow-mc-btn: 0 1px 2px rgb(0 0 0 / 0.35);
   --shadow-mc-btn-pressed: inset 0 1px 3px rgb(0 0 0 / 0.35);
@@ -159,8 +167,11 @@
     font-size: 0.9375rem;
     line-height: 1.5;
     background-color: #0e0c09;
+    /* Subtle 24px voxel grid under a warm glow */
     background-image:
       radial-gradient(ellipse 80% 50% at 50% -10%, rgb(240 161 60 / 0.06), transparent),
+      repeating-linear-gradient(0deg, transparent 0 23px, rgb(240 233 219 / 0.015) 23px 24px),
+      repeating-linear-gradient(90deg, transparent 0 23px, rgb(240 233 219 / 0.015) 23px 24px),
       linear-gradient(180deg, #121009 0%, #0e0c09 100%);
     background-attachment: fixed;
     color: var(--color-text);
@@ -196,7 +207,6 @@
 
   ::-webkit-scrollbar-thumb {
     background: var(--color-panel-border-light);
-    border-radius: 6px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
@@ -350,7 +360,7 @@
 
   .status-online::before {
     content: "";
-    @apply w-2 h-2 rounded-full;
+    @apply w-2 h-2;
     background: var(--color-success);
     box-shadow: 0 0 8px color-mix(in srgb, var(--color-success) 70%, transparent);
     animation: pulse 2s ease-in-out infinite;
@@ -399,7 +409,7 @@
   .mc-badge {
     @apply inline-flex items-center gap-1.5;
     @apply px-2.5 py-0.5 text-xs font-medium;
-    @apply rounded-full border;
+    @apply rounded-sm border;
     background: var(--color-panel-light);
     border-color: var(--color-panel-border-light);
     color: var(--color-text-muted);
@@ -425,13 +435,13 @@
 
   /* ===== PROGRESS BAR ===== */
   .mc-progress {
-    @apply relative h-2.5 overflow-hidden rounded-full;
+    @apply relative h-2.5 overflow-hidden rounded-sm;
     background: #100e0b;
     border: 1px solid var(--color-panel-border);
   }
 
   .mc-progress-bar {
-    @apply h-full rounded-full transition-all duration-300;
+    @apply h-full transition-all duration-300;
     background: linear-gradient(90deg, var(--color-hytale-gold) 0%, var(--color-hytale-orange) 100%);
   }
 
@@ -449,12 +459,12 @@
   }
 
   /* ===== LOADING SPINNER ===== */
+  /* Spinning block instead of a circle — voxel wink */
   .mc-spinner {
-    @apply w-9 h-9;
+    @apply w-8 h-8 rounded-sm;
     border: 3px solid var(--color-panel-border-light);
     border-top-color: var(--color-hytale-orange);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    animation: spin 1.1s steps(8) infinite;
   }
 
   /* ===== DROPDOWN/SELECT ===== */
