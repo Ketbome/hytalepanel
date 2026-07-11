@@ -108,7 +108,7 @@ async function handleUploadItems(uploadItems: UploadFileItem[]): Promise<void> {
     ondragover={handleDragOver}
     ondrop={handleDrop}
     onclick={() => fileInput?.click()}
-    onkeydown={(e: KeyboardEvent) => e.key === 'Enter' && fileInput?.click()}
+    onkeydown={(e: KeyboardEvent) => (e.key === 'Enter' || e.key === ' ') && fileInput?.click()}
   >
     <div class="text-4xl mb-2">📤</div>
     <div class="text-hytale-gold mb-1">{$_('dropFilesFoldersHere')}</div>

@@ -21,11 +21,15 @@ export const confirmState = writable<ConfirmState>({
 
 export function confirmDialog(message: string, options: ConfirmOptions = {}): Promise<boolean> {
   return new Promise((resolve) => {
-    confirmState.set({
-      open: true,
-      message,
-      resolve,
-      ...options
+    confirmState.update((prev) => {
+      // A dialog opened over another one cancels the previous awaiter
+      prev.resolve?.(false);
+      return {
+        open: true,
+        message,
+        resolve,
+        ...options
+      };
     });
   });
 }

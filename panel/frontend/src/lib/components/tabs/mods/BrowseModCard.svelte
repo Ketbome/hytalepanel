@@ -9,6 +9,7 @@ import { classificationClass, getModUrl, installMod } from './modActions';
 const { mod }: { mod: ModProject } = $props();
 
 const alreadyInstalled = $derived($installedMods.some((m) => m.projectId === mod.id));
+let iconError = $state(false);
 const latestVersion = $derived(mod.latestVersion || mod.versions?.[0]);
 const modUrl = $derived(getModUrl(mod));
 const noDistribution = $derived('allowDistribution' in mod && mod.allowDistribution === false);
@@ -20,12 +21,12 @@ const noDistribution = $derived('allowDistribution' in mod && mod.allowDistribut
 >
   <!-- Icon -->
   <div class="w-14 h-14 shrink-0 rounded-lg bg-panel-bg border border-panel-border flex items-center justify-center overflow-hidden">
-    {#if mod.iconUrl}
+    {#if mod.iconUrl && !iconError}
       <img
         src={mod.iconUrl}
         alt=""
         class="w-full h-full object-cover"
-        onerror={(e: Event) => ((e.target as HTMLImageElement).style.display = 'none')}
+        onerror={() => (iconError = true)}
       />
     {:else}
       <span class="text-2xl text-text-dim">?</span>

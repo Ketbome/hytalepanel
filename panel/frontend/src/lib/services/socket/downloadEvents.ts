@@ -15,6 +15,7 @@ function formatSec(s: number): string {
 }
 
 function startDlTimer(): void {
+  stopDlTimer();
   dlTimer = setInterval(() => {
     if (dlStartTime) {
       const elapsed = Math.floor((Date.now() - dlStartTime) / 1000);

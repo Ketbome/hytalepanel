@@ -30,7 +30,11 @@ function handleKeydown(e: KeyboardEvent): void {
   }
   if (e.key === 'Tab') {
     const items = focusables();
-    if (items.length === 0) return;
+    if (items.length === 0) {
+      // Nothing focusable inside: keep focus trapped on the dialog itself
+      e.preventDefault();
+      return;
+    }
     const first = items[0];
     const last = items[items.length - 1];
     if (e.shiftKey && document.activeElement === first) {

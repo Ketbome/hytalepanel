@@ -9,6 +9,7 @@ import { classificationClass, getModUrl, toggleMod, updateMod } from './modActio
 const { mod, updateInfo }: { mod: InstalledMod; updateInfo?: ModUpdate } = $props();
 
 const modUrl = $derived(getModUrl(mod));
+let iconError = $state(false);
 
 async function uninstall(): Promise<void> {
   if (await confirmDialog($_('confirmUninstall'), { danger: true })) {
@@ -23,12 +24,12 @@ async function uninstall(): Promise<void> {
 >
   <!-- Icon -->
   <div class="w-14 h-14 shrink-0 rounded-lg bg-panel-bg border border-panel-border flex items-center justify-center overflow-hidden">
-    {#if mod.projectIconUrl}
+    {#if mod.projectIconUrl && !iconError}
       <img
         src={mod.projectIconUrl}
         alt=""
         class="w-full h-full object-cover"
-        onerror={(e: Event) => ((e.target as HTMLImageElement).style.display = 'none')}
+        onerror={() => (iconError = true)}
       />
     {:else}
       <span class="text-2xl text-text-dim">?</span>

@@ -77,6 +77,13 @@ export function registerServerEvents(socket: Socket): void {
 
   socket.on('action-status', (s: ActionStatus) => {
     const t = get(_);
+    const actionLabels: Record<string, string> = {
+      restart: t('restart'),
+      stop: t('stop'),
+      start: t('start'),
+      wipe: t('wipeData'),
+      kill: t('forceStop')
+    };
     if (s.success) {
       const msgs: Record<string, string> = {
         restart: t('restarted'),
@@ -87,7 +94,7 @@ export function registerServerEvents(socket: Socket): void {
       };
       showToast(msgs[s.action] || t('done'));
     } else if (s.error) {
-      showToast(`${s.action} ${t('failed')}`, 'error');
+      showToast(`${actionLabels[s.action] || s.action}: ${t('failed')}`, 'error');
     }
   });
 
