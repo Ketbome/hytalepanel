@@ -172,6 +172,8 @@
 	"maxMemory": "Макс RAM",
 	"create": "Створити",
 	"cancel": "Скасувати",
+	"confirmTitle": "Підтвердження",
+	"confirmOk": "Підтвердити",
 	"backToPanel": "Назад до панелi",
 	"confirmDeleteServer": "Видалити цей сервер i всi данi?",
 	"serverDeleted": "Сервер видалено",

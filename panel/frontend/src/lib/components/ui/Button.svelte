@@ -6,6 +6,8 @@ interface ButtonProps {
   active?: boolean;
   type?: 'button' | 'submit' | 'reset';
   title?: string;
+  'aria-label'?: string;
+  class?: string;
   onclick?: (e: MouseEvent) => void;
   children?: import('svelte').Snippet;
 }
@@ -17,6 +19,8 @@ const {
   active = false,
   type = 'button',
   title,
+  'aria-label': ariaLabel,
+  class: className = '',
   onclick,
   children
 }: ButtonProps = $props();
@@ -30,20 +34,19 @@ const variantMap: Record<string, string> = {
   tab: ''
 };
 
-const classes = $derived(() => {
-  if (variant === 'tab') {
-    return `mc-tab ${active ? 'active' : ''}`.trim();
-  }
-  const sizeClass = size === 'small' ? 'mc-btn-sm' : '';
-  return `mc-btn ${variantMap[variant]} ${sizeClass}`.trim();
-});
+const classes = $derived(
+  variant === 'tab'
+    ? `mc-tab ${active ? 'active' : ''} ${className}`.trim()
+    : `mc-btn ${variantMap[variant]} ${size === 'small' ? 'mc-btn-sm' : ''} ${className}`.trim()
+);
 </script>
 
 <button
   {type}
   {title}
   {disabled}
-  class={classes()}
+  aria-label={ariaLabel}
+  class={classes}
   onclick={onclick}
 >
   {@render children?.()}

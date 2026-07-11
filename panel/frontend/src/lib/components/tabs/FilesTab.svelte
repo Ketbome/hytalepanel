@@ -4,6 +4,7 @@ import { _ } from 'svelte-i18n';
 import Skeleton from '$lib/components/ui/Skeleton.svelte';
 import { downloadFile, type UploadFileItem, uploadFiles } from '$lib/services/api';
 import { emit } from '$lib/services/socketClient';
+import { confirmDialog } from '$lib/stores/confirm';
 import {
   closeEditor,
   currentPath,
@@ -87,8 +88,8 @@ function handleEdit(file: FileEntry): void {
   emit('files:read', filePath);
 }
 
-function handleDelete(file: FileEntry): void {
-  if (confirm(`${$_('confirmDelete')} "${file.name}"?`)) {
+async function handleDelete(file: FileEntry): Promise<void> {
+  if (await confirmDialog(`${$_('confirmDelete')} "${file.name}"?`, { danger: true })) {
     const filePath = $currentPath === '/' ? `/${file.name}` : `${$currentPath}/${file.name}`;
     emit('files:delete', filePath);
   }

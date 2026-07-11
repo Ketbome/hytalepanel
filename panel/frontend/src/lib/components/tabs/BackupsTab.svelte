@@ -1,6 +1,7 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
 import { emit, joinedServerId, socket } from '$lib/services/socketClient';
+import { confirmDialog } from '$lib/stores/confirm';
 import { serverStatus } from '$lib/stores/server';
 import { showToast } from '$lib/stores/ui';
 import { formatSize } from '$lib/utils/formatters';
@@ -165,20 +166,20 @@ function handleCreateBackup(): void {
   emit('backup:create');
 }
 
-function handleRestore(backup: BackupInfo): void {
+async function handleRestore(backup: BackupInfo): Promise<void> {
   if ($serverStatus.running) {
     showToast($_('serverMustBeStopped'), 'error');
     return;
   }
 
-  if (confirm($_('confirmRestore'))) {
+  if (await confirmDialog($_('confirmRestore'), { danger: true })) {
     isRestoring = true;
     emit('backup:restore', backup.id);
   }
 }
 
-function handleDelete(backup: BackupInfo): void {
-  if (confirm(`${$_('confirmDelete')} "${backup.filename}"?`)) {
+async function handleDelete(backup: BackupInfo): Promise<void> {
+  if (await confirmDialog(`${$_('confirmDelete')} "${backup.filename}"?`, { danger: true })) {
     emit('backup:delete', backup.id);
   }
 }

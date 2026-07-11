@@ -20,38 +20,38 @@ export default defineConfig({
     },
     proxy: {
       "/panel-config": {
-        target: "http://localhost:3000",
+        target: "http://127.0.0.1:3000",
         changeOrigin: true,
       },
       ...(basePath && {
         [`${basePath}/api`]: {
-          target: "http://localhost:3000",
+          target: "http://127.0.0.1:3000",
           changeOrigin: true,
         },
         [`${basePath}/auth`]: {
-          target: "http://localhost:3000",
+          target: "http://127.0.0.1:3000",
           changeOrigin: true,
         },
         [`${basePath}/socket.io`]: {
-          target: "http://localhost:3000",
+          target: "http://127.0.0.1:3000",
           ws: true,
         },
         [`${basePath}/panel-config`]: {
-          target: "http://localhost:3000",
+          target: "http://127.0.0.1:3000",
           changeOrigin: true,
         },
       }),
       // Default routes (no prefix)
       "/api": {
-        target: "http://localhost:3000",
+        target: "http://127.0.0.1:3000",
         changeOrigin: true,
       },
       "/auth": {
-        target: "http://localhost:3000",
+        target: "http://127.0.0.1:3000",
         changeOrigin: true,
       },
       "/socket.io": {
-        target: "http://localhost:3000",
+        target: "http://127.0.0.1:3000",
         ws: true,
       },
     },

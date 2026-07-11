@@ -1,5 +1,7 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
+import Button from '$lib/components/ui/Button.svelte';
+import Input from '$lib/components/ui/Input.svelte';
 import { updateServer } from '$lib/services/api';
 import { serverStatus } from '$lib/stores/server';
 import {
@@ -78,92 +80,48 @@ async function handleSave(): Promise<void> {
 }
 </script>
 
-<div class="config-section">
-  <div class="config-header">
-    <h3>{$_('serverConfig')}</h3>
-  </div>
+<div class="flex flex-col h-full gap-4">
+  <h3 class="font-display text-xs uppercase tracking-wider text-hytale-orange">{$_('serverConfig')}</h3>
 
   {#if $serverStatus.running}
-    <div class="offline-notice">
-      <span>⚠</span> {$_('stopServerToEdit')}
+    <div class="mc-badge mc-badge-warning !flex gap-2 !px-4 !py-2.5 !rounded-lg text-sm">
+      <span>⚠</span>
+      {$_('stopServerToEdit')}
     </div>
   {/if}
 
-  <div class="config-form" class:disabled={$serverStatus.running}>
-    <div class="form-group">
-      <label for="port">{$_('serverPort')}</label>
-      <input 
-        type="number" 
-        id="port"
-        bind:value={port}
-        onchange={markChanged}
-        disabled={$serverStatus.running}
-        min="1024"
-        max="65535"
-      />
+  <div class="flex-1 overflow-y-auto flex flex-col gap-4" class:opacity-60={$serverStatus.running} class:pointer-events-none={$serverStatus.running}>
+    <div class="flex flex-col gap-1">
+      <label for="port" class="text-xs text-text-dim uppercase">{$_('serverPort')}</label>
+      <Input type="number" id="port" bind:value={port} oninput={markChanged} disabled={$serverStatus.running} min={1024} max={65535} />
     </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label for="javaXms">{$_('minMemory')}</label>
-        <input 
-          type="text" 
-          id="javaXms"
-          bind:value={javaXms}
-          onchange={markChanged}
-          disabled={$serverStatus.running}
-          placeholder="2G"
-        />
+    <div class="grid grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="javaXms" class="text-xs text-text-dim uppercase">{$_('minMemory')}</label>
+        <Input type="text" id="javaXms" bind:value={javaXms} oninput={markChanged} disabled={$serverStatus.running} placeholder="2G" />
       </div>
 
-      <div class="form-group">
-        <label for="javaXmx">{$_('maxMemory')}</label>
-        <input 
-          type="text" 
-          id="javaXmx"
-          bind:value={javaXmx}
-          onchange={markChanged}
-          disabled={$serverStatus.running}
-          placeholder="4G"
-        />
+      <div class="flex flex-col gap-1">
+        <label for="javaXmx" class="text-xs text-text-dim uppercase">{$_('maxMemory')}</label>
+        <Input type="text" id="javaXmx" bind:value={javaXmx} oninput={markChanged} disabled={$serverStatus.running} placeholder="4G" />
       </div>
     </div>
 
-    <div class="form-group">
-      <label for="bindAddr">{$_('bindAddress')}</label>
-      <input 
-        type="text" 
-        id="bindAddr"
-        bind:value={bindAddr}
-        onchange={markChanged}
-        disabled={$serverStatus.running}
-        placeholder="0.0.0.0"
-      />
+    <div class="flex flex-col gap-1">
+      <label for="bindAddr" class="text-xs text-text-dim uppercase">{$_('bindAddress')}</label>
+      <Input type="text" id="bindAddr" bind:value={bindAddr} oninput={markChanged} disabled={$serverStatus.running} placeholder="0.0.0.0" />
     </div>
 
-    <div class="form-group">
-      <label for="extraArgs">{$_('extraArgs')}</label>
-      <input 
-        type="text" 
-        id="extraArgs"
-        bind:value={extraArgs}
-        onchange={markChanged}
-        disabled={$serverStatus.running}
-        placeholder="--world-seed 12345"
-      />
+    <div class="flex flex-col gap-1">
+      <label for="extraArgs" class="text-xs text-text-dim uppercase">{$_('extraArgs')}</label>
+      <Input type="text" id="extraArgs" bind:value={extraArgs} oninput={markChanged} disabled={$serverStatus.running} placeholder="--world-seed 12345" />
     </div>
 
-    <div class="form-group checkbox-group">
-      <label>
-        <input 
-          type="checkbox" 
-          bind:checked={autoDownload}
-          onchange={markChanged}
-          disabled={$serverStatus.running}
-        />
-        {$_('autoDownloadFiles')}
-      </label>
-    </div>
+    <label class="flex items-center gap-2 text-sm cursor-pointer">
+      <input type="checkbox" class="w-4 h-4 accent-hytale-orange" bind:checked={autoDownload} onchange={markChanged} disabled={$serverStatus.running} />
+      {$_('autoDownloadFiles')}
+    </label>
 
     {#if $activeServerId}
       <ReleaseChannelSelector
@@ -177,158 +135,26 @@ async function handleSave(): Promise<void> {
       />
     {/if}
 
-    <div class="form-group checkbox-group">
-      <label>
-        <input 
-          type="checkbox" 
-          bind:checked={useG1gc}
-          onchange={markChanged}
-          disabled={$serverStatus.running}
-        />
-        {$_('useG1GC')}
-      </label>
-    </div>
+    <label class="flex items-center gap-2 text-sm cursor-pointer">
+      <input type="checkbox" class="w-4 h-4 accent-hytale-orange" bind:checked={useG1gc} onchange={markChanged} disabled={$serverStatus.running} />
+      {$_('useG1GC')}
+    </label>
 
-    <div class="form-group checkbox-group">
-      <label>
-        <input 
-          type="checkbox" 
-          bind:checked={useMachineId}
-          onchange={markChanged}
-          disabled={$serverStatus.running}
-        />
-        {$_('linuxNative')}
-      </label>
-      <span class="hint">{$_('machineIdHint')}</span>
-    </div>
+    <label class="flex items-center gap-2 text-sm cursor-pointer" title={$_('machineIdHint')}>
+      <input type="checkbox" class="w-4 h-4 accent-hytale-orange" bind:checked={useMachineId} onchange={markChanged} disabled={$serverStatus.running} />
+      {$_('linuxNative')}
+      <span class="text-xs text-text-dim ml-auto">{$_('machineIdHint')}</span>
+    </label>
   </div>
 
   {#if $activeServerId}
     <MachineIdCard serverId={$activeServerId} />
   {/if}
 
-  <div class="config-footer">
-    <span class="config-hint">{$_('configHint')}</span>
-    <button 
-      class="mc-btn primary small"
-      onclick={handleSave}
-      disabled={$serverStatus.running || isSaving || !hasChanges}
-    >
+  <div class="flex justify-between items-center pt-3 border-t border-panel-border">
+    <span class="text-xs text-text-dim">{$_('configHint')}</span>
+    <Button variant="primary" size="small" onclick={handleSave} disabled={$serverStatus.running || isSaving || !hasChanges}>
       {isSaving ? '...' : $_('save')}
-    </button>
+    </Button>
   </div>
 </div>
-
-<style>
-  .config-section {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    padding: 8px;
-  }
-
-  .config-header {
-    margin-bottom: 12px;
-  }
-
-  .config-header h3 {
-    font-size: 14px;
-    color: var(--hytale-orange);
-    margin: 0;
-  }
-
-  .config-form {
-    flex: 1;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .config-form.disabled {
-    opacity: 0.6;
-    pointer-events: none;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .form-row {
-    display: flex;
-    gap: 12px;
-  }
-
-  .form-row .form-group {
-    flex: 1;
-  }
-
-  .form-group label {
-    font-size: 11px;
-    color: var(--text-dim);
-    text-transform: uppercase;
-  }
-
-  .form-group input[type="text"],
-  .form-group input[type="number"] {
-    background: var(--mc-darker);
-    border: 2px solid var(--mc-border-light);
-    color: var(--text);
-    padding: 6px 8px;
-    font-size: 12px;
-    font-family: inherit;
-  }
-
-  .form-group input:focus {
-    border-color: var(--hytale-orange);
-    outline: none;
-  }
-
-  .form-group input:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .checkbox-group {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .checkbox-group label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-    text-transform: none;
-    font-size: 12px;
-    color: var(--text);
-  }
-
-  .checkbox-group input[type="checkbox"] {
-    width: 14px;
-    height: 14px;
-    cursor: pointer;
-  }
-
-  .checkbox-group .hint {
-    font-size: 10px;
-    color: var(--text-dim);
-    margin-left: auto;
-  }
-
-  .config-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 12px;
-    padding-top: 8px;
-    border-top: 1px solid var(--mc-border-light);
-  }
-
-  .config-hint {
-    font-size: 11px;
-    color: var(--text-dim);
-  }
-</style>

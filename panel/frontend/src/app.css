@@ -121,6 +121,33 @@
 
 /* ===== BASE LAYER ===== */
 @layer base {
+  /* Aliases for component <style> blocks (legacy var names, previously undefined) */
+  :root {
+    --accent: var(--color-hytale-orange);
+    --accent-dark: #c87f22;
+    --hytale-orange: var(--color-hytale-orange);
+    --warning: var(--color-warning);
+    --success: var(--color-success);
+    --error: var(--color-error);
+    --text: var(--color-text);
+    --text-dim: var(--color-text-dim);
+    --bg: var(--color-panel-bg);
+    --bg-dark: #100e0b;
+    --border: var(--color-panel-border);
+    --mc-bg: var(--color-panel-light);
+    --mc-bg-dark: var(--color-panel-bg);
+    --mc-darker: #100e0b;
+    --mc-border: var(--color-panel-border);
+    --mc-border-light: var(--color-panel-border-light);
+    --mc-text: var(--color-text);
+    --mc-text-secondary: var(--color-text-muted);
+    --mc-text-muted: var(--color-text-dim);
+    --mc-red: var(--color-error);
+    --mc-red-dark: #a33c3c;
+    --mc-green: var(--color-success);
+    --mc-green-dark: #3f8a3c;
+  }
+
   html {
     font-size: 16px;
     -webkit-font-smoothing: antialiased;

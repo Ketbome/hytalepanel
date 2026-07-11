@@ -3,6 +3,7 @@ import { get } from 'svelte/store';
 import { _ } from 'svelte-i18n';
 import Skeleton from '$lib/components/ui/Skeleton.svelte';
 import { emit } from '$lib/services/socketClient';
+import { confirmDialog } from '$lib/stores/confirm';
 import {
   apiConfigured,
   availableUpdates,
@@ -194,8 +195,8 @@ function installMod(mod: ModProject): void {
   }
 }
 
-function uninstallMod(modId: string): void {
-  if (confirm($_('confirmUninstall'))) {
+async function uninstallMod(modId: string): Promise<void> {
+  if (await confirmDialog($_('confirmUninstall'), { danger: true })) {
     emit('mods:uninstall', modId);
   }
 }

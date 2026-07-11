@@ -172,6 +172,8 @@
   "maxMemory": "RAM máxima",
   "create": "Criar",
   "cancel": "Cancelar",
+  "confirmTitle": "Confirmar",
+  "confirmOk": "Confirmar",
   "backToPanel": "Voltar ao painel",
   "confirmDeleteServer": "Excluir este servidor e todos os dados?",
   "serverDeleted": "Servidor excluído",

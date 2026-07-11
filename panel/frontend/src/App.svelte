@@ -4,6 +4,8 @@ import Dashboard from '$lib/components/Dashboard.svelte';
 import Header from '$lib/components/Header.svelte';
 import LoginScreen from '$lib/components/LoginScreen.svelte';
 import Sidebar from '$lib/components/Sidebar.svelte';
+import Button from '$lib/components/ui/Button.svelte';
+import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 import Toast from '$lib/components/ui/Toast.svelte';
 import { connectSocket, disconnectSocket } from '$lib/services/socketClient';
 import { checkStatus, isAuthenticated, isLoading } from '$lib/stores/auth';
@@ -90,13 +92,9 @@ function handleKeydown(e: KeyboardEvent): void {
       <main class="min-h-0 flex flex-col relative" class:hidden={$panelExpanded}>
         <Console />
         {#if $sidebarHidden}
-          <button 
-            class="absolute top-4 right-4 mc-btn mc-btn-sm mc-btn-wood"
-            title="Show Panel" 
-            onclick={showSidebar}
-          >
+          <Button size="small" variant="wood" class="absolute top-4 right-4" title="Show Panel" aria-label="Show panel" onclick={showSidebar}>
             ☰
-          </button>
+          </Button>
         {/if}
       </main>
       {#if !$sidebarHidden || $panelExpanded}
@@ -127,3 +125,4 @@ function handleKeydown(e: KeyboardEvent): void {
 {/if}
 
 <Toast />
+<ConfirmDialog />

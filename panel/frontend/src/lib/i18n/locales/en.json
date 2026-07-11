@@ -172,6 +172,8 @@
   "maxMemory": "Max RAM",
   "create": "Create",
   "cancel": "Cancel",
+  "confirmTitle": "Confirm",
+  "confirmOk": "Confirm",
   "backToPanel": "Back to Panel",
   "confirmDeleteServer": "Delete this server and all data?",
   "serverDeleted": "Server deleted",

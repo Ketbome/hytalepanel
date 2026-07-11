@@ -1,6 +1,8 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
+import Button from '$lib/components/ui/Button.svelte';
 import { apiUrl } from '$lib/stores/config';
+import { confirmDialog } from '$lib/stores/confirm';
 import { showToast } from '$lib/stores/ui';
 
 const { serverId }: { serverId: string } = $props();
@@ -45,7 +47,7 @@ async function checkStatus(): Promise<void> {
 async function regenerate(): Promise<void> {
   if (!serverId) return;
 
-  if (!confirm($_('machineIdRegenerateConfirm'))) {
+  if (!(await confirmDialog($_('machineIdRegenerateConfirm'), { danger: true }))) {
     return;
   }
 
@@ -100,14 +102,16 @@ $effect(() => {
         </span>
       {/if}
     </div>
-    <button 
-      class="mc-btn small" 
-      onclick={(e) => { e.stopPropagation(); checkStatus(); }} 
+    <Button
+      size="small"
+      onclick={(e) => {
+        e.stopPropagation();
+        checkStatus();
+      }}
       disabled={checking}
-      type="button"
     >
       {checking ? $_('checking') : $_('refresh')}
-    </button>
+    </Button>
   </div>
 
   {#if isExpanded}
@@ -150,13 +154,9 @@ $effect(() => {
           </div>
 
           <div class="actions">
-            <button 
-              class="mc-btn small warning" 
-              onclick={regenerate} 
-              disabled={regenerating}
-            >
+            <Button size="small" variant="warning" onclick={regenerate} disabled={regenerating}>
               {regenerating ? $_('saving') : $_('machineIdRegenerate')}
-            </button>
+            </Button>
           </div>
         </div>
       {:else if checking}
@@ -293,7 +293,7 @@ $effect(() => {
   }
 
   .status-text {
-    font-family: var(--font-ui);
+    font-family: var(--font-sans);
     font-size: 11px;
     color: #fff;
   }
@@ -305,7 +305,7 @@ $effect(() => {
   }
 
   .machine-id-value .label {
-    font-family: var(--font-ui);
+    font-family: var(--font-sans);
     font-size: 10px;
     color: #aaa;
   }

@@ -28,7 +28,7 @@ function hideSidebar(): void {
 <aside class="h-full flex flex-col">
   <div class="mc-panel h-full flex flex-col">
     <!-- Tabs navigation -->
-    <div class="flex flex-wrap border-b-2 border-panel-bg">
+    <div class="flex flex-wrap gap-1 p-2 border-b border-panel-border">
       {#each tabs as tab}
         <Button
           variant="tab"
@@ -80,21 +80,13 @@ function hideSidebar(): void {
     </div>
 
     <!-- Toolbar -->
-    <div class="flex justify-end gap-2 p-3 border-t-2 border-panel-border bg-panel-light">
-      <button 
-        class="mc-btn mc-btn-sm !px-3"
-        title="Expand" 
-        onclick={toggleExpand}
-      >
+    <div class="flex justify-end gap-2 p-3 border-t border-panel-border bg-panel-light">
+      <Button size="small" class="!px-3" title="Expand" aria-label="Expand panel" onclick={toggleExpand}>
         {$panelExpanded ? '✕' : '⤢'}
-      </button>
-      <button 
-        class="mc-btn mc-btn-sm mc-btn-danger !px-3"
-        title="Hide" 
-        onclick={hideSidebar}
-      >
+      </Button>
+      <Button size="small" variant="danger" class="!px-3" title="Hide" aria-label="Hide panel" onclick={hideSidebar}>
         ✕
-      </button>
+      </Button>
     </div>
   </div>
 </aside>
