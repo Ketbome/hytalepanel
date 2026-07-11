@@ -89,11 +89,12 @@ CURSEFORGE_API_KEY='$2a$10$your-key-here'
 | Game    | 5520/UDP |
 | Panel   | 3000/TCP |
 
-## Related Projects
+## Other Projects
 
-Part of the same self-hosted game-server ecosystem:
+More self-hosted game-server panels from the same author:
 
-- **[Minepanel — Minecraft Server Manager](https://minepanel.ketbome.com/)** — Docker-based web panel for Minecraft Java & Bedrock servers, docs at **[minepanel.ketbome.com](https://minepanel.ketbome.com/)** ([GitHub](https://github.com/Ketbome/minepanel)).
+- **[Minepanel](https://minepanel.ketbome.com/)** — Minecraft Server Manager: Docker-based web panel for Minecraft Java & Bedrock servers → [minepanel.ketbome.com](https://minepanel.ketbome.com/) ([GitHub](https://github.com/Ketbome/minepanel))
+- **[HytalePanel docs](https://hytalepanel.ketbome.com/)** — full documentation for this project → [hytalepanel.ketbome.com](https://hytalepanel.ketbome.com/)
 
 ## Contributing
 

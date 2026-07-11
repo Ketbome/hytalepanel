@@ -13,7 +13,7 @@
     "lint:fix": "pnpm exec biome check --write src/"
   },
   "dependencies": {
-    "socket.io-client": "^4.7.2",
+    "socket.io-client": "^4.8.3",
     "svelte-i18n": "^4.0.1"
   },
   "devDependencies": {
@@ -25,7 +25,12 @@
     "svelte": "^5.56.4",
     "svelte-check": "^4.7.2",
     "tailwindcss": "^4.3.2",
-    "typescript": "^5.9.0",
+    "typescript": "^5.9.3",
     "vite": "^8.1.4"
+  },
+  "pnpm": {
+    "overrides": {
+      "svelte-i18n>esbuild": "^0.25.0"
+    }
   }
 }

@@ -79,7 +79,8 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          # PRs only validate amd64 (no push); arm64 via QEMU runs on real publishes
+          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ketbom/hytale-server:${{ steps.config.outputs.version }}
@@ -95,7 +96,8 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./panel
-          platforms: linux/amd64,linux/arm64
+          # PRs only validate amd64 (no push); arm64 via QEMU runs on real publishes
+          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ketbom/hytale-panel:${{ steps.config.outputs.version }}
