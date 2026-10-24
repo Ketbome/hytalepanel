@@ -3,6 +3,20 @@ import { _ } from 'svelte-i18n';
 import { confirmState, resolveConfirm } from '$lib/stores/confirm';
 import Button from './Button.svelte';
 import Modal from './Modal.svelte';
+
+let armed = $state(true);
+const dangerKey = $derived($confirmState.open && $confirmState.danger ? $confirmState.message : null);
+$effect(() => {
+  if (!dangerKey) {
+    armed = true;
+    return;
+  }
+  armed = false;
+  const timer = setTimeout(() => {
+    armed = true;
+  }, 400);
+  return () => clearTimeout(timer);
+});
 </script>
 
 <Modal
@@ -20,6 +34,7 @@ import Modal from './Modal.svelte';
     <Button
       variant={$confirmState.danger ? 'danger-fill' : 'primary'}
       data-confirm-ok
+      disabled={!armed}
       onclick={() => resolveConfirm(true)}
     >
       {$confirmState.confirmLabel ?? $_('confirmOk')}

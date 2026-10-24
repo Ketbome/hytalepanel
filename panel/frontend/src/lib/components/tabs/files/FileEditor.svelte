@@ -10,8 +10,9 @@ import { closeEditor, editorState, setEditorStatus } from '$lib/stores/files';
 let editorContent = $state('');
 let createBackup = $state(true);
 
+const loaded = $derived($editorState.content);
 $effect(() => {
-  editorContent = $editorState.content;
+  editorContent = loaded;
 });
 
 const loading = $derived($editorState.status === 'loading');
