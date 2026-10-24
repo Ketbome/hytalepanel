@@ -21,6 +21,7 @@ let port = $state(5520);
 let bindAddr = $state('0.0.0.0');
 let autoDownload = $state(true);
 let releaseChannel = $state<'stable' | 'pre-release'>('stable');
+let backupBeforeUpdate = $state(true);
 let useG1gc = $state(true);
 let extraArgs = $state('');
 let useMachineId = $state(false);
@@ -39,6 +40,7 @@ $effect(() => {
     bindAddr = $activeServer.config.bindAddr;
     autoDownload = $activeServer.config.autoDownload;
     releaseChannel = $activeServer.config.releaseChannel || 'stable';
+    backupBeforeUpdate = $activeServer.config.backupBeforeUpdate !== false;
     useG1gc = $activeServer.config.useG1gc;
     extraArgs = $activeServer.config.extraArgs;
     useMachineId = $activeServer.config.useMachineId;
@@ -61,6 +63,7 @@ async function handleSave(): Promise<void> {
     bindAddr,
     autoDownload,
     releaseChannel,
+    backupBeforeUpdate,
     useG1gc,
     extraArgs,
     useMachineId
@@ -134,6 +137,11 @@ async function handleSave(): Promise<void> {
         }}
       />
     {/if}
+
+    <label class="flex items-center gap-2 text-sm cursor-pointer">
+      <input type="checkbox" class="w-4 h-4 accent-hytale-orange" bind:checked={backupBeforeUpdate} onchange={markChanged} disabled={$serverStatus.running} />
+      {$_('backupBeforeUpdate')}
+    </label>
 
     <label class="flex items-center gap-2 text-sm cursor-pointer">
       <input type="checkbox" class="w-4 h-4 accent-hytale-orange" bind:checked={useG1gc} onchange={markChanged} disabled={$serverStatus.running} />

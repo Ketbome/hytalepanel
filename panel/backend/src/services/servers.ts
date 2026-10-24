@@ -16,6 +16,7 @@ export interface ServerConfig {
   bindAddr: string;
   autoDownload: boolean;
   releaseChannel: ReleaseChannel;
+  backupBeforeUpdate: boolean;
   useG1gc: boolean;
   extraArgs: string;
   useMachineId: boolean; // Linux only - for CasaOS/Windows set to false
@@ -62,6 +63,7 @@ const DEFAULT_CONFIG: ServerConfig = {
   bindAddr: '0.0.0.0',
   autoDownload: true,
   releaseChannel: 'stable',
+  backupBeforeUpdate: true,
   useG1gc: true,
   extraArgs: '',
   useMachineId: false, // Default false for compatibility (CasaOS/Windows)

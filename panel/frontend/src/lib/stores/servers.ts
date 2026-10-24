@@ -6,6 +6,7 @@ export interface ServerConfig {
   bindAddr: string;
   autoDownload: boolean;
   releaseChannel?: 'stable' | 'pre-release';
+  backupBeforeUpdate?: boolean;
   useG1gc: boolean;
   extraArgs: string;
   useMachineId: boolean;

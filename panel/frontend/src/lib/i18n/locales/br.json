@@ -206,6 +206,8 @@
   "extraArgs": "Argumentos extras",
   "autoDownloadFiles": "Baixar arquivos do servidor automaticamente",
   "useG1GC": "Usar coletor de lixo G1GC",
+  "backupBeforeUpdate": "Fazer backup dos mundos antes de aplicar atualizações",
+  "updateBackingUp": "Criando backup antes da atualização...",
   "configSaved": "Configuração salva",
   "configHint": "Reinicie o servidor para aplicar as mudanças",
   "stopServerToEdit": "Pare o servidor para editar a configuração",

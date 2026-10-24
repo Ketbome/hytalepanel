@@ -22,6 +22,21 @@ const mockCheckServerFiles =
     () => Promise<{ hasJar: boolean; hasAssets: boolean; ready: boolean }>
   >();
 
+const mockCreateBackup =
+  jest.fn<(serverId: string) => Promise<{ success: boolean; error?: string }>>();
+const mockGetServer =
+  jest.fn<
+    (id: string) => Promise<{ success: boolean; server?: { config: Record<string, unknown> } }>
+  >();
+
+jest.unstable_mockModule("../src/services/backups.js", () => ({
+  createBackup: mockCreateBackup,
+}));
+
+jest.unstable_mockModule("../src/services/servers.js", () => ({
+  getServer: mockGetServer,
+}));
+
 jest.unstable_mockModule("../src/services/docker.js", () => ({
   getStatus: mockGetStatus,
   restart: mockRestart,
@@ -51,6 +66,8 @@ describe("Updater Service", () => {
     mockStop.mockResolvedValue();
     mockExecCommand.mockResolvedValue("{}");
     mockDownloadServerFiles.mockResolvedValue({ success: true });
+    mockCreateBackup.mockResolvedValue({ success: true });
+    mockGetServer.mockResolvedValue({ success: true, server: { config: {} } });
     mockCheckServerFiles.mockResolvedValue({
       hasJar: true,
       hasAssets: true,
@@ -115,6 +132,44 @@ describe("Updater Service", () => {
         message: "Downloading update...",
         serverId: "test-server",
       });
+    });
+
+    test("creates a backup before downloading by default", async () => {
+      await applyUpdate(mockSocket as any, "test-container", "test-server");
+
+      expect(mockCreateBackup).toHaveBeenCalledWith("test-server");
+      expect(mockSocket.emit).toHaveBeenCalledWith("update:status", {
+        status: "backing-up",
+        message: "Creating backup before update...",
+        serverId: "test-server",
+      });
+      expect(mockCreateBackup.mock.invocationCallOrder[0]).toBeLessThan(
+        mockDownloadServerFiles.mock.invocationCallOrder[0],
+      );
+    });
+
+    test("aborts the update when the backup fails", async () => {
+      mockCreateBackup.mockResolvedValue({ success: false, error: "disk full" });
+
+      const result = await applyUpdate(mockSocket as any, "test-container", "test-server");
+
+      expect(result).toEqual({ success: false, error: "Backup before update failed: disk full" });
+      expect(mockDownloadServerFiles).not.toHaveBeenCalled();
+      expect(mockRestart).not.toHaveBeenCalled();
+      expect(mockSocket.emit).toHaveBeenCalledWith("update:status", {
+        status: "error",
+        message: "Backup before update failed: disk full",
+        serverId: "test-server",
+      });
+    });
+
+    test("skips the backup when backupBeforeUpdate is disabled", async () => {
+      mockGetServer.mockResolvedValue({ success: true, server: { config: { backupBeforeUpdate: false } } });
+
+      await applyUpdate(mockSocket as any, "test-container", "test-server");
+
+      expect(mockCreateBackup).not.toHaveBeenCalled();
+      expect(mockDownloadServerFiles).toHaveBeenCalled();
     });
 
     test("handles download errors gracefully", async () => {

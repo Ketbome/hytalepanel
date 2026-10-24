@@ -1,4 +1,5 @@
 import type { Socket } from 'socket.io';
+import * as backups from './backups.js';
 import * as docker from './docker.js';
 import * as downloader from './downloader.js';
 import * as files from './files.js';
@@ -69,10 +70,15 @@ async function getRemoteVersion(containerName?: string, channel?: servers.Releas
   }
 }
 
-async function getServerChannel(serverId?: string): Promise<servers.ReleaseChannel> {
-  if (!serverId) return 'stable';
+async function getServerConfig(serverId?: string): Promise<servers.ServerConfig | null> {
+  if (!serverId) return null;
   const result = await servers.getServer(serverId);
-  return result.success && result.server ? result.server.config.releaseChannel || 'stable' : 'stable';
+  return result.success && result.server ? result.server.config : null;
+}
+
+async function getServerChannel(serverId?: string): Promise<servers.ReleaseChannel> {
+  const config = await getServerConfig(serverId);
+  return config?.releaseChannel || 'stable';
 }
 
 async function getJarInfo(containerName?: string): Promise<{ size: number; hash: string } | null> {
@@ -156,8 +162,21 @@ export async function applyUpdate(
     const status = await docker.getStatus(containerName);
     const wasRunning = status.running;
 
-    // Get server config to determine release channel
-    const channel = await getServerChannel(serverId);
+    const config = await getServerConfig(serverId);
+    const channel = config?.releaseChannel || 'stable';
+
+    // World upgrades are irreversible, so never update without a backup when enabled (default: on)
+    if (serverId && config?.backupBeforeUpdate !== false) {
+      socket.emit('update:status', {
+        status: 'backing-up',
+        message: 'Creating backup before update...',
+        serverId
+      });
+      const backupResult = await backups.createBackup(serverId);
+      if (!backupResult.success) {
+        throw new Error(`Backup before update failed: ${backupResult.error || 'unknown error'}`);
+      }
+    }
 
     // Download new files FIRST (requires container running, not server)
     socket.emit('update:status', {
