@@ -1,6 +1,6 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
-import { activeTab, panelExpanded, sidebarHidden } from '$lib/stores/ui';
+import { activeTab, panelExpanded, sidebarHidden, toolsDrawerOpen } from '$lib/stores/ui';
 import type { TabId } from '$lib/types';
 import BackupsTab from './tabs/BackupsTab.svelte';
 import ConfigTab from './tabs/ConfigTab.svelte';
@@ -9,84 +9,72 @@ import FilesTab from './tabs/FilesTab.svelte';
 import ModsTab from './tabs/ModsTab.svelte';
 import SetupTab from './tabs/SetupTab.svelte';
 import Button from './ui/Button.svelte';
+import Segmented from './ui/Segmented.svelte';
+import Tabs from './ui/Tabs.svelte';
 
-const tabs: TabId[] = ['control', 'setup', 'files', 'mods', 'backups', 'config'];
+type Layout = 'split' | 'console' | 'tools';
 
-function setTab(tab: TabId): void {
-  activeTab.set(tab);
-}
+const { showLayout = false, drawer = false }: { showLayout?: boolean; drawer?: boolean } = $props();
 
-function toggleExpand(): void {
-  panelExpanded.update((v) => !v);
-}
+const tabIds: TabId[] = ['control', 'setup', 'files', 'mods', 'backups', 'config'];
+const tabs = $derived(tabIds.map((id) => ({ id, label: $_(id) })));
+const layout = $derived<Layout>($panelExpanded ? 'tools' : $sidebarHidden ? 'console' : 'split');
 
-function hideSidebar(): void {
-  sidebarHidden.set(true);
+function setLayout(next: Layout): void {
+  sidebarHidden.set(next === 'console');
+  panelExpanded.set(next === 'tools');
+  toolsDrawerOpen.set(false);
 }
 </script>
 
-<aside class="h-full flex flex-col">
-  <div class="mc-panel h-full flex flex-col">
-    <!-- Tabs navigation -->
-    <div class="flex flex-wrap gap-1 p-2 border-b border-panel-border">
-      {#each tabs as tab}
-        <Button
-          variant="tab"
-          active={$activeTab === tab}
-          onclick={() => setTab(tab)}
-        >
-          {$_(tab)}
-        </Button>
-      {/each}
-    </div>
-
-    <!-- Tab content -->
-    <div class="flex-1 overflow-hidden">
-      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'setup'}>
-        <div class="p-5 animate-fade-in">
-          <SetupTab />
-        </div>
-      </div>
-
-      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'files'}>
-        <div class="p-5 animate-fade-in">
-          <FilesTab />
-        </div>
-      </div>
-
-      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'mods'}>
-        <div class="p-5 animate-fade-in">
-          <ModsTab />
-        </div>
-      </div>
-
-      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'control'}>
-        <div class="p-5 animate-fade-in">
-          <ControlTab />
-        </div>
-      </div>
-
-      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'config'}>
-        <div class="p-5 animate-fade-in">
-          <ConfigTab />
-        </div>
-      </div>
-
-      <div class="h-full overflow-auto" class:hidden={$activeTab !== 'backups'}>
-        <div class="p-5 animate-fade-in">
-          <BackupsTab />
-        </div>
-      </div>
-    </div>
-
-    <!-- Toolbar -->
-    <div class="flex justify-end gap-2 p-3 border-t border-panel-border bg-panel-light">
-      <Button size="small" class="!px-3" title="Expand" aria-label="Expand panel" onclick={toggleExpand}>
-        {$panelExpanded ? '✕' : '⤢'}
-      </Button>
-      <Button size="small" variant="danger" class="!px-3" title="Hide" aria-label="Hide panel" onclick={hideSidebar}>
-        ✕
-      </Button>
-    </div>
+<div class="flex h-full min-h-0 flex-col">
+  <div class="flex h-11 shrink-0 items-center gap-2 border-b border-line pr-2">
+    <Tabs
+      {tabs}
+      selected={$activeTab}
+      idPrefix="tool"
+      label={$_('serverTools')}
+      class="min-w-0 flex-1 self-end px-1"
+      onselect={(id) => activeTab.set(id)}
+    />
+    {#if showLayout}
+      <Segmented
+        size="sm"
+        label={$_('layout')}
+        value={layout}
+        onchange={setLayout}
+        options={[
+          { value: 'split', label: $_('layoutSplit'), icon: 'panel-left', iconOnly: true },
+          { value: 'console', label: $_('layoutConsole'), icon: 'terminal', iconOnly: true },
+          { value: 'tools', label: $_('layoutTools'), icon: 'wrench', iconOnly: true }
+        ]}
+      />
+    {/if}
+    {#if drawer}
+      <Button variant="ghost" size="sm" iconOnly icon="x" aria-label={$_('close')} onclick={() => toolsDrawerOpen.set(false)} />
+    {/if}
   </div>
-</aside>
+
+  {#each tabIds as id (id)}
+    <div
+      id="tool-panel-{id}"
+      role="tabpanel"
+      aria-labelledby="tool-tab-{id}"
+      class="min-h-0 flex-1 max-sm:overflow-y-auto ws:overflow-y-auto"
+      hidden={$activeTab !== id}
+      tabindex="-1"
+    >
+      {#if id === 'config'}
+        <ConfigTab />
+      {:else}
+        <div class="p-4">
+          {#if id === 'control'}<ControlTab />
+          {:else if id === 'setup'}<SetupTab />
+          {:else if id === 'files'}<FilesTab />
+          {:else if id === 'mods'}<ModsTab />
+          {:else if id === 'backups'}<BackupsTab />{/if}
+        </div>
+      {/if}
+    </div>
+  {/each}
+</div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+import { _ } from 'svelte-i18n';
 import { emit } from '$lib/services/socketClient';
 import { currentPath, isFilesLoading } from '$lib/stores/files';
 
@@ -26,21 +27,21 @@ function navigateTo(path: string): void {
 }
 </script>
 
-<nav class="flex items-center gap-1 px-3 py-2 rounded-lg bg-panel-light border border-panel-border overflow-x-auto" aria-label="Path">
+<nav class="flex min-w-0 items-center overflow-x-auto font-mono text-[13px] whitespace-nowrap" aria-label={$_('path')}>
   {#each breadcrumbParts as part, i}
     {#if i > 0}
-      <span class="text-text-dim">/</span>
+      <span class="px-0.5 text-fg-3" aria-hidden="true">/</span>
     {/if}
-    <button
-      type="button"
-      class="px-2 py-1 text-sm rounded-md transition-colors
-             {i === breadcrumbParts.length - 1
-        ? 'text-hytale-gold bg-panel-lighter'
-        : 'text-text-muted hover:text-text hover:bg-panel-lighter'}"
-      aria-current={i === breadcrumbParts.length - 1 ? 'location' : undefined}
-      onclick={() => navigateTo(part.path)}
-    >
-      {part.label}
-    </button>
+    {#if i === breadcrumbParts.length - 1}
+      <span class="px-1 text-fg-1" aria-current="location">{part.label}</span>
+    {:else}
+      <button
+        type="button"
+        class="h-7 rounded-xs px-1 text-fg-2 transition-colors hover:bg-raised hover:text-fg-1"
+        onclick={() => navigateTo(part.path)}
+      >
+        {part.label}
+      </button>
+    {/if}
   {/each}
 </nav>

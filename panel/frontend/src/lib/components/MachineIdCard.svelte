@@ -1,6 +1,10 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
+import BlockLoader from '$lib/components/ui/BlockLoader.svelte';
 import Button from '$lib/components/ui/Button.svelte';
+import Icon from '$lib/components/ui/Icon.svelte';
+import InlineNotice from '$lib/components/ui/InlineNotice.svelte';
+import Tag from '$lib/components/ui/Tag.svelte';
 import { apiUrl } from '$lib/stores/config';
 import { confirmDialog } from '$lib/stores/confirm';
 import { showToast } from '$lib/stores/ui';
@@ -16,6 +20,7 @@ interface MachineIdStatus {
   recommendation: string;
 }
 
+const uid = $props.id();
 let status = $state<MachineIdStatus | null>(null);
 let checking = $state(false);
 let regenerating = $state(false);
@@ -35,7 +40,7 @@ async function checkStatus(): Promise<void> {
     if (result.success && result.status) {
       status = result.status;
     } else {
-      error = result.error || 'Failed to check machine-id';
+      error = result.error || $_('machineIdCheckFailed');
     }
   } catch (e) {
     error = (e as Error).message;
@@ -47,7 +52,13 @@ async function checkStatus(): Promise<void> {
 async function regenerate(): Promise<void> {
   if (!serverId) return;
 
-  if (!(await confirmDialog($_('machineIdRegenerateConfirm'), { danger: true }))) {
+  if (
+    !(await confirmDialog($_('machineIdRegenerateConfirm'), {
+      title: $_('machineIdRegenerateTitle'),
+      confirmLabel: $_('machineIdRegenerate'),
+      danger: true
+    }))
+  ) {
     return;
   }
 
@@ -64,14 +75,10 @@ async function regenerate(): Promise<void> {
       showToast($_('machineIdRegenerated'));
       await checkStatus(); // Refresh status
     } else {
-      const errorMsg = result.error || 'Failed to regenerate machine-id';
-      error = errorMsg;
-      showToast(errorMsg, 'error');
+      error = result.error || $_('machineIdRegenerateFailed');
     }
   } catch (e) {
-    const errorMsg = (e as Error).message;
-    error = errorMsg;
-    showToast(errorMsg, 'error');
+    error = (e as Error).message;
   } finally {
     regenerating = false;
   }
@@ -85,314 +92,78 @@ $effect(() => {
 });
 </script>
 
-<div class="machine-id-card" class:expanded={isExpanded}>
-  <div class="card-header-btn">
+<div class="border-y border-line">
+  <div class="flex h-10 items-center gap-2">
     <button
       type="button"
-      class="header-left"
+      class="flex h-full min-w-0 flex-1 items-center gap-2 text-left text-sm font-medium text-fg-1"
       aria-expanded={isExpanded}
+      aria-controls="{uid}-content"
       onclick={() => (isExpanded = !isExpanded)}
     >
-      <span class="expand-icon">{isExpanded ? '▼' : '▶'}</span>
-      <h4>{$_('machineIdTitle')}</h4>
-      {#if status && !isExpanded}
-        <span class="status-badge-mini" class:valid={status.valid}>
-          {status.valid ? '✓' : '⚠'}
-        </span>
+      <span class="hp-chevron flex text-fg-3" class:open={isExpanded}><Icon name="chevron-right" /></span>
+      <span class="truncate">{$_('machineIdTitle')}</span>
+      {#if checking}
+        <BlockLoader />
+      {:else if status}
+        <Tag kind={status.valid ? 'positive' : 'warning'}>{status.valid ? $_('machineIdValid') : $_('machineIdInvalid')}</Tag>
       {/if}
     </button>
-    <Button size="small" onclick={() => checkStatus()} disabled={checking}>
-      {checking ? $_('checking') : $_('refresh')}
-    </Button>
+    <Button
+      variant="ghost"
+      size="sm"
+      iconOnly
+      icon="refresh-cw"
+      playIcon={checking}
+      onclick={() => checkStatus()}
+      disabled={checking}
+      aria-label={$_('refresh')}
+      title={$_('refresh')}
+    />
   </div>
 
-  {#if isExpanded}
-    <div class="card-content">
-      {#if error}
-        <div class="alert error">
-          <span class="icon">⚠</span>
-          <span>{error}</span>
-        </div>
-      {/if}
+  <div id="{uid}-content" class="hp-disclosure" class:open={isExpanded} inert={!isExpanded}>
+    <div class="overflow-hidden">
+      <div class="flex flex-col gap-3 pb-4 pl-6">
+        {#if error}
+          <InlineNotice kind="negative">{error}</InlineNotice>
+        {/if}
 
-      {#if status}
-        <div class="status-section">
-          <div class="status-badge" class:valid={status.valid} class:invalid={!status.valid}>
-            <span class="status-icon">{status.valid ? '✓' : '⚠'}</span>
-            <span class="status-text">
-              {status.valid ? $_('machineIdValid') : $_('machineIdInvalid')}
-            </span>
-          </div>
-
-          {#if status.value}
-            <div class="machine-id-value">
-              <span class="label">{$_('machineIdValue')}</span>
-              <code>{status.value}</code>
+        {#if status}
+          <dl class="hp-kv">
+            <div>
+              <dt>{$_('status')}</dt>
+              <dd class="text-[13px]" class:text-positive={status.valid} class:text-warning={!status.valid}>
+                {status.valid ? $_('machineIdValid') : $_('machineIdInvalid')}
+              </dd>
             </div>
-          {/if}
+            <div>
+              <dt>{$_('machineIdValue')}</dt>
+              <dd class="font-mono text-xs">
+                <span class="truncate select-all" title={status.value ?? undefined}>{status.value ?? '—'}</span>
+              </dd>
+            </div>
+          </dl>
 
           {#if status.changedSinceLastCheck}
-            <div class="alert warning">
-              <span class="icon">⚠</span>
-              <div>
-                <strong>{$_('machineIdChanged')}</strong>
-                <p>{$_('machineIdAuthDataLost')}</p>
-              </div>
-            </div>
+            <InlineNotice kind="warning" title={$_('machineIdChanged')}>{$_('machineIdAuthDataLost')}</InlineNotice>
           {/if}
 
-          <div class="recommendation">
-            <p>{status.recommendation}</p>
-          </div>
+          {#if status.recommendation}
+            <p class="text-[13px] text-fg-2">{status.recommendation}</p>
+          {/if}
 
-          <div class="actions">
-            <Button size="small" variant="warning" onclick={regenerate} disabled={regenerating}>
-              {regenerating ? $_('saving') : $_('machineIdRegenerate')}
+          <div>
+            <Button variant="secondary" size="sm" icon="rotate-cw" loading={regenerating} onclick={regenerate}>
+              {$_('machineIdRegenerate')}
             </Button>
           </div>
-        </div>
-      {:else if checking}
-        <div class="loading">{$_('checking')}</div>
-      {/if}
+        {:else if checking}
+          <p class="flex items-center gap-2 text-[13px] text-fg-3"><BlockLoader />{$_('checking')}</p>
+        {/if}
 
-      <div class="info-text">
-        <p>{$_('machineIdInfo')}</p>
+        <p class="text-xs text-fg-3">{$_('machineIdInfo')}</p>
       </div>
     </div>
-  {/if}
+  </div>
 </div>
-
-<style>
-  .machine-id-card {
-    background: rgba(0, 0, 0, 0.3);
-    border: 2px solid #666;
-    margin-bottom: 12px;
-    transition: all 0.3s;
-  }
-
-  .machine-id-card.expanded {
-    border-color: var(--hytale-orange);
-  }
-
-  .card-header-btn {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 12px;
-    background: transparent;
-    border: none;
-    color: inherit;
-    cursor: pointer;
-    text-align: left;
-    transition: background 0.2s;
-  }
-
-  .card-header-btn:hover {
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: inherit;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-    padding: 0;
-  }
-
-  .expand-icon {
-    font-size: 10px;
-    color: var(--text-dim);
-    transition: transform 0.2s;
-  }
-
-  .card-header-btn h4 {
-    margin: 0;
-    font-size: 13px;
-    color: #fff;
-  }
-
-  .status-badge-mini {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    font-size: 10px;
-    background: rgba(255, 152, 0, 0.2);
-    border: 1px solid #ff9800;
-    color: #ff9800;
-  }
-
-  .status-badge-mini.valid {
-    background: rgba(76, 175, 80, 0.2);
-    border-color: #4caf50;
-    color: #4caf50;
-  }
-
-  .card-content {
-    padding: 0 12px 12px;
-    animation: slideDown 0.3s ease-out;
-  }
-
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      max-height: 0;
-    }
-    to {
-      opacity: 1;
-      max-height: 1000px;
-    }
-  }
-
-  .status-section {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    border: 2px solid;
-    width: fit-content;
-    font-size: 11px;
-  }
-
-  .status-badge.valid {
-    border-color: #4caf50;
-    background: rgba(76, 175, 80, 0.1);
-  }
-
-  .status-badge.invalid {
-    border-color: #ff9800;
-    background: rgba(255, 152, 0, 0.1);
-  }
-
-  .status-icon {
-    font-size: 14px;
-  }
-
-  .status-badge.valid .status-icon {
-    color: #4caf50;
-  }
-
-  .status-badge.invalid .status-icon {
-    color: #ff9800;
-  }
-
-  .status-text {
-    font-family: var(--font-sans);
-    font-size: 11px;
-    color: #fff;
-  }
-
-  .machine-id-value {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .machine-id-value .label {
-    font-family: var(--font-sans);
-    font-size: 10px;
-    color: #aaa;
-  }
-
-  .machine-id-value code {
-    background: rgba(0, 0, 0, 0.5);
-    border: 1px solid #555;
-    padding: 6px;
-    font-family: monospace;
-    font-size: 11px;
-    color: #0f0;
-    word-break: break-all;
-  }
-
-  .alert {
-    display: flex;
-    gap: 10px;
-    padding: 10px;
-    border: 2px solid;
-    font-size: 11px;
-  }
-
-  .alert.warning {
-    border-color: #ff9800;
-    background: rgba(255, 152, 0, 0.1);
-  }
-
-  .alert.error {
-    border-color: #f44336;
-    background: rgba(244, 67, 54, 0.1);
-  }
-
-  .alert .icon {
-    font-size: 16px;
-    color: #ff9800;
-  }
-
-  .alert.error .icon {
-    color: #f44336;
-  }
-
-  .alert strong {
-    color: #fff;
-    display: block;
-    margin-bottom: 4px;
-  }
-
-  .alert p {
-    margin: 0;
-    font-size: 11px;
-    color: #ddd;
-  }
-
-  .recommendation {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid #555;
-    padding: 10px;
-  }
-
-  .recommendation p {
-    margin: 0;
-    font-size: 11px;
-    color: #ddd;
-    line-height: 1.5;
-  }
-
-  .actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .info-text {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #555;
-  }
-
-  .info-text p {
-    margin: 0;
-    font-size: 10px;
-    color: #888;
-    line-height: 1.5;
-  }
-
-  .loading {
-    text-align: center;
-    padding: 16px;
-    color: #aaa;
-    font-size: 11px;
-  }
-</style>

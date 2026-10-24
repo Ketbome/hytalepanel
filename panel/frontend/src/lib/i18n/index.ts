@@ -9,6 +9,7 @@ const savedLang = localStorage.getItem('hytale-panel-lang') || 'en';
 
 function setLangAttribute(lang: string): void {
   document.documentElement.setAttribute('data-lang', lang);
+  document.documentElement.lang = lang === 'br' ? 'pt-BR' : lang;
   if (document.body) {
     document.body.setAttribute('data-lang', lang);
   }

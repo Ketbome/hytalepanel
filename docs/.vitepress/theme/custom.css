@@ -1,130 +1,1076 @@
-/* HytalePanel docs theme — mirrors the panel design system
-   (dark hosting-panel surfaces, Hytale orange/gold accent,
-   Unbounded display / Sofia Sans body / JetBrains Mono code) */
+/* HytalePanel docs theme: same ground, type roles, code wells and single
+   accent as the panel. Dark only (appearance: force-dark in config.ts). */
 
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Sofia+Sans:wght@400;500;600;700&family=Unbounded:wght@400;500;600&display=swap");
-
+/* HytalePanel shared tokens v2. Change only in both files at once. */
 :root {
-  --vp-font-family-base: "Sofia Sans", ui-sans-serif, system-ui, sans-serif;
-  --vp-font-family-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  /* Surfaces: elevation by lightness, warm-neutral (hue ~70, very low chroma) */
+  --hp-bg-sunken: #0b0a09;  /* console well, code blocks, input fill */
+  --hp-bg-0:      #100f0d;  /* app ground */
+  --hp-bg-1:      #181614;  /* surface: panes, sections, table body */
+  --hp-bg-2:      #211f1c;  /* raised: hover rows, secondary buttons, inline code */
+  --hp-bg-3:      #2a2724;  /* overlay: menus, popovers, toasts, selected row */
 
-  /* Brand: Hytale orange/gold */
-  --vp-c-brand-1: #c87f22;
-  --vp-c-brand-2: #dd9330;
-  --vp-c-brand-3: #ec9c30;
-  --vp-c-brand-soft: rgba(240, 161, 60, 0.14);
+  /* Lines */
+  --hp-line-1:       #2b2825; /* structural: pane edges, row rules, tab rail */
+  --hp-line-2:       #3b3732; /* secondary button border, menu edge */
+  --hp-line-control: #6b645b; /* form-field / checkbox / switch outline: 3.09:1 on bg-1 (WCAG 1.4.11) */
 
-  /* Buttons like the panel's primary */
-  --vp-button-brand-bg: #ec9c30;
-  --vp-button-brand-text: #241708;
-  --vp-button-brand-border: #c87f22;
-  --vp-button-brand-hover-bg: #f0a13c;
-  --vp-button-brand-hover-text: #241708;
-  --vp-button-brand-hover-border: #dd9330;
-  --vp-button-brand-active-bg: #dd9330;
-  --vp-button-brand-active-text: #241708;
-  --vp-button-brand-active-border: #c87f22;
+  /* Text */
+  --hp-fg-1: #f2eee8; /* primary   15.6:1 on bg-1 */
+  --hp-fg-2: #b8b0a5; /* secondary  8.4:1 on bg-1 */
+  --hp-fg-3: #958d82; /* meta / placeholder  5.5:1 on bg-1, 4.5:1 on bg-3 */
 
-  /* Warm light mode (cream tint) */
-  --vp-c-bg: #faf6ee;
-  --vp-c-bg-alt: #f3ede1;
-  --vp-c-bg-soft: #f3ede1;
-  --vp-c-bg-elv: #ffffff;
-  --vp-c-divider: #e5dcc9;
-  --vp-c-gutter: #e5dcc9;
+  /* Accent: Hytale orange (the only brand hue) */
+  --hp-accent:        #f0a13c; /* fill + accent text (8.5:1 on bg-1) */
+  --hp-accent-hover:  #f5b25c;
+  --hp-accent-press:  #d98b2b;
+  --hp-accent-ink:    #1c1206; /* text on accent: 8.7:1 */
+  --hp-accent-soft:   rgb(240 161 60 / 0.12); /* selection, matched-prefix bg */
 
-  /* Home hero */
-  --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(120deg, #ec9c30 30%, #dfae3f);
-  --vp-home-hero-image-background-image: linear-gradient(
-    -45deg,
-    rgba(240, 161, 60, 0.35) 50%,
-    rgba(223, 174, 63, 0.35) 50%
-  );
-  --vp-home-hero-image-filter: blur(56px);
+  /* Status (text colour / tinted background) */
+  --hp-positive:    #5cc27a;  --hp-positive-bg: #14241a;  /* online, success, enabled */
+  --hp-negative:    #f2736a;  --hp-negative-bg: #2a1715;  /* error, crashed, destructive */
+  --hp-negative-fill: #c9443b;                             /* destructive confirm button, white text 4.8:1 */
+  --hp-warning:     #e6c34f;  --hp-warning-bg:  #29230f;  /* starting/stopping, caution, update available */
+  --hp-info:        #74aee3;  --hp-info-bg:     #14202b;  /* neutral notices only, never decoration */
+
+  /* Radius: blocky */
+  --hp-radius-0: 0;    /* status squares, progress cells, loader blocks */
+  --hp-radius-1: 2px;  /* tags, checkbox, kbd, inline code, switch */
+  --hp-radius-2: 3px;  /* buttons, inputs, selects, segmented controls */
+  --hp-radius-3: 4px;  /* sections, menus, toasts, code blocks, callouts */
+  --hp-radius-4: 6px;  /* modals: the largest radius in the system */
+
+  /* Type */
+  --hp-font-display: "Unbounded", ui-sans-serif, system-ui, sans-serif;
+  --hp-font-ui:      "Sofia Sans", ui-sans-serif, system-ui, sans-serif;
+  --hp-font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Motion */
+  --hp-ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --hp-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --hp-dur-press: 120ms;
+  --hp-dur-hover: 150ms;
+  --hp-dur-ui:    180ms;  /* menus, popovers, tab indicator, switch, disclosure */
+  --hp-dur-modal: 220ms;
+  --hp-dur-exit:  140ms;
+  --hp-dur-toast: 260ms;
+
+  /* Shadow: only on things that float */
+  --hp-shadow-menu:    0 6px 16px rgb(0 0 0 / 0.45);
+  --hp-shadow-overlay: 0 16px 40px rgb(0 0 0 / 0.55);
+
+  /* Focus */
+  --hp-focus: 0 0 0 2px var(--hp-bg-0), 0 0 0 4px var(--hp-accent); /* used where outline is clipped */
 }
 
-.dark {
-  --vp-c-brand-1: #f0a13c;
-  --vp-c-brand-2: #dfae3f;
-  --vp-c-brand-3: #ec9c30;
-  --vp-c-brand-soft: rgba(240, 161, 60, 0.16);
+/* VitePress variables mapped onto the shared tokens */
+:root {
+  --vp-font-family-base: var(--hp-font-ui);
+  --vp-font-family-mono: var(--hp-font-mono);
+  --vp-c-bg: var(--hp-bg-0);         --vp-c-bg-alt: var(--hp-bg-0);   /* open plane: sidebar = page ground */
+  --vp-c-bg-soft: var(--hp-bg-2);    --vp-c-bg-elv: var(--hp-bg-3);   --vp-c-bg-mute: var(--hp-bg-2);
+  --vp-c-divider: var(--hp-line-1);  --vp-c-gutter: var(--hp-line-1); --vp-c-border: var(--hp-line-2);
+  --vp-c-text-1: var(--hp-fg-1);     --vp-c-text-2: var(--hp-fg-2);   --vp-c-text-3: var(--hp-fg-3);
+  --vp-c-brand-1: var(--hp-accent);  --vp-c-brand-2: var(--hp-accent-hover); --vp-c-brand-3: var(--hp-accent);
+  --vp-c-brand-soft: var(--hp-accent-soft);
+  --vp-c-default-1: var(--hp-line-2); --vp-c-default-2: var(--hp-bg-3); --vp-c-default-3: var(--hp-bg-2);
+  --vp-c-default-soft: var(--hp-bg-2);
+  --vp-button-brand-bg: var(--hp-accent);  --vp-button-brand-text: var(--hp-accent-ink);  --vp-button-brand-border: transparent;
+  --vp-button-brand-hover-bg: var(--hp-accent-hover); --vp-button-brand-hover-text: var(--hp-accent-ink); --vp-button-brand-hover-border: transparent;
+  --vp-button-brand-active-bg: var(--hp-accent-press); --vp-button-brand-active-text: var(--hp-accent-ink);
+  --vp-button-alt-bg: var(--hp-bg-2); --vp-button-alt-text: var(--hp-fg-1); --vp-button-alt-border: var(--hp-line-2);
+  --vp-button-alt-hover-bg: var(--hp-bg-3); --vp-button-alt-hover-text: var(--hp-fg-1); --vp-button-alt-hover-border: var(--hp-line-control);
+  --vp-code-bg: var(--hp-bg-2);  --vp-code-color: var(--hp-fg-1);   /* inline code: neutral, not orange */
+  --vp-code-block-bg: var(--hp-bg-sunken); --vp-code-block-divider-color: var(--hp-line-1);
+  --vp-code-copy-code-bg: var(--hp-bg-3); --vp-code-copy-code-hover-bg: var(--hp-bg-3);
+  --vp-code-lang-color: var(--hp-fg-3);
+  --vp-c-tip-1: var(--hp-accent);     --vp-c-tip-soft: var(--hp-bg-1);
+  --vp-c-info-1: var(--hp-info);      --vp-c-info-soft: var(--hp-bg-1);
+  --vp-c-warning-1: var(--hp-warning);--vp-c-warning-soft: var(--hp-bg-1);
+  --vp-c-danger-1: var(--hp-negative);--vp-c-danger-soft: var(--hp-negative-bg);
+  --vp-home-hero-name-color: var(--hp-fg-1);
+  --vp-home-hero-name-background: none;
+  --vp-home-hero-image-background-image: none;
+  --vp-home-hero-image-filter: none;
+  --vp-nav-height: 56px;
+  --vp-sidebar-bg-color: var(--hp-bg-0);
+  --vp-local-search-bg: var(--hp-bg-1); --vp-local-search-result-bg: var(--hp-bg-2);
+  --vp-local-search-result-selected-bg: var(--hp-bg-3); --vp-local-search-highlight-bg: var(--hp-accent-soft);
+  --vp-local-search-highlight-text: var(--hp-fg-1);
 
-  /* Panel surfaces */
-  --vp-c-bg: #171410;
-  --vp-c-bg-alt: #12100c;
-  --vp-c-bg-soft: #1f1b15;
-  --vp-c-bg-elv: #1f1b15;
-  --vp-c-divider: #2e2820;
-  --vp-c-gutter: #12100c;
-
-  /* Panel text ramp */
-  --vp-c-text-1: #f0e9db;
-  --vp-c-text-2: #b3a78f;
-  --vp-c-text-3: #8a7f6b;
-
-  --vp-code-block-bg: #100e0b;
-  --vp-c-bg-elv-mute: #292319;
-
-  --vp-custom-block-tip-bg: rgba(240, 161, 60, 0.1);
-  --vp-custom-block-tip-border: rgba(240, 161, 60, 0.35);
-  --vp-custom-block-tip-text: #f0e9db;
+  /* Small additions the default theme reads */
+  --vp-nav-logo-height: 20px;
+  --vp-code-link-color: var(--hp-accent);
+  --vp-code-link-hover-color: var(--hp-fg-1);
+  --vp-code-copy-code-border-color: var(--hp-line-2);
+  --vp-code-copy-code-hover-border-color: var(--hp-line-control);
+  --vp-code-copy-code-active-text: var(--hp-fg-2);
+  --vp-code-tab-active-bar-color: var(--hp-accent);
+  --vp-custom-block-font-size: 15px;
+  --vp-custom-block-code-font-size: 13px;
+  --vp-custom-block-info-border: var(--hp-line-1);
+  --vp-custom-block-tip-border: var(--hp-line-1);
+  --vp-custom-block-warning-border: var(--hp-line-1);
+  --vp-custom-block-danger-border: var(--hp-line-1);
+  --vp-custom-block-details-border: var(--hp-line-1);
+  --vp-custom-block-info-bg: var(--hp-bg-1);
+  --vp-custom-block-details-bg: var(--hp-bg-1);
+  --vp-backdrop-bg-color: rgb(8 7 6 / 0.72);
+  --vp-input-border-color: var(--hp-line-control);
+  --vp-input-bg-color: var(--hp-bg-sunken);
+  --vp-local-search-result-border: transparent;
+  --vp-local-search-result-selected-border: var(--hp-line-2);
 }
 
-/* Display face for the site title, hero name and page headings */
-.VPNavBarTitle .title,
-.VPHero .name,
-.vp-doc h1 {
-  font-family: "Unbounded", ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: 0.02em;
+html {
+  color-scheme: dark;
 }
 
-.vp-doc h1 {
-  font-weight: 600;
+/* Square-capped icons (1.75 stroke, as in the panel), used as masks so they take token colours */
+:root {
+  --hp-icon-copy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='square' stroke-linejoin='miter'%3E%3Cpath d='M5.5 5.5h8v8h-8z'/%3E%3Cpath d='M10.5 2.5h-8v8'/%3E%3C/svg%3E");
+  --hp-icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='square' stroke-linejoin='miter'%3E%3Cpath d='M3 8.5l3.2 3.2L13 4.8'/%3E%3C/svg%3E");
+  --vp-code-copy-copied-text-content: "Copied";
 }
 
-.vp-doc h2,
-.vp-doc h3 {
-  letter-spacing: 0.01em;
+html:lang(es) {
+  --vp-code-copy-copied-text-content: "Copiado";
 }
 
-/* Angular, blocky corners across the default theme — voxel-game identity */
+html:lang(uk) {
+  --vp-code-copy-copied-text-content: "Скопійовано";
+}
+
+body {
+  background: var(--hp-bg-0);
+  color: var(--hp-fg-1);
+  font-feature-settings: "kern";
+}
+
+::selection {
+  background: var(--hp-accent-soft);
+  color: var(--hp-fg-1);
+}
+
+:focus-visible {
+  outline: 2px solid var(--hp-accent);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   Radii: VitePress hard-codes these, hence !important
+   ------------------------------------------------------------------------- */
+
 .vp-doc div[class*="language-"],
 .vp-doc .custom-block,
-.VPFeature,
-.VPNavBarSearchButton,
-.DocSearch-Button {
-  border-radius: 4px !important;
+.VPLocalSearchBox .shell,
+.DocSearch-Button,
+.VPDocFooter .pager-link {
+  border-radius: var(--hp-radius-3) !important;
 }
 
 .VPButton {
-  border-radius: 3px !important;
+  border-radius: var(--hp-radius-2) !important;
 }
 
 .VPBadge,
+.vp-doc :not(pre) > code,
+.DocSearch-Button .DocSearch-Button-Key,
+.VPLocalSearchBox kbd {
+  border-radius: var(--hp-radius-1) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Nav: ground colour, one 1px rail at every scroll position
+   ------------------------------------------------------------------------- */
+
+.VPNav .VPNavBar .divider {
+  padding-left: 0 !important;
+}
+
+.VPNav .VPNavBar .divider-line {
+  background-color: var(--hp-line-1);
+}
+
+.VPNav .VPNavBarTitle.has-sidebar .title {
+  border-bottom-color: transparent;
+}
+
+.VPNav .VPNavBarTitle .title {
+  gap: 10px;
+  font-family: var(--hp-font-display);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.01em;
+}
+
+.VPNav .VPNavBarTitle .logo {
+  margin-right: 0;
+}
+
+.VPNav .VPNavBarMenu {
+  --vp-c-brand-1: var(--hp-fg-1);
+}
+
+.VPNav .VPNavBarMenuLink {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--hp-fg-2);
+  transition: color var(--hp-dur-hover) ease;
+}
+
+.VPNav .VPNavBarMenuLink.active {
+  box-shadow: inset 0 -2px 0 var(--hp-accent);
+}
+
+.VPNav .VPNavBarTranslations .button,
+.VPNav .VPNavBarExtra .button,
+.VPNav .VPSocialLink {
+  color: var(--hp-fg-2);
+}
+
+.VPNavScreen {
+  --vp-c-brand-1: var(--hp-fg-1);
+}
+
+.VPLocalNav {
+  background-color: var(--hp-bg-0);
+}
+
+/* Search button */
+.DocSearch-Button {
+  transition: border-color var(--hp-dur-hover) ease;
+}
+
+@media (min-width: 768px) {
+  .VPNavBarSearch .DocSearch-Button {
+    height: 36px;
+    border: 1px solid var(--hp-line-1);
+    background-color: var(--hp-bg-1);
+  }
+
+  .VPNavBarSearch .DocSearch-Button:hover {
+    border-color: var(--hp-line-control);
+    background-color: var(--hp-bg-1);
+  }
+}
+
+.DocSearch-Button .DocSearch-Search-Icon,
+.DocSearch-Button .DocSearch-Button-Placeholder {
+  color: var(--hp-fg-3);
+}
+
+.DocSearch-Button .DocSearch-Button-Placeholder {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.DocSearch-Button:hover .DocSearch-Button-Placeholder {
+  color: var(--hp-fg-2);
+}
+
+.VPNavBarSearch .DocSearch-Button .DocSearch-Button-Key {
+  margin-top: 0;
+  border: 0;
+  padding: 0 5px;
+  height: 20px;
+  line-height: 20px;
+  background: var(--hp-bg-2);
+  font-family: var(--hp-font-mono);
+  font-size: 12px;
+  color: var(--hp-fg-3);
+}
+
+.VPNavBarSearch .DocSearch-Button .DocSearch-Button-Key + .DocSearch-Button-Key {
+  margin-left: 2px;
+  border: 0;
+  padding: 0 5px;
+}
+
+/* ---------------------------------------------------------------------------
+   Sidebar
+   ------------------------------------------------------------------------- */
+
+.VPSidebar {
+  --vp-c-brand-1: var(--hp-fg-1);
+  background-color: var(--hp-bg-0);
+}
+
+@media (min-width: 960px) {
+  .VPSidebar {
+    border-right: 1px solid var(--hp-line-1);
+  }
+}
+
+.VPSidebar .group + .group {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.VPSidebar .VPSidebarItem.level-0 > .item > .text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hp-fg-1);
+}
+
+.VPSidebar .VPSidebarItem.level-1 > .item {
+  position: relative;
+}
+
+.VPSidebar .VPSidebarItem.level-1 .link .text {
+  font-weight: 400;
+  color: var(--hp-fg-2);
+  transition: color var(--hp-dur-hover) ease;
+}
+
+.VPSidebar .VPSidebarItem.level-1 .link:hover .text,
+.VPSidebar .VPSidebarItem.level-1.is-active .link .text {
+  color: var(--hp-fg-1);
+}
+
+.VPSidebar .VPSidebarItem.level-1.is-active .link .text {
+  font-weight: 500;
+}
+
+/* Active page: the panel's status pixel, hung in the gutter */
+.VPSidebar .VPSidebarItem.level-1 > .item > .indicator {
+  top: 50%;
+  bottom: auto;
+  left: -16px;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 0;
+  background-color: transparent;
+  transition: background-color var(--hp-dur-hover) ease;
+}
+
+.VPSidebar .VPSidebarItem.level-1.is-active > .item > .indicator {
+  background-color: var(--hp-accent);
+}
+
+/* Outline: the same square marker travels down the list */
+.VPDocAsideOutline .outline-marker {
+  left: -4px;
+  width: 6px;
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 0;
+  background-color: var(--hp-accent);
+}
+
+.VPDocAsideOutline .content {
+  border-left-color: var(--hp-line-1);
+}
+
+.VPDocAsideOutline .outline-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hp-fg-1);
+}
+
+.VPDocAsideOutline .outline-link {
+  font-size: 13px;
+  color: var(--hp-fg-3);
+  transition: color var(--hp-dur-hover) ease;
+}
+
+.VPDocAsideOutline .outline-link:hover,
+.VPDocAsideOutline .outline-link.active {
+  color: var(--hp-fg-1);
+}
+
+/* ---------------------------------------------------------------------------
+   Content typography
+   ------------------------------------------------------------------------- */
+
+.vp-doc {
+  font-size: 16px;
+  line-height: 26px;
+  color: var(--hp-fg-1);
+}
+
+.vp-doc p {
+  line-height: 26px;
+}
+
+/* Page titles: the display face, set tight, with the first paragraph as a lead */
+.vp-doc h1 {
+  margin-bottom: 20px;
+  font-family: var(--hp-font-display);
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 38px;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+@media (min-width: 768px) {
+  .vp-doc h1 {
+    font-size: 40px;
+    line-height: 48px;
+  }
+}
+
+.vp-doc h1 + p {
+  max-width: 60ch;
+  font-size: 19px;
+  line-height: 30px;
+  color: var(--hp-fg-2);
+}
+
+.vp-doc h2 {
+  position: relative;
+  margin: 56px 0 16px;
+  border-top: 0;
+  padding-top: 0;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  letter-spacing: -0.005em;
+}
+
+.vp-doc h3 {
+  position: relative;
+  margin-top: 36px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
+  letter-spacing: 0;
+}
+
+.vp-doc h4 {
+  font-size: 15px;
+  line-height: 24px;
+  letter-spacing: 0;
+}
+
+/* Heading anchors: a status pixel in the gutter instead of "#".
+   Always shown on h2 (a quiet section marker), on hover for h3. */
+.vp-doc .header-anchor {
+  top: 50%;
+  left: -22px;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0;
+  overflow: hidden;
+  font-size: 0;
+  background-color: var(--hp-line-2);
+  transition:
+    opacity var(--hp-dur-hover) ease,
+    background-color var(--hp-dur-hover) ease;
+}
+
+.vp-doc .header-anchor::before {
+  content: none;
+}
+
+.vp-doc h2 .header-anchor {
+  top: 16px;
+  opacity: 1;
+}
+
+.vp-doc h3 .header-anchor {
+  top: 13px;
+  left: -20px;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+}
+
+.vp-doc h2:hover .header-anchor,
+.vp-doc h3:hover .header-anchor,
+.vp-doc .header-anchor:focus-visible {
+  opacity: 1;
+  background-color: var(--hp-accent);
+}
+
+.vp-doc h1 .header-anchor {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .vp-doc .header-anchor {
+    left: -16px;
+  }
+
+  .vp-doc h3 .header-anchor {
+    left: -14px;
+  }
+}
+
+.vp-doc a {
+  color: var(--hp-accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  transition: color var(--hp-dur-hover) ease;
+}
+
+.vp-doc a:hover {
+  color: var(--hp-fg-1);
+}
+
+/* Square list markers: the blocky character, at the smallest scale */
+.vp-doc ul {
+  list-style-type: square;
+}
+
+.vp-doc ul > li::marker {
+  color: var(--hp-fg-3);
+}
+
+.vp-doc ol > li::marker {
+  font-family: var(--hp-font-mono);
+  font-size: 0.85em;
+  color: var(--hp-fg-3);
+}
+
+.vp-doc blockquote {
+  border-left-color: var(--hp-line-2);
+}
+
+.vp-doc hr {
+  border-top-color: var(--hp-line-1);
+}
+
+/* Tables: row rules only, no zebra, no header band; full measure on wider screens */
+@media (min-width: 768px) {
+  .vp-doc table {
+    display: table;
+    width: 100%;
+  }
+}
+
+.vp-doc tr,
+.vp-doc tr:nth-child(2n) {
+  border-top: 0;
+  background-color: transparent;
+}
+
+.vp-doc th,
+.vp-doc td {
+  border: 0;
+  border-bottom: 1px solid var(--hp-line-1);
+  padding: 10px 14px;
+  line-height: 20px;
+}
+
+.vp-doc th {
+  background-color: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hp-fg-2);
+}
+
+.vp-doc tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.vp-doc th:first-child,
+.vp-doc td:first-child {
+  padding-left: 0;
+}
+
+/* Inline code: neutral chip */
 .vp-doc :not(pre) > code {
-  border-radius: 2px !important;
+  padding: 2px 5px;
+  font-size: 0.85em;
 }
 
-/* Square the dark-mode switch */
-.VPSwitch {
-  border-radius: 4px !important;
+/* Code blocks: the panel console well, with a title bar holding the language and the copy button */
+.vp-doc div[class*="language-"] {
+  border: 1px solid var(--hp-line-1);
+  padding-top: 36px;
 }
 
-.VPSwitch .check {
-  border-radius: 2px !important;
+.vp-doc div[class*="language-"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  height: 36px;
+  border-bottom: 1px solid var(--hp-line-1);
+  background-color: var(--hp-bg-1);
 }
 
-.dark .vp-doc div[class*="language-"] {
-  border: 1px solid var(--vp-c-divider);
+.vp-doc [class*="language-"] pre {
+  padding: 16px 0;
 }
 
-.VPHero .image-bg {
-  opacity: 0.7;
+.vp-doc [class*="language-"] code {
+  padding: 0 20px;
+  font-size: 13px;
+  line-height: 22px;
 }
 
-/* Selection matches the panel */
-::selection {
-  background: #f0a13c;
-  color: #1d1508;
+.vp-doc [class*="language-"] code .highlighted,
+.vp-doc [class*="language-"] code .diff {
+  margin: 0 -20px;
+  padding: 0 20px;
+  width: calc(100% + 40px);
+}
+
+.vp-doc [class*="language-"] > span.lang {
+  top: 0;
+  left: 16px;
+  right: auto;
+  z-index: 2;
+  height: 36px;
+  font-family: var(--hp-font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 36px;
+  color: var(--hp-fg-3);
+}
+
+/* The language label stays put; VitePress would hide it on hover */
+.vp-doc [class*="language-"]:hover > button.copy + span.lang,
+.vp-doc [class*="language-"] > button.copy:focus + span.lang {
+  opacity: 1;
+}
+
+.vp-doc [class*="language-"] > button.copy {
+  top: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--hp-radius-2);
+  background: transparent;
+  opacity: 1;
+  transition:
+    background-color var(--hp-dur-hover) ease,
+    transform var(--hp-dur-press) var(--hp-ease-out);
+}
+
+.vp-doc [class*="language-"] > button.copy::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--hp-fg-3);
+  -webkit-mask: var(--hp-icon-copy) center / 16px no-repeat;
+  mask: var(--hp-icon-copy) center / 16px no-repeat;
+  transition: background-color var(--hp-dur-hover) ease;
+}
+
+.vp-doc [class*="language-"] > button.copy:hover {
+  background-color: var(--hp-bg-2);
+}
+
+.vp-doc [class*="language-"] > button.copy:hover::after {
+  background-color: var(--hp-fg-1);
+}
+
+.vp-doc [class*="language-"] > button.copy:active {
+  transform: scale(0.94);
+}
+
+.vp-doc [class*="language-"] > button.copy.copied,
+.vp-doc [class*="language-"] > button.copy:hover.copied {
+  border-radius: var(--hp-radius-2);
+  background: transparent;
+}
+
+.vp-doc [class*="language-"] > button.copy.copied::after {
+  background-color: var(--hp-positive);
+  -webkit-mask-image: var(--hp-icon-check);
+  mask-image: var(--hp-icon-check);
+}
+
+.vp-doc [class*="language-"] > button.copy.copied::before,
+.vp-doc [class*="language-"] > button.copy:hover.copied::before {
+  top: 0;
+  height: 28px;
+  border: 0;
+  padding: 0 4px 0 0;
+  background: transparent;
+  font-family: var(--hp-font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--hp-positive);
+}
+
+@media (max-width: 639px) {
+  .vp-doc div[class*="language-"] {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0 !important;
+  }
+}
+
+/* Custom containers */
+.vp-doc .custom-block {
+  padding: 14px 16px;
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--hp-fg-1);
+}
+
+.vp-doc .custom-block p {
+  line-height: 24px;
+}
+
+.vp-doc .custom-block > :last-child {
+  margin-bottom: 0;
+}
+
+.vp-doc .custom-block .custom-block-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Each kind carries a status pixel in its own colour, as status does in the panel */
+.vp-doc .custom-block .custom-block-title::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  background-color: currentColor;
+}
+
+.vp-doc .custom-block.details .custom-block-title::before {
+  content: none;
+}
+
+.vp-doc .custom-block.tip .custom-block-title {
+  color: var(--hp-accent);
+}
+
+.vp-doc .custom-block.info .custom-block-title {
+  color: var(--hp-info);
+}
+
+.vp-doc .custom-block.warning .custom-block-title {
+  color: var(--hp-warning);
+}
+
+.vp-doc .custom-block.danger .custom-block-title {
+  color: var(--hp-negative);
+}
+
+.vp-doc .custom-block a {
+  color: var(--hp-accent);
+}
+
+.vp-doc .custom-block a:hover {
+  color: var(--hp-fg-1);
+}
+
+.vp-doc .custom-block :not(pre) > code {
+  color: var(--hp-fg-1);
+  background-color: var(--hp-bg-2);
+}
+
+.vp-doc .custom-block.danger :not(pre) > code {
+  background-color: var(--hp-bg-sunken);
+}
+
+/* Site footer (shown on pages without a sidebar, e.g. 404) */
+.VPFooter {
+  border-top: 1px solid var(--hp-line-1);
+}
+
+.VPFooter .container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 24px;
+  text-align: left;
+}
+
+.VPFooter .message,
+.VPFooter .copyright {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--hp-fg-3);
+}
+
+/* Prev / next pager and outline */
+.VPDocFooter .pager-link {
+  transition: border-color var(--hp-dur-hover) ease;
+}
+
+.VPDocFooter .pager-link:hover {
+  border-color: var(--hp-line-control);
+}
+
+.VPDocFooter .pager-link .title {
+  color: var(--hp-fg-1);
+}
+
+.VPDocFooter .pager-link .desc {
+  color: var(--hp-fg-3);
+}
+
+/* ---------------------------------------------------------------------------
+   Buttons: flat fills, press feedback
+   ------------------------------------------------------------------------- */
+
+.VPHero .VPButton {
+  transition:
+    color var(--hp-dur-hover) ease,
+    border-color var(--hp-dur-hover) ease,
+    background-color var(--hp-dur-hover) ease,
+    transform var(--hp-dur-press) var(--hp-ease-out);
+}
+
+.VPHero .VPButton:active {
+  transition: transform var(--hp-dur-press) var(--hp-ease-out);
+  transform: scale(0.97);
+}
+
+.VPHero .VPButton.medium {
+  padding: 0 16px;
+  line-height: 38px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------------
+   Local search modal
+   ------------------------------------------------------------------------- */
+
+.VPLocalSearchBox .shell {
+  border: 1px solid var(--hp-line-2);
+  box-shadow: var(--hp-shadow-overlay);
+}
+
+.VPLocalSearchBox .search-bar {
+  border-color: var(--hp-line-control);
+  border-radius: var(--hp-radius-2);
+  background-color: var(--hp-bg-sunken);
+}
+
+.VPLocalSearchBox .search-bar:focus-within {
+  border-color: var(--hp-accent);
+  box-shadow: 0 0 0 1px var(--hp-accent);
+}
+
+.VPLocalSearchBox .result {
+  border-width: 1px;
+  border-radius: var(--hp-radius-2);
+}
+
+.VPLocalSearchBox .results .result.selected {
+  background-color: var(--hp-bg-3);
+}
+
+/* The "#" before each result becomes the same square marker the sidebar and headings use */
+.VPLocalSearchBox .result .title-icon {
+  flex: none;
+  align-self: center;
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
+  overflow: hidden;
+  font-size: 0;
+  background-color: var(--hp-line-2);
+}
+
+.VPLocalSearchBox .results .result.selected .titles {
+  color: var(--hp-fg-1) !important;
+}
+
+.VPLocalSearchBox .results .result.selected .title-icon {
+  background-color: var(--hp-accent);
+}
+
+.VPLocalSearchBox .result .title.main {
+  font-weight: 600;
+}
+
+.VPLocalSearchBox .excerpt-wrapper .excerpt {
+  font-size: 13px;
+  color: var(--hp-fg-2);
+}
+
+.VPLocalSearchBox .excerpt mark,
+.VPLocalSearchBox .titles mark {
+  border-radius: var(--hp-radius-1);
+  background-color: var(--hp-accent-soft);
+  color: var(--hp-fg-1);
+}
+
+.VPLocalSearchBox .search-keyboard-shortcuts {
+  color: var(--hp-fg-3);
+}
+
+.VPLocalSearchBox kbd {
+  border: 0 !important;
+  background: var(--hp-bg-2) !important;
+  box-shadow: none !important;
+  font-family: var(--hp-font-mono);
+  font-size: 12px;
+  color: var(--hp-fg-2);
+}
+
+@media (max-width: 767px) {
+  .VPLocalSearchBox .shell {
+    border: 0;
+    border-radius: 0 !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Home
+   ------------------------------------------------------------------------- */
+
+.VPHome .VPHero .image-bg {
+  display: none;
+}
+
+.VPHome .VPHero .name {
+  max-width: none;
+  font-family: var(--hp-font-display);
+  font-size: clamp(40px, 6vw, 64px);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.VPHome .VPHero .text {
+  max-width: 560px;
+  font-size: clamp(24px, 2.6vw, 32px);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--hp-fg-1);
+  text-wrap: balance;
+}
+
+.VPHome .VPHero .tagline {
+  padding-top: 16px;
+  max-width: 540px;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 28px;
+  color: var(--hp-fg-2);
+  text-wrap: pretty;
+}
+
+.VPHome .VPHero .actions {
+  margin: -4px;
+  padding-top: 32px;
+}
+
+.VPHome .VPHero .action {
+  padding: 4px;
+}
+
+/* Left-aligned at every width; the screenshot sits under the text below 960px */
+.VPHome .VPHero.has-image .container {
+  text-align: left;
+}
+
+.VPHome .VPHero.has-image .name,
+.VPHome .VPHero.has-image .text,
+.VPHome .VPHero.has-image .tagline {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.VPHome .VPHero.has-image .text {
+  margin-top: 16px;
+}
+
+.VPHome .VPHero.has-image .actions {
+  justify-content: flex-start;
+}
+
+.VPHome .VPHero .image {
+  order: 3;
+  margin: 48px 0 0;
+}
+
+.VPHome .VPHero .image-container {
+  width: auto;
+  height: auto;
+  transform: none;
+}
+
+.VPHome .VPHero .image-container .image-src {
+  position: static;
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  max-height: none;
+  height: auto;
+  transform: none;
+  border: 1px solid var(--hp-line-1);
+  border-radius: var(--hp-radius-3);
+}
+
+@media (min-width: 960px) {
+  .VPHome .VPHero.has-image .main {
+    flex-shrink: 1;
+    width: auto;
+    max-width: 540px;
+  }
+
+  .VPHome .VPHero .image {
+    flex: 1 1 0;
+    order: 2;
+    margin: 0 0 0 48px;
+    min-width: 0;
+  }
+
+  .VPHome .VPHero .image-container {
+    justify-content: flex-end;
+  }
+}
+
+/* Home body */
+.VPHome .vp-doc h2:first-child {
+  margin-top: 16px;
+}
+
+.VPHome .hp-features dl {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px 48px;
+  margin: 24px 0 0;
+}
+
+@media (min-width: 768px) {
+  .VPHome .hp-features dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.VPHome .hp-features dt {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+  color: var(--hp-fg-1);
+}
+
+.VPHome .hp-features dd {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--hp-fg-2);
+}
+
+/* ---------------------------------------------------------------------------
+   Motion
+   ------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --hp-dur-ui: 0ms;
+    --hp-dur-modal: 120ms;
+    --hp-dur-toast: 120ms;
+  }
+
+  .VPHero .VPButton:active {
+    transform: none;
+  }
 }

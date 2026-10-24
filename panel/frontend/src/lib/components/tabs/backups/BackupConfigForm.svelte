@@ -1,7 +1,11 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
 import Button from '$lib/components/ui/Button.svelte';
+import Checkbox from '$lib/components/ui/Checkbox.svelte';
+import InlineNotice from '$lib/components/ui/InlineNotice.svelte';
 import Input from '$lib/components/ui/Input.svelte';
+import Section from '$lib/components/ui/Section.svelte';
+import Switch from '$lib/components/ui/Switch.svelte';
 import { emit, joinedServerId, socket } from '$lib/services/socketClient';
 import { showToast } from '$lib/stores/ui';
 
@@ -20,6 +24,7 @@ let maxAgeDays = $state(7);
 let onServerStart = $state(true);
 let hasConfigChanges = $state(false);
 let isSavingConfig = $state(false);
+let configError = $state<string | null>(null);
 
 $effect(() => {
   if ($joinedServerId) {
@@ -32,16 +37,19 @@ $effect(() => {
   if (!s) return;
 
   const handleConfigResult = (result: { success: boolean; config?: BackupConfig; error?: string }) => {
+    const wasSaving = isSavingConfig;
     isSavingConfig = false;
     if (result.success && result.config) {
+      configError = null;
       enabled = result.config.enabled;
       intervalMinutes = result.config.intervalMinutes;
       maxBackups = result.config.maxBackups;
       maxAgeDays = result.config.maxAgeDays;
       onServerStart = result.config.onServerStart;
       hasConfigChanges = false;
+      if (wasSaving) showToast($_('backupConfigSaved'));
     } else {
-      showToast(result.error || $_('backupConfigInvalid'), 'error');
+      configError = result.error || $_('backupConfigInvalid');
     }
   };
 
@@ -68,43 +76,71 @@ function handleSaveConfig(): void {
 }
 </script>
 
-<div class="mc-panel">
-  <div class="mc-panel-header">{$_('backupConfig')}</div>
-  <div class="mc-panel-body flex flex-col gap-3">
-    <label class="flex items-center gap-2 text-sm cursor-pointer">
-      <input type="checkbox" class="w-4 h-4 accent-hytale-orange" bind:checked={enabled} onchange={markConfigChanged} />
-      {$_('backupEnabled')}
-    </label>
+<Section title={$_('backupEnabled')}>
+  {#snippet actions()}
+    <Switch
+      checked={enabled}
+      label={$_('backupEnabled')}
+      onchange={(value) => {
+        enabled = value;
+        markConfigChanged();
+      }}
+    />
+  {/snippet}
 
-    <label class="flex items-center gap-2 text-sm cursor-pointer">
-      <input type="checkbox" class="w-4 h-4 accent-hytale-orange" bind:checked={onServerStart} onchange={markConfigChanged} />
-      {$_('backupOnStart')}
-    </label>
+  <div class="flex flex-col gap-4">
+    {#if configError}
+      <InlineNotice kind="negative">{configError}</InlineNotice>
+    {/if}
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      <div class="flex flex-col gap-1">
-        <label for="intervalMinutes" class="text-xs text-text-dim uppercase">{$_('backupInterval')}</label>
-        <Input type="number" id="intervalMinutes" bind:value={intervalMinutes} oninput={markConfigChanged} min={0} max={1440} />
-        <span class="text-xs text-text-dim">0 = {$_('disabled')}</span>
+    <!-- Retention also applies to manual and pre-start backups, so only the interval depends on the switch -->
+    <div class="grid grid-cols-1 gap-4 {enabled ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}">
+      {#if enabled}
+        <div class="hp-field-group">
+          <label for="intervalMinutes">{$_('backupInterval')}</label>
+          <Input
+            type="number"
+            id="intervalMinutes"
+            mono
+            suffix={$_('unitMin')}
+            bind:value={intervalMinutes}
+            oninput={markConfigChanged}
+            min={0}
+            max={1440}
+          />
+        </div>
+      {/if}
+      <div class="hp-field-group">
+        <label for="maxBackups">{$_('maxBackups')}</label>
+        <Input type="number" id="maxBackups" mono bind:value={maxBackups} oninput={markConfigChanged} min={0} max={100} />
       </div>
-
-      <div class="flex flex-col gap-1">
-        <label for="maxBackups" class="text-xs text-text-dim uppercase">{$_('maxBackups')}</label>
-        <Input type="number" id="maxBackups" bind:value={maxBackups} oninput={markConfigChanged} min={0} max={100} />
-        <span class="text-xs text-text-dim">0 = {$_('unlimited')}</span>
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <label for="maxAgeDays" class="text-xs text-text-dim uppercase">{$_('maxAgeDays')}</label>
-        <Input type="number" id="maxAgeDays" bind:value={maxAgeDays} oninput={markConfigChanged} min={0} max={365} />
-        <span class="text-xs text-text-dim">0 = {$_('unlimited')}</span>
+      <div class="hp-field-group">
+        <label for="maxAgeDays">{$_('maxAgeDays')}</label>
+        <Input
+          type="number"
+          id="maxAgeDays"
+          mono
+          suffix={$_('unitDays')}
+          bind:value={maxAgeDays}
+          oninput={markConfigChanged}
+          min={0}
+          max={365}
+        />
       </div>
     </div>
+    <p class="-mt-2 text-xs text-fg-3">{$_('backupZeroHint')}</p>
 
-    <div>
-      <Button variant="primary" onclick={handleSaveConfig} disabled={!hasConfigChanges || isSavingConfig}>
-        {isSavingConfig ? $_('saving') : $_('save')}
+    <Checkbox bind:checked={onServerStart} onchange={markConfigChanged}>{$_('backupOnStart')}</Checkbox>
+
+    <div class="flex justify-end">
+      <Button
+        variant={hasConfigChanges ? 'primary' : 'secondary'}
+        loading={isSavingConfig}
+        onclick={handleSaveConfig}
+        disabled={!hasConfigChanges}
+      >
+        {$_('save')}
       </Button>
     </div>
   </div>
-</div>
+</Section>

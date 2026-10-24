@@ -1,5 +1,8 @@
 ---
 layout: home
+markdownStyles: false
+footer: false
+pageClass: hp-home-page
 
 head:
   - - meta
@@ -9,58 +12,94 @@ head:
     - name: keywords
       content: hytale сервер, docker, виділений сервер, веб-панель, моди, jwt автентифікація, файловий менеджер, консоль реальний час
 
-hero:
-  name: HytalePanel
-  text: Docker + Веб-панель
-  tagline: Запустіть свій виділений сервер Hytale з автозавантаженням, JWT автентифікацією та панеллю адміністрування.
-  image:
-    src: /images/hytale.png
-    alt: HytalePanel Logo
-  actions:
-    - theme: brand
-      text: Початок роботи
-      link: /uk/guide/getting-started
-    - theme: alt
-      text: GitHub
-      link: https://github.com/ketbome/hytalepanel
-
-features:
-  - icon: 🐳
-    title: Готовий для Docker
-    details: Одна команда для запуску. Без ручного налаштування.
-  - icon: 📜
-    title: Консоль в реальному часі
-    details: Переглядайте логи та надсилайте команди прямо з веб-панелі.
-  - icon: 🔐
-    title: JWT Автентифікація
-    details: Безпечний доступ з автентифікацією користувача та пароля.
-  - icon: 📁
-    title: Файловий менеджер
-    details: Завантажуйте, редагуйте та видаляйте файли сервера з браузера.
-  - icon: 🔧
-    title: Менеджер модів
-    details: Встановлюйте та керуйте модами з інтеграцією Modtale.
-  - icon: 🌍
-    title: Багатомовність
-    details: Доступний англійською, іспанською та українською.
+hp:
+  hero:
+    title: [Сервери Hytale, прямо з браузера]
+    lead: HytalePanel — безкоштовний Docker-образ і веб-панель для хостингу Hytale. Жива консоль, файли, моди та резервні копії для кожного вашого сервера.
+    primary: { text: Почати, link: /uk/guide/getting-started }
+    secondary: { text: GitHub, link: https://github.com/ketbome/hytalepanel }
+    hint: Консоль відтворює справжній запуск сервера. Вона приймає й команди — спробуйте /help.
+  console:
+    online: Онлайн
+    offline: Офлайн
+    starting: Запуск…
+    stopping: Зупинка…
+    up: працює {time}
+    placeholder: Введіть команду — Tab доповнює
+    offlinePlaceholder: Сервер офлайн
+    send: Надіслати
+    start: Запустити
+    stop: Зупинити
+    log: Вивід консолі
+    command: Команда сервера
+  steps:
+    title: Як це працює
+    running: Працює
+    downloading: Завантаження…
+    players: "гравців: {n}"
+    items:
+      - Один compose-файл запускає панель.
+      - Панель створює кожен сервер в окремому контейнері.
+      - Вона завантажує файли гри через ваш акаунт Hytale.
+      - Друзі підключаються на порт 5520.
+  showcase:
+    title: Один екран на сервер
+    text: Консоль лишається відкритою поруч із вкладками, у яких ви працюєте. Керування, встановлення, файли, моди, копії та конфіг — і лог завжди перед очима.
+    alt: Сторінка сервера в HytalePanel, жива консоль ліворуч і вкладка модів праворуч
+    list: Усі ваші сервери в одному списку, з портом, пам’яттю та контейнером.
+    listAlt: Список із трьох серверів зі статусом, портом, пам’яттю та контейнером
+  compare:
+    title: Що це замінює
+    text: Усе, що інакше робиться через SSH, у терміналі, зі скриптом, який треба пам’ятати.
+    label: Завдання
+    ours: HytalePanel
+    theirs: Вручну
+    rows:
+      - { name: "Консоль", ours: "Наживо в браузері, з фільтром за рівнем", theirs: "SSH-сесія всередині screen" }
+      - { name: "Файли", ours: "Перегляд, редагування, завантаження й вивантаження", theirs: "scp і термінальний редактор" }
+      - { name: "Моди", ours: "Пошук у Modtale і CurseForge, встановлення в один клік", theirs: "Завантажити кожен jar і скопіювати" }
+      - { name: "Резервні копії", ours: "За розкладом, скільки забажаєте зберігати", theirs: "Cron-задача, яку пишете самі" }
+      - { name: "Оновлення гри", ours: "Перевірка й оновлення на вкладці «Встановлення»", theirs: "Знову запустити завантажувач" }
+      - { name: "Більше серверів", ours: "Одна панель, окремий контейнер і порт для кожного", theirs: "Окрема тека, порт і скрипт для кожного" }
+      - { name: "Доступ", ours: "Пароль або ваш SSO-проксі попереду", theirs: "Будь-хто з SSH-ключем" }
+  faq:
+    title: Запитання
+    items:
+      - q: Чи потрібен акаунт Hytale?
+        a: Так. Файли гри надходять з офіційного <code>hytale-downloader</code>, який один раз просить увійти за кодом пристрою. Вхід зберігається в томі сервера.
+      - q: Скільки пам’яті потрібно серверу?
+        a: Близько 4 ГБ для десяти гравців. Дайте 6 ГБ для двадцяти і 8 ГБ для п’ятдесяти.
+      - q: Чи працює на ARM64 або Raspberry Pi?
+        a: Сервер працює на ARM64 нативно. Автоматичне завантаження є лише для x64, тож скопіюйте <code>HytaleServer.jar</code> і <code>Assets.zip</code> вручну.
+      - q: Чи можна запустити на Windows?
+        a: Так, через Docker Desktop. Вкажіть у <code>.env</code> абсолютний шлях <code>HOST_DATA_PATH</code> із прямими скісними рисками (/).
+      - q: Чи можна сховати панель за власним входом?
+        a: Встановіть <code>DISABLE_AUTH=true</code>, коли вхід обробляє проксі на кшталт Authentik, і <code>BASE_PATH=/panel</code>, щоб відкривати панель за підшляхом.
+      - q: Де зберігаються мої світи?
+        a: У <code>./data</code> поруч із compose-файлом. Кожен сервер монтує звідти власну теку, тож перенести чи скопіювати його — це просто скопіювати файли.
+      - q: Якими мовами працює панель?
+        a: Англійською, іспанською, українською та бразильською португальською. Ця документація доступна англійською, іспанською та українською.
+      - q: Це безкоштовно?
+        a: Безкоштовно для особистого, освітнього й некомерційного використання, а також для малого бізнесу. Для хостингу платних серверів потрібен письмовий дозвіл.
+  close:
+    title: [Старт за, п’ять рядків]
+    text: Потім відкрийте localhost:3000, увійдіть і створіть перший сервер. Посібник описує кожен крок.
+    action: { text: Читати посібник, link: /uk/guide/getting-started }
+    copy: Копіювати
+    copied: Скопійовано
+    comment: змініть PANEL_USER і PANEL_PASS
+  footer:
+    statement: Інструмент спільноти для хостингу виділених серверів Hytale.
+    legal: Не пов’язано з Hypixel Studios чи Hytale. Безкоштовно для особистого й некомерційного використання.
+    navTitle: Документація
+    nav:
+      - { text: Посібник, link: /uk/guide/getting-started }
+      - { text: Довідник, link: /uk/reference/environment }
+      - { text: GitHub, link: https://github.com/ketbome/hytalepanel }
+      - { text: Minepanel, link: https://minepanel.ketbome.com/ }
+    langTitle: Мова
+    imageTitle: Docker-образи
+    issue: { text: Знайшли помилку? Створіть issue, link: https://github.com/ketbome/hytalepanel/issues }
 ---
 
-## Швидкий старт
-
-```bash
-# 1. Створити папку
-mkdir hytale && cd hytale
-
-# 2. Завантажити файли
-curl -O https://raw.githubusercontent.com/ketbome/hytalepanel/main/docker-compose.yml
-curl -O https://raw.githubusercontent.com/ketbome/hytalepanel/main/.env.example
-
-# 3. Налаштувати
-cp .env.example .env
-nano .env  # Змініть PANEL_USER та PANEL_PASS!
-
-# 4. Запустити
-docker compose up -d
-
-# 5. Відкрити панель http://localhost:3000
-```
+<HomePage />

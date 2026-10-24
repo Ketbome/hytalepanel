@@ -1,0 +1,4 @@
+overrides:
+  vitepress>vite: ^6.4.5
+allowBuilds:
+  esbuild: false

@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 import type { DownloadProgress, FilesReady, ServerStatus } from '$lib/types';
+import type { PendingAction } from '$lib/utils/status';
 
 export const serverStatus = writable<ServerStatus>({
   running: false,
@@ -12,6 +13,16 @@ export const filesReady = writable<FilesReady>({
   hasAssets: false,
   ready: false
 });
+
+// A lifecycle action the user started that Docker hasn't reported back yet
+export const pendingAction = writable<PendingAction>(null);
+let pendingTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function setPendingAction(action: PendingAction): void {
+  if (pendingTimer) clearTimeout(pendingTimer);
+  pendingTimer = action ? setTimeout(() => pendingAction.set(null), 90000) : null;
+  pendingAction.set(action);
+}
 
 export const downloaderAuth = writable<boolean>(false);
 

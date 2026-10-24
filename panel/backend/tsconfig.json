@@ -7,7 +7,8 @@
     "rootDir": ".",
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "types": ["node", "jest"]
   },
   "include": ["src/**/*.ts", "__tests__/**/*.ts"],
   "exclude": ["node_modules", "dist"]

@@ -4,6 +4,6 @@ import BackupList from './backups/BackupList.svelte';
 </script>
 
 <div class="flex flex-col gap-6">
-  <BackupConfigForm />
   <BackupList />
+  <BackupConfigForm />
 </div>

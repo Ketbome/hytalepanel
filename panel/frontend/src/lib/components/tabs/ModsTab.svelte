@@ -1,15 +1,23 @@
 <script lang="ts">
-import { get } from 'svelte/store';
 import { _ } from 'svelte-i18n';
 import Button from '$lib/components/ui/Button.svelte';
+import Segmented from '$lib/components/ui/Segmented.svelte';
 import { emit } from '$lib/services/socketClient';
-import { currentProvider, currentView, curseforgeStatus, modtaleStatus } from '$lib/stores/mods';
-import { showToast } from '$lib/stores/ui';
+import {
+  type ApiStatus,
+  currentProvider,
+  currentView,
+  curseforgeStatus,
+  installedMods,
+  modtaleStatus
+} from '$lib/stores/mods';
 import BrowseView from './mods/BrowseView.svelte';
 import InstalledView from './mods/InstalledView.svelte';
 import { switchView } from './mods/modActions';
 
 let isCheckingUpdates = $state(false);
+
+const canCheckUpdates = $derived($modtaleStatus.valid || $curseforgeStatus.valid);
 
 // Fall back to the other provider when the selected one is unusable
 $effect(() => {
@@ -29,15 +37,7 @@ $effect(() => {
 });
 
 function checkForUpdates(): void {
-  const mtStatus = get(modtaleStatus);
-  const cfStatus = get(curseforgeStatus);
-  const hasModtale = mtStatus.configured && mtStatus.valid;
-  const hasCurseforge = cfStatus.configured && cfStatus.valid;
-
-  if (!hasModtale && !hasCurseforge) {
-    showToast(get(_)('updatesRequireApi'), 'error');
-    return;
-  }
+  if (!canCheckUpdates) return;
   isCheckingUpdates = true;
   emit('mods:check-updates');
   setTimeout(() => {
@@ -45,50 +45,50 @@ function checkForUpdates(): void {
   }, 5000);
 }
 
-function apiChipClass(status: { configured: boolean; valid: boolean }): string {
-  if (status.valid) return 'bg-success/15 border-success/40 text-grass-light';
-  if (status.configured) return 'bg-error/15 border-error/40 text-error';
-  return 'bg-panel-bg border-panel-border text-text-dim';
+function providerTitle(name: string, status: ApiStatus): string {
+  if (status.valid) return `${name}: ${$_('apiReady')}`;
+  if (status.configured) return `${name}: ${status.error || $_('apiKeyInvalidShort')}`;
+  return `${name}: ${$_('notConfigured')}`;
 }
 </script>
 
-<div class="space-y-3">
-  <!-- View Toggle & API Status -->
-  <div class="flex flex-wrap items-center justify-between gap-3 px-3 py-2 rounded-lg bg-panel-light border border-panel-border">
-    <!-- API Status -->
-    <div class="flex items-center gap-2">
-      <span
-        class="px-2 py-1 text-xs rounded border cursor-default {apiChipClass($modtaleStatus)}"
-        title={$modtaleStatus.valid
-          ? 'Modtale: OK'
-          : $modtaleStatus.configured
-            ? `Modtale: ${$modtaleStatus.error || 'Invalid'}`
-            : 'Modtale: Not configured'}
-      >
-        M
-      </span>
-      <span
-        class="px-2 py-1 text-xs rounded border cursor-default {apiChipClass($curseforgeStatus)}"
-        title={$curseforgeStatus.valid
-          ? 'CurseForge: OK'
-          : $curseforgeStatus.configured
-            ? `CurseForge: ${$curseforgeStatus.error || 'Invalid'}`
-            : 'CurseForge: Not configured'}
-      >
-        CF
-      </span>
-    </div>
+{#snippet provider(name: string, status: ApiStatus)}
+  <span class="flex items-center gap-1.5 text-[13px] text-fg-2" title={providerTitle(name, status)}>
+    <span
+      class="h-1.5 w-1.5 shrink-0"
+      class:bg-positive={status.valid}
+      class:bg-negative={status.configured && !status.valid}
+      class:hp-hollow={!status.configured}
+      aria-hidden="true"
+    ></span>
+    {name}
+    <span class="hp-sr-only">{providerTitle(name, status)}</span>
+  </span>
+{/snippet}
 
-    <!-- View Buttons -->
-    <div class="flex items-center gap-2">
-      <Button variant="tab" active={$currentView === 'installed'} onclick={() => switchView('installed')}>
-        📦 {$_('local')}
-      </Button>
-      <Button variant="tab" active={$currentView === 'browse'} onclick={() => switchView('browse')}>
-        🌐 {$_('browse')}
-      </Button>
-      <Button size="small" variant="warning" onclick={checkForUpdates} disabled={isCheckingUpdates}>
-        ⟳ {$_('checkUpdates')}
+<div class="flex flex-col gap-4">
+  <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+    <Segmented
+      label={$_('mods')}
+      value={$currentView === 'browse' ? 'browse' : 'installed'}
+      onchange={(v) => switchView(v)}
+      options={[
+        { value: 'installed', label: $_('installed'), count: $installedMods.length },
+        { value: 'browse', label: $_('browse') }
+      ]}
+    />
+    <div class="ml-auto flex items-center gap-3">
+      {@render provider('Modtale', $modtaleStatus)}
+      {@render provider('CurseForge', $curseforgeStatus)}
+      <Button
+        variant="secondary"
+        size="sm"
+        loading={isCheckingUpdates}
+        onclick={checkForUpdates}
+        disabled={!canCheckUpdates}
+        title={canCheckUpdates ? undefined : $_('updatesRequireApi')}
+      >
+        {$_('checkUpdates')}
       </Button>
     </div>
   </div>
@@ -99,3 +99,9 @@ function apiChipClass(status: { configured: boolean; valid: boolean }): string {
     <BrowseView />
   {/if}
 </div>
+
+<style>
+  .hp-hollow {
+    box-shadow: inset 0 0 0 1px var(--hp-fg-3);
+  }
+</style>

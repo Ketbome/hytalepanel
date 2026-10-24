@@ -1,0 +1,5 @@
+overrides:
+  svelte-i18n>esbuild: ^0.25.0
+allowBuilds:
+  es5-ext: false
+  esbuild: false

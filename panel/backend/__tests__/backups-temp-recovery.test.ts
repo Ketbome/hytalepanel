@@ -211,8 +211,8 @@ jest.unstable_mockModule('archiver', () => ({
   ZipArchive: archiverMockFactory
 }));
 
-jest.unstable_mockModule('extract-zip', () => ({
-  default: jest.fn(async () => undefined)
+jest.unstable_mockModule('yauzl', () => ({
+  default: { openPromise: jest.fn(async () => undefined) }
 }));
 
 jest.unstable_mockModule('../src/config/index.js', () => ({

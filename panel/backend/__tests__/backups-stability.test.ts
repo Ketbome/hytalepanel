@@ -27,7 +27,11 @@ describe('Backups Stability', () => {
   let serverDir: string;
   const testServerId = 'test-server-stability';
 
-  async function createZip(filePath: string, entries: Record<string, string>): Promise<void> {
+  async function createZip(
+    filePath: string,
+    entries: Record<string, string>,
+    symlinks: Record<string, string> = {}
+  ): Promise<void> {
     await new Promise<void>((resolve, reject) => {
       const output = createWriteStream(filePath);
       const archive = new ZipArchive({ zlib: { level: 6 } });
@@ -39,6 +43,9 @@ describe('Backups Stability', () => {
       archive.pipe(output);
       for (const [entryPath, content] of Object.entries(entries)) {
         archive.append(content, { name: entryPath });
+      }
+      for (const [entryPath, target] of Object.entries(symlinks)) {
+        archive.symlink(entryPath, target);
       }
       void archive.finalize();
     });
@@ -160,5 +167,18 @@ describe('Backups Stability', () => {
     expect(await fs.readFile(path.join(serverDir, 'universe', 'new.txt'), 'utf-8')).toBe('new-world');
     expect(await fs.readFile(path.join(serverDir, 'config', 'game.properties'), 'utf-8')).toBe('difficulty=hard');
     expect(await fs.readFile(path.join(serverDir, 'settings.json'), 'utf-8')).toBe('{"old":false}');
+  });
+
+  test('restore skips symlink entries instead of creating them', async () => {
+    const restoreId = '2026-02-28T12-00-00';
+    const zipPath = path.join(backupsDir, `backup-${restoreId}.zip`);
+
+    await createZip(zipPath, { 'universe/new.txt': 'new-world' }, { 'universe/evil': '/etc/passwd' });
+
+    const result = await restoreBackup(testServerId, restoreId);
+    expect(result.success).toBe(true);
+
+    expect(await fs.readFile(path.join(serverDir, 'universe', 'new.txt'), 'utf-8')).toBe('new-world');
+    await expect(fs.lstat(path.join(serverDir, 'universe', 'evil'))).rejects.toThrow();
   });
 });

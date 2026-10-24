@@ -13,24 +13,20 @@
     "lint:fix": "pnpm exec biome check --write src/"
   },
   "dependencies": {
-    "socket.io-client": "^4.8.3",
+    "@animateicons/vanilla": "^0.1.0",
+    "socket.io-client": "^4.8.4",
     "svelte-i18n": "^4.0.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.3",
-    "@sveltejs/vite-plugin-svelte": "^7.2.0",
-    "@tailwindcss/vite": "^4.3.2",
+    "@biomejs/biome": "^2.6.2",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@tailwindcss/vite": "^4.3.3",
     "@tsconfig/svelte": "^5.0.8",
-    "knip": "^6.26.0",
-    "svelte": "^5.56.4",
-    "svelte-check": "^4.7.2",
-    "tailwindcss": "^4.3.2",
-    "typescript": "^5.9.3",
-    "vite": "^8.1.4"
-  },
-  "pnpm": {
-    "overrides": {
-      "svelte-i18n>esbuild": "^0.25.0"
-    }
+    "knip": "^6.42.1",
+    "svelte": "^5.57.2",
+    "svelte-check": "^4.7.7",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.5"
   }
 }

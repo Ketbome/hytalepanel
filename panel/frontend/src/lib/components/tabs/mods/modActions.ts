@@ -14,6 +14,7 @@ import {
   type ModProvider,
   type ModView,
   modtaleStatus,
+  searchError,
   searchQuery,
   searchResults
 } from '$lib/stores/mods';
@@ -69,11 +70,10 @@ export function switchProvider(provider: ModProvider): void {
 }
 
 export function searchMods(page = 1): void {
-  if (!isCurrentApiConfigured()) {
-    showToast(getApiErrorMessage(), 'error');
-    return;
-  }
+  // The browse view explains a missing or invalid key in place
+  if (!isCurrentApiConfigured()) return;
   isModsLoading.set(true);
+  searchError.set(null);
   initialBrowseLoad = false;
 
   const provider = get(currentProvider);
@@ -174,17 +174,4 @@ export function getModUrl(mod: InstalledMod | ModProject): string | null {
     return `https://modtale.net/mod/${mod.slug}-${mod.id}`;
   }
   return null;
-}
-
-export function classificationClass(classification: string | undefined): string {
-  switch (classification) {
-    case 'PLUGIN':
-      return 'bg-info/15 border-info/40 text-info';
-    case 'DATA':
-      return 'bg-success/15 border-success/40 text-grass-light';
-    case 'ART':
-      return 'bg-warning/15 border-warning/40 text-warning';
-    default:
-      return 'bg-panel-light border-panel-border-light text-text-muted';
-  }
 }

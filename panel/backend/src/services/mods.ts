@@ -171,7 +171,7 @@ async function loadMods(backend: StorageBackend): Promise<{ success: boolean; da
 
         extract.on('entry', (_header, entryStream, next) => {
           const chunks: Buffer[] = [];
-          entryStream.on('data', (chunk: Buffer) => chunks.push(chunk));
+          entryStream.on('data', (chunk) => chunks.push(chunk as Buffer));
           entryStream.on('end', () => {
             content = Buffer.concat(chunks).toString('utf8');
             next();

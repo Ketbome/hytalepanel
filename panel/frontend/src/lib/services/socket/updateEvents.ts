@@ -45,7 +45,7 @@ export function registerUpdateEvents(socket: Socket): void {
   socket.on('update:status', (data: { status: string; message: string }) => {
     updateInfo.update((u) => ({
       ...u,
-      updateStatus: data.message,
+      updateStatus: data.status === 'backing-up' ? get(_)('updateBackingUp') : data.message,
       isUpdating: data.status !== 'complete' && data.status !== 'error'
     }));
 

@@ -79,6 +79,8 @@ SERVER_EXTRA_ARGS=--mods mods
 SERVER_EXTRA_ARGS=--mods mods --debug
 ```
 
+Since Update 8 you can also pass `--transport` here to select the network transport (see [Server Arguments](../guide/configuration#server-arguments)).
+
 ### TZ (Timezone)
 
 Sets the container timezone for log timestamps.

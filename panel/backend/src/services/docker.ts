@@ -1,5 +1,6 @@
 import type { Container } from 'dockerode';
 import Docker from 'dockerode';
+import type { Pack } from 'tar-stream';
 import config from '../config/index.js';
 
 const docker = new Docker({ socketPath: config.docker.socketPath });
@@ -218,13 +219,13 @@ export async function getArchive(filePath: string, containerName?: string): Prom
 }
 
 export async function putArchive(
-  stream: NodeJS.ReadableStream,
+  stream: NodeJS.ReadableStream | Pack,
   options: { path: string },
   containerName?: string
 ): Promise<void> {
   const c = await getContainer(containerName);
   if (!c) throw new Error('Container not found');
-  await c.putArchive(stream, options);
+  await c.putArchive(stream as NodeJS.ReadableStream, options);
 }
 
 export async function removeContainer(containerName: string, removeVolumes = false): Promise<CommandResult> {
