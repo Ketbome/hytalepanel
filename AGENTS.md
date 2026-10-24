@@ -94,10 +94,10 @@ hytale-server/
 
 ### Backend
 
-- **Node.js 24 LTS** (Alpine)
+- **Node.js 24 LTS** (Alpine, pinned `node:24.22.1-alpine3.24`)
 - **Express 5** + **Socket.IO 4**
-- **TypeScript 5.9** (strict mode)
-- **pnpm** package manager
+- **TypeScript 6.0** (strict mode)
+- **pnpm 11** package manager (per-package settings in `pnpm-workspace.yaml`: `overrides`, `allowBuilds`)
 - **Jest** + **ts-jest** for testing
 - **Biome** for linting
 

@@ -69,7 +69,7 @@ pnpm dev
 
 - **Node.js 25** (Alpine)
 - **Express 5** + **Socket.IO 4**
-- **TypeScript 5.9** (modo estricto)
+- **TypeScript 6.0** (modo estricto)
 - **pnpm** como gestor de paquetes
 - **Jest** + **ts-jest** para testing
 - **Biome** para linting

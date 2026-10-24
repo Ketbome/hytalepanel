@@ -1,10 +1,10 @@
 # Development Dockerfile with hot reload
-FROM node:24-alpine
+FROM node:24.22.1-alpine3.24
 
-RUN npm install -g pnpm@10
+RUN npm install -g pnpm@11.28.6
 
 # Install docker CLI and tzdata for timezone support
-RUN apk add --no-cache docker-cli docker-cli-compose tzdata
+RUN apk upgrade --no-cache && apk add --no-cache docker-cli docker-cli-compose tzdata
 
 WORKDIR /app
 
@@ -13,11 +13,11 @@ COPY package.json ./
 RUN pnpm install
 
 # Install backend dependencies
-COPY backend/package.json backend/pnpm-lock.yaml* ./backend/
+COPY backend/package.json backend/pnpm-lock.yaml* backend/pnpm-workspace.yaml ./backend/
 RUN cd backend && pnpm install
 
 # Install frontend dependencies
-COPY frontend/package.json frontend/pnpm-lock.yaml* ./frontend/
+COPY frontend/package.json frontend/pnpm-lock.yaml* frontend/pnpm-workspace.yaml ./frontend/
 RUN cd frontend && pnpm install
 
 # Copy shared config

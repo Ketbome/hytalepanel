@@ -16,12 +16,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: "24.22.1"
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
-          version: 10
+          version: 11.28.6
 
       - name: Install root dependencies
         working-directory: panel
@@ -60,12 +60,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: "24.22.1"
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
-          version: 10
+          version: 11.28.6
 
       - name: Install backend dependencies
         working-directory: panel/backend
@@ -85,12 +85,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: "24.22.1"
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
-          version: 10
+          version: 11.28.6
 
       - name: Install backend dependencies
         working-directory: panel/backend

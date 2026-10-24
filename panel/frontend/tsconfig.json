@@ -10,6 +10,7 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
+    "types": ["vite/client"],
     "paths": {
       "$lib/*": ["./src/lib/*"]
     }
