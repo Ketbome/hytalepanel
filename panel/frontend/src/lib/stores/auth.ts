@@ -7,6 +7,7 @@ export const isAuthenticated = writable<boolean>(false);
 export const authError = writable<string | null>(null);
 export const isUsingDefaults = writable<boolean>(false);
 export const authDisabled = writable<boolean>(false);
+export const currentUser = writable<string | null>(null);
 export const isLoading = writable<boolean>(true);
 
 export async function checkStatus(): Promise<boolean> {
@@ -15,6 +16,7 @@ export async function checkStatus(): Promise<boolean> {
     if (res.ok) {
       const data: AuthStatus = await res.json();
       isAuthenticated.set(data.authenticated);
+      currentUser.set(data.username ?? null);
       if (data.authDisabled) authDisabled.set(true);
       return data.authenticated;
     }

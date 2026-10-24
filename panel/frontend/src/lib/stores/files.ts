@@ -4,6 +4,7 @@ import type { EditorState, FileEntry, UploadState } from '$lib/types';
 export const currentPath = writable<string>('/');
 export const fileList = writable<FileEntry[]>([]);
 export const isFilesLoading = writable<boolean>(false);
+export const filesError = writable<string | null>(null);
 
 export const editorState = writable<EditorState>({
   isOpen: false,

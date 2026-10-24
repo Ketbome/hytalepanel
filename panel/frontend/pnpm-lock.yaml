@@ -11,6 +11,9 @@ importers:
 
   .:
     dependencies:
+      '@animateicons/vanilla':
+        specifier: ^0.1.0
+        version: 0.1.0
       socket.io-client:
         specifier: ^4.8.4
         version: 4.8.4
@@ -50,6 +53,10 @@ importers:
         version: 8.3.5(jiti@2.7.0)(yaml@2.9.1)
 
 packages:
+
+  '@animateicons/vanilla@0.1.0':
+    resolution: {integrity: sha512-o556Pw+B4OGShwhCBNiAs58e0yUXwb4cSipfy803Mf+UVmkSa+NV8Wmv8ZhdkDF7B6A7cl7E9jVbnHGBhRC59w==}
+    engines: {node: '>=18.17.0'}
 
   '@biomejs/biome@2.6.2':
     resolution: {integrity: sha512-JLTFAFF9vfJcWwLhwuL4ZHflLg+XfTEC4IUnAlJRX1cMRt57++Xd1Ysb9Fdmlh9YUrvyCXfPEHjjEIqKJGdPKw==}
@@ -1308,6 +1315,8 @@ packages:
     resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
 
 snapshots:
+
+  '@animateicons/vanilla@0.1.0': {}
 
   '@biomejs/biome@2.6.2':
     optionalDependencies:

@@ -1,11 +1,15 @@
 <script lang="ts">
-import { _ } from 'svelte-i18n';
+import { _, locale } from 'svelte-i18n';
+import BlockLoader from '$lib/components/ui/BlockLoader.svelte';
 import Button from '$lib/components/ui/Button.svelte';
+import InlineNotice from '$lib/components/ui/InlineNotice.svelte';
+import Section from '$lib/components/ui/Section.svelte';
+import Skeleton from '$lib/components/ui/Skeleton.svelte';
 import { emit, joinedServerId, socket } from '$lib/services/socketClient';
 import { confirmDialog } from '$lib/stores/confirm';
 import { serverStatus } from '$lib/stores/server';
 import { showToast } from '$lib/stores/ui';
-import { formatSize } from '$lib/utils/formatters';
+import { formatRelative, formatSize, toBcp47 } from '$lib/utils/formatters';
 
 interface BackupInfo {
   id: string;
@@ -18,15 +22,13 @@ type BackupStatus = 'idle' | 'creating' | 'restoring' | 'error';
 
 let backupsList = $state<BackupInfo[]>([]);
 let isLoading = $state(false);
+let loadError = $state<string | null>(null);
 let isCreating = $state(false);
 let isRestoring = $state(false);
 let backupStatus = $state<BackupStatus>('idle');
 let backupStatusError = $state('');
+let loadedOnce = $state(false);
 
-// svelte-ignore non_reactive_update
-let backupsListEl: HTMLElement | null = null;
-let prevBackupCount = 0;
-let listMaxHeight = $state('400px');
 const isBusy = $derived(backupStatus === 'creating' || backupStatus === 'restoring' || isCreating || isRestoring);
 
 $effect(() => {
@@ -35,31 +37,18 @@ $effect(() => {
   }
 });
 
-// Update list max-height and scroll when backups change
-$effect(() => {
-  const count = backupsList.length;
-  // compute max height: each item ~84px, cap at 480px
-  const max = Math.min(Math.max(count * 84, 120), 480);
-  listMaxHeight = `${max}px`;
-
-  // if items increased, scroll to top to reveal newest at top
-  if (backupsListEl && count > prevBackupCount) {
-    backupsListEl.scrollTop = 0;
-  }
-
-  prevBackupCount = count;
-});
-
 $effect(() => {
   const s = $socket;
   if (!s) return;
 
   const handleListResult = (result: { success: boolean; backups: BackupInfo[]; error?: string }) => {
     isLoading = false;
+    loadedOnce = true;
     if (result.success) {
+      loadError = null;
       backupsList = result.backups;
     } else {
-      showToast(result.error || 'Error loading backups', 'error');
+      loadError = result.error || $_('error');
     }
   };
 
@@ -69,7 +58,7 @@ $effect(() => {
       showToast($_('backupCreated'));
       loadBackups();
     } else {
-      showToast(result.error || 'Error creating backup', 'error');
+      showToast(result.error || $_('backupStatusError'), 'error');
     }
   };
 
@@ -78,7 +67,7 @@ $effect(() => {
     if (result.success) {
       showToast($_('backupRestored'));
     } else {
-      showToast(result.error || 'Error restoring backup', 'error');
+      showToast(result.error || $_('backupStatusError'), 'error');
     }
   };
 
@@ -87,15 +76,18 @@ $effect(() => {
       showToast($_('backupDeleted'));
       loadBackups();
     } else {
-      showToast(result.error || 'Error deleting backup', 'error');
+      showToast(result.error || $_('backupStatusError'), 'error');
     }
   };
 
+  // The backend sends 'error' and then 'idle' right away: toast it and keep the notice until the next operation
   const handleBackupStatus = (result: { status: BackupStatus; error?: string }) => {
     backupStatus = result.status;
-    backupStatusError = result.error || '';
-    if (result.status === 'error' && result.error) {
-      showToast(result.error, 'error');
+    if (result.status === 'error') {
+      backupStatusError = result.error || $_('backupStatusError');
+      showToast(backupStatusError, 'error');
+    } else if (result.status !== 'idle') {
+      backupStatusError = '';
     }
   };
 
@@ -128,88 +120,116 @@ function handleCreateBackup(): void {
 }
 
 async function handleRestore(backup: BackupInfo): Promise<void> {
-  if ($serverStatus.running) {
-    showToast($_('serverMustBeStopped'), 'error');
-    return;
-  }
+  if ($serverStatus.running) return;
 
-  if (await confirmDialog($_('confirmRestore'), { danger: true })) {
+  if (
+    await confirmDialog($_('confirmRestoreMsg'), {
+      title: $_('confirmRestore', { values: { name: backup.filename } }),
+      confirmLabel: $_('restoreBackup'),
+      danger: true
+    })
+  ) {
     isRestoring = true;
     emit('backup:restore', backup.id);
   }
 }
 
 async function handleDelete(backup: BackupInfo): Promise<void> {
-  if (await confirmDialog(`${$_('confirmDelete')} "${backup.filename}"?`, { danger: true })) {
+  if (
+    await confirmDialog($_('confirmDeleteMsg'), {
+      title: $_('confirmDelete', { values: { name: backup.filename } }),
+      confirmLabel: $_('delete'),
+      danger: true
+    })
+  ) {
     emit('backup:delete', backup.id);
   }
 }
-
-function formatDate(isoString: string): string {
-  const date = new Date(isoString);
-  return date.toLocaleString();
-}
 </script>
 
-<div class="mc-panel">
-  <div class="mc-panel-header">
-    <span>{$_('backups')}</span>
-    <Button size="small" onclick={handleCreateBackup} disabled={isBusy}>
-      {isCreating ? $_('creating') : $_('createBackup')}
+<Section title={$_('backups')} meta={loadedOnce && !loadError ? backupsList.length : undefined}>
+  {#snippet actions()}
+    <Button variant="primary" size="sm" icon="plus" loading={isCreating} onclick={handleCreateBackup} disabled={isBusy}>
+      {$_('createBackup')}
     </Button>
-  </div>
-  <div class="mc-panel-body">
-    {#if backupStatus !== 'idle'}
-      <div
-        class="mb-3 px-3 py-2.5 rounded-lg border text-sm
-               {backupStatus === 'error' ? 'border-error/50 text-error' : 'border-panel-border text-text-muted'}"
-        aria-live="polite"
-      >
-        {#if backupStatus === 'creating'}
-          {$_('backupStatusCreating')}
-        {:else if backupStatus === 'restoring'}
-          {$_('backupStatusRestoring')}
-        {:else if backupStatus === 'error'}
-          {backupStatusError || $_('backupStatusError')}
-        {/if}
-      </div>
-    {/if}
+  {/snippet}
 
-    {#if isLoading}
-      <div class="text-center py-8 text-text-muted">{$_('loading')}...</div>
-    {:else if backupsList.length === 0}
-      <div class="text-center py-8 text-text-muted">{$_('noBackups')}</div>
-    {:else}
-      <div class="flex flex-col gap-2 overflow-y-auto pr-1" bind:this={backupsListEl} style="max-height: {listMaxHeight};">
-        {#each backupsList as backup}
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-panel-light border border-panel-border">
-            <div class="flex flex-col gap-1 min-w-0">
-              <span class="font-code text-sm truncate">{backup.filename}</span>
-              <span class="text-xs text-text-muted">
-                {formatDate(backup.createdAt)} • {formatSize(backup.size)}
+  {#if backupStatus === 'creating' || backupStatus === 'restoring'}
+    <p class="flex h-9 items-center gap-2 text-[13px] text-fg-1" aria-live="polite">
+      <BlockLoader />
+      {backupStatus === 'creating' ? $_('backupStatusCreating') : $_('backupStatusRestoring')}
+    </p>
+  {:else if backupStatusError}
+    <InlineNotice kind="negative" class="mb-2">{backupStatusError}</InlineNotice>
+  {/if}
+
+  {#if loadError}
+    <InlineNotice kind="negative" title={$_('backupsLoadError')}>
+      <span class="text-fg-3">{loadError}</span>
+      {#snippet action()}
+        <Button variant="ghost" size="sm" onclick={loadBackups}>{$_('retry')}</Button>
+      {/snippet}
+    </InlineNotice>
+  {:else if isLoading && !loadedOnce}
+    <ul class="hp-list -mx-2">
+      {#each Array(3) as _item}
+        <li class="flex h-14 flex-col justify-center gap-2 px-2" aria-hidden="true">
+          <Skeleton width="55%" /><Skeleton width="25%" height="8px" />
+        </li>
+      {/each}
+    </ul>
+  {:else if backupsList.length === 0}
+    <div class="py-4">
+      <p class="text-sm text-fg-2">{$_('noBackups')}</p>
+      <p class="mt-1 text-xs text-fg-3">{$_('noBackupsHint')}</p>
+    </div>
+  {:else}
+    <ul class="hp-list -mx-2">
+      {#each backupsList as backup (backup.id)}
+        <li class="hp-backup flex min-h-14 items-center gap-3 px-2 py-2">
+          <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span class="truncate font-mono text-[13px] text-fg-1" title={backup.filename}>{backup.filename}</span>
+            <span class="flex items-center gap-2 text-[13px] text-fg-2">
+              <span title={new Date(backup.createdAt).toLocaleString(toBcp47($locale))}>
+                {formatRelative(backup.createdAt, $locale)}
               </span>
-            </div>
-            <div class="flex gap-2 justify-end shrink-0">
-              <Button
-                size="small"
-                onclick={() => handleRestore(backup)}
-                disabled={isRestoring || $serverStatus.running}
-                title={$serverStatus.running ? $_('serverMustBeStopped') : $_('restoreBackup')}
-              >
-                ↩ {$_('restoreBackup')}
-              </Button>
-              <Button
-                size="small"
-                variant="danger"
-                onclick={() => handleDelete(backup)}
-                aria-label="{$_('confirmDelete')} {backup.filename}"
-              >
-                ✕
-              </Button>
-            </div>
+              <span class="text-fg-3" aria-hidden="true">·</span>
+              <span class="font-mono text-xs tabular-nums">{formatSize(backup.size)}</span>
+            </span>
           </div>
-        {/each}
-      </div>
-    {/if}
-  </div>
-</div>
+          <span class="flex shrink-0 items-center gap-1">
+            <Button
+              variant="secondary"
+              size="sm"
+              onclick={() => handleRestore(backup)}
+              disabled={isRestoring || $serverStatus.running}
+              title={$serverStatus.running ? $_('serverMustBeStopped') : undefined}
+            >
+              {$_('restoreBackup')}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
+              icon="trash-2"
+              class="hover:!text-negative"
+              aria-label={$_('deleteNamed', { values: { name: backup.filename } })}
+              title={$_('delete')}
+              onclick={() => handleDelete(backup)}
+            />
+          </span>
+        </li>
+      {/each}
+    </ul>
+  {/if}
+</Section>
+
+<style>
+  .hp-backup {
+    transition: background-color var(--hp-dur-hover) ease;
+  }
+
+  .hp-backup:hover {
+    background: var(--hp-bg-2);
+  }
+</style>

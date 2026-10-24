@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#100f0d">
   <title>HytalePanel</title>
   <link rel="icon" type="image/x-icon" href="./images/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Sofia+Sans:wght@400;500;600;700&family=Unbounded:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Sofia+Sans:wght@400;500;600&family=Unbounded:wght@500;600&display=swap" rel="stylesheet">
 </head>
 <body data-lang="en">
   <script>
@@ -16,6 +17,7 @@
       var lang = localStorage.getItem('hytale-panel-lang');
       if (lang) {
         document.documentElement.setAttribute('data-lang', lang);
+        document.documentElement.lang = lang === 'br' ? 'pt-BR' : lang;
         document.body.setAttribute('data-lang', lang);
       }
     })();

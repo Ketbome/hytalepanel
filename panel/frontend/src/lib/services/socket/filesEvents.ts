@@ -1,6 +1,14 @@
 import type { Socket } from 'socket.io-client';
 import { get } from 'svelte/store';
-import { currentPath, fileList, isFilesLoading, setEditorContent, setEditorStatus } from '$lib/stores/files';
+import { _ } from 'svelte-i18n';
+import {
+  currentPath,
+  fileList,
+  filesError,
+  isFilesLoading,
+  setEditorContent,
+  setEditorStatus
+} from '$lib/stores/files';
 import { showToast } from '$lib/stores/ui';
 import type { FileListResult, FileOperationResult, FileReadResult, FileSaveResult } from '$lib/types';
 
@@ -8,47 +16,52 @@ export function registerFilesEvents(socket: Socket): void {
   socket.on('files:list-result', (result: FileListResult) => {
     isFilesLoading.set(false);
     if (result.success) {
+      filesError.set(null);
       currentPath.set(result.path);
       fileList.set(result.files);
     } else {
-      showToast(`Error: ${result.error}`, 'error');
+      // Shown inside the file list, not as a toast
+      filesError.set(result.error || get(_)('error'));
       fileList.set([]);
     }
   });
 
   socket.on('files:read-result', (result: FileReadResult) => {
+    const t = get(_);
     if (result.success && result.content !== undefined) {
       setEditorContent(result.content);
     } else if (result.binary) {
-      setEditorStatus('Cannot edit binary file', 'error');
+      setEditorStatus(t('cannotEditBinary'), 'error');
     } else {
-      setEditorStatus(`Error: ${result.error}`, 'error');
+      setEditorStatus(`${t('error')}: ${result.error}`, 'error');
     }
   });
 
   socket.on('files:save-result', (result: FileSaveResult) => {
+    const t = get(_);
     if (result.success) {
-      setEditorStatus(result.backup?.success ? 'Saved (backup created)' : 'Saved', 'saved');
-      showToast('File saved');
+      setEditorStatus(result.backup?.success ? t('savedWithBackup') : t('saved'), 'saved');
+      showToast(t('fileSaved'));
     } else {
-      setEditorStatus(`Error: ${result.error}`, 'error');
-      showToast('Save failed', 'error');
+      setEditorStatus(`${t('error')}: ${result.error}`, 'error');
+      showToast(t('saveFailed'), 'error');
     }
   });
 
   const refreshOps: Array<[string, string]> = [
-    ['files:mkdir-result', 'Folder created'],
-    ['files:delete-result', 'Deleted'],
-    ['files:rename-result', 'Renamed']
+    ['files:mkdir-result', 'folderCreated'],
+    ['files:delete-result', 'deleted'],
+    ['files:rename-result', 'renamed']
   ];
 
-  for (const [event, message] of refreshOps) {
+  for (const [event, messageKey] of refreshOps) {
     socket.on(event, (result: FileOperationResult) => {
+      const t = get(_);
       if (result.success) {
-        showToast(message);
+        showToast(t(messageKey));
         socket.emit('files:list', get(currentPath));
       } else {
-        showToast(`Error: ${result.error}`, 'error');
+        showToast(`${t('error')}: ${result.error}`, 'error');
       }
     });
   }

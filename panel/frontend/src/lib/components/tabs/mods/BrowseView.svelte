@@ -1,7 +1,10 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
 import Button from '$lib/components/ui/Button.svelte';
+import Icon from '$lib/components/ui/Icon.svelte';
+import InlineNotice from '$lib/components/ui/InlineNotice.svelte';
 import Input from '$lib/components/ui/Input.svelte';
+import Segmented from '$lib/components/ui/Segmented.svelte';
 import Select from '$lib/components/ui/Select.svelte';
 import Skeleton from '$lib/components/ui/Skeleton.svelte';
 import {
@@ -12,94 +15,131 @@ import {
   hasMore,
   isModsLoading,
   modtaleStatus,
+  searchError,
   searchQuery,
   searchResults
 } from '$lib/stores/mods';
 import BrowseModCard from './BrowseModCard.svelte';
 import { changePage, searchMods, switchProvider } from './modActions';
+
+const DOCS_URL = 'https://hytalepanel.ketbome.com/';
+
+const usable = $derived($modtaleStatus.valid || $curseforgeStatus.valid);
+const invalidProvider = $derived(
+  $modtaleStatus.configured && !$modtaleStatus.valid
+    ? 'Modtale'
+    : $curseforgeStatus.configured && !$curseforgeStatus.valid
+      ? 'CurseForge'
+      : null
+);
 </script>
 
-<!-- Provider Toggle -->
-<div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-panel-light border border-panel-border">
-  <span class="text-sm text-text-dim mr-2">{$_('providerLabel')}</span>
-  <button
-    type="button"
-    class="flex items-center gap-2 px-4 py-2 text-sm rounded-lg border transition-colors
-           {$currentProvider === 'modtale'
-      ? 'bg-info/15 border-info/50 text-info'
-      : 'bg-panel-bg border-panel-border text-text-muted hover:bg-panel-lighter'}
-           {!$modtaleStatus.configured || !$modtaleStatus.valid ? 'opacity-50' : ''}"
-    aria-pressed={$currentProvider === 'modtale'}
-    onclick={() => switchProvider('modtale')}
-    title={$modtaleStatus.valid ? 'Modtale API ready' : $modtaleStatus.configured ? 'API key invalid' : 'API key not configured'}
+{#if !usable}
+  {#if invalidProvider}
+    <InlineNotice kind="negative">
+      {$_('apiKeyInvalid', { values: { provider: invalidProvider } })}
+      {#snippet action()}
+        <Button variant="ghost" size="sm" href={DOCS_URL} external trailingIcon="external-link">{$_('docs')}</Button>
+      {/snippet}
+    </InlineNotice>
+  {:else}
+    <InlineNotice kind="info">
+      {$_('modSearchNeedsKey')}
+      {#snippet action()}
+        <Button variant="ghost" size="sm" href={DOCS_URL} external trailingIcon="external-link">{$_('docs')}</Button>
+      {/snippet}
+    </InlineNotice>
+  {/if}
+{:else}
+  <form
+    class="flex flex-wrap items-center gap-2"
+    onsubmit={(e) => {
+      e.preventDefault();
+      searchMods();
+    }}
   >
-    <span class="w-2 h-2 {$modtaleStatus.valid ? 'bg-success' : $modtaleStatus.configured ? 'bg-error' : 'bg-stone'}"></span>
-    Modtale
-  </button>
-  <button
-    type="button"
-    class="flex items-center gap-2 px-4 py-2 text-sm rounded-lg border transition-colors
-           {$currentProvider === 'curseforge'
-      ? 'bg-[#f16436]/15 border-[#f16436]/60 text-[#f16436]'
-      : 'bg-panel-bg border-panel-border text-text-muted hover:bg-panel-lighter'}
-           {!$curseforgeStatus.configured || !$curseforgeStatus.valid ? 'opacity-50' : ''}"
-    aria-pressed={$currentProvider === 'curseforge'}
-    onclick={() => switchProvider('curseforge')}
-    title={$curseforgeStatus.valid ? 'CurseForge API ready' : $curseforgeStatus.configured ? 'API key invalid' : 'API key not configured'}
-  >
-    <span class="w-2 h-2 {$curseforgeStatus.valid ? 'bg-success' : $curseforgeStatus.configured ? 'bg-error' : 'bg-stone'}"></span>
-    CurseForge
-  </button>
-</div>
-
-<!-- Search Bar -->
-<div class="flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg bg-panel-light border border-panel-border">
-  <div class="flex-1 min-w-[200px]">
     <Input
-      type="text"
-      class="!py-2 !text-sm"
+      type="search"
+      class="min-w-[160px] flex-1"
       placeholder={$_('searchForMods')}
       aria-label={$_('searchForMods')}
       bind:value={$searchQuery}
-      onkeydown={(e: KeyboardEvent) => e.key === 'Enter' && searchMods()}
-    />
-  </div>
-  {#if $currentProvider === 'modtale'}
-    <Select class="!w-auto !py-2 !text-sm" aria-label={$_('allTypes')} bind:value={$classificationFilter} onchange={() => searchMods()}>
-      <option value="">{$_('allTypes')}</option>
-      <option value="PLUGIN">{$_('typePlugin')}</option>
-      <option value="DATA">{$_('typeData')}</option>
-      <option value="ART">{$_('typeArt')}</option>
-      <option value="SAVE">{$_('typeSave')}</option>
-      <option value="MODPACK">{$_('typeModpack')}</option>
-    </Select>
-  {/if}
-  <Button size="small" variant="primary" onclick={() => searchMods()}>🔍 {$_('search')}</Button>
-</div>
+    >
+      {#snippet leading()}<Icon name="search" />{/snippet}
+    </Input>
+    {#if $currentProvider === 'modtale'}
+      <Select class="w-[132px]" aria-label={$_('modType')} bind:value={$classificationFilter} onchange={() => searchMods()}>
+        <option value="">{$_('allTypes')}</option>
+        <option value="PLUGIN">{$_('typePlugin')}</option>
+        <option value="DATA">{$_('typeData')}</option>
+        <option value="ART">{$_('typeArt')}</option>
+        <option value="SAVE">{$_('typeSave')}</option>
+        <option value="MODPACK">{$_('typeModpack')}</option>
+      </Select>
+    {/if}
+    {#if $modtaleStatus.valid && $curseforgeStatus.valid}
+      <Segmented
+        label={$_('providerLabel')}
+        value={$currentProvider}
+        onchange={switchProvider}
+        options={[
+          { value: 'modtale', label: 'Modtale' },
+          { value: 'curseforge', label: 'CurseForge' }
+        ]}
+      />
+    {/if}
+    <Button variant="secondary" type="submit">{$_('search')}</Button>
+  </form>
 
-<!-- Results -->
-<div class="space-y-2">
-  {#if $isModsLoading}
-    {#each Array(4) as _item}
-      <Skeleton type="card" />
-    {/each}
-  {:else if $searchResults.length === 0}
-    <div class="px-4 py-8 text-center rounded-xl bg-panel-light border border-panel-border">
-      <div class="text-3xl mb-2">🔍</div>
-      <div class="text-text-dim">{$_('noModsFound')}</div>
+  {#if $searchError}
+    <InlineNotice kind="negative" title={$_('modSearchError')} class="mt-3">
+      <span class="text-fg-3">{$searchError}</span>
+      {#snippet action()}
+        <Button variant="ghost" size="sm" onclick={() => searchMods($currentPage)}>{$_('retry')}</Button>
+      {/snippet}
+    </InlineNotice>
+  {/if}
+
+  <ul class="hp-list -mx-2 mt-3">
+    {#if $isModsLoading}
+      {#each Array(4) as _item}
+        <li class="flex h-16 items-center gap-3 px-2" aria-hidden="true">
+          <Skeleton width="40px" height="40px" />
+          <span class="flex flex-1 flex-col gap-2"><Skeleton width="45%" /><Skeleton width="25%" height="8px" /></span>
+        </li>
+      {/each}
+    {:else if $searchResults.length === 0 && !$searchError}
+      <li class="px-2 py-6 text-sm text-fg-2">{$_('noModsFound')}</li>
+    {:else}
+      {#each $searchResults as mod (mod.id)}
+        <BrowseModCard {mod} />
+      {/each}
+    {/if}
+  </ul>
+
+  {#if $searchResults.length > 0}
+    <div class="mt-2 flex items-center justify-end gap-1">
+      <span class="mr-2 text-[13px] text-fg-2">{$_('pageN', { values: { page: $currentPage } })}</span>
+      <Button
+        variant="ghost"
+        size="sm"
+        iconOnly
+        icon="chevron-left"
+        aria-label={$_('prev')}
+        title={$_('prev')}
+        onclick={() => changePage(-1)}
+        disabled={$currentPage <= 1 || $isModsLoading}
+      />
+      <Button
+        variant="ghost"
+        size="sm"
+        iconOnly
+        icon="chevron-right"
+        aria-label={$_('next')}
+        title={$_('next')}
+        onclick={() => changePage(1)}
+        disabled={!$hasMore || $isModsLoading}
+      />
     </div>
-  {:else}
-    {#each $searchResults as mod}
-      <BrowseModCard {mod} />
-    {/each}
   {/if}
-</div>
-
-<!-- Pagination -->
-{#if $searchResults.length > 0}
-  <div class="flex items-center justify-center gap-4 px-4 py-3 rounded-lg bg-panel-light border border-panel-border">
-    <Button size="small" onclick={() => changePage(-1)} disabled={$currentPage <= 1}>◀ {$_('prev')}</Button>
-    <span class="text-sm text-text-muted">{$_('page')} {$currentPage}</span>
-    <Button size="small" onclick={() => changePage(1)} disabled={!$hasMore}>{$_('next')} ▶</Button>
-  </div>
 {/if}

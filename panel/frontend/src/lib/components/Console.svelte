@@ -1,8 +1,13 @@
 <script lang="ts">
 import { tick } from 'svelte';
 import { _ } from 'svelte-i18n';
+import BlockLoader from '$lib/components/ui/BlockLoader.svelte';
 import Button from '$lib/components/ui/Button.svelte';
+import Icon from '$lib/components/ui/Icon.svelte';
 import Input from '$lib/components/ui/Input.svelte';
+import Menu, { type MenuEntry } from '$lib/components/ui/Menu.svelte';
+import Segmented from '$lib/components/ui/Segmented.svelte';
+import { startServer } from '$lib/services/lifecycle';
 import { emit } from '$lib/services/socketClient';
 import {
   addLog,
@@ -14,7 +19,11 @@ import {
   loadedCount,
   logs
 } from '$lib/stores/console';
-import { serverStatus } from '$lib/stores/server';
+import { pendingAction, serverStatus } from '$lib/stores/server';
+import { sidebarHidden, toolsDrawerOpen } from '$lib/stores/ui';
+import { workspaceStatus } from '$lib/utils/status';
+
+const { toolsButton = false }: { toolsButton?: boolean } = $props();
 
 // Command definitions for autocomplete
 const COMMANDS = [
@@ -145,18 +154,47 @@ const COMMANDS = [
   { cmd: '/plugin reload', desc: 'Reload plugin' }
 ];
 
+type Filter = 'all' | 'info' | 'warn' | 'error' | 'cmd';
+
 let consoleEl: HTMLDivElement | undefined = $state();
 let cmdInput = $state('');
 let lastCmdTime = 0;
 let suggestions = $state<typeof COMMANDS>([]);
 let selectedIndex = $state(-1);
 let showSuggestions = $state(false);
-let filterType = $state<'all' | 'info' | 'warn' | 'error' | 'cmd'>('all');
+let filterType = $state<Filter>('all');
 
-const filteredLogs = $derived(() => {
-  if (filterType === 'all') return $logs;
-  return $logs.filter((log) => log.type === filterType);
+const status = $derived(workspaceStatus($serverStatus, $pendingAction));
+const filteredLogs = $derived(filterType === 'all' ? $logs : $logs.filter((log) => log.type === filterType));
+const errorCount = $derived($logs.reduce((n, log) => (log.type === 'error' ? n + 1 : n), 0));
+
+const filterLabels = $derived<Record<Filter, string>>({
+  all: $_('filterAll'),
+  info: $_('filterInfo'),
+  warn: $_('filterWarn'),
+  error: $_('filterError'),
+  cmd: $_('filterCmd')
 });
+const filterValues: Filter[] = ['all', 'info', 'warn', 'error', 'cmd'];
+const filterOptions = $derived(
+  filterValues.map((value) => ({
+    value,
+    label: filterLabels[value],
+    count: value === 'error' && errorCount > 0 ? errorCount : undefined
+  }))
+);
+const filterMenu = $derived<MenuEntry[]>(
+  filterValues.map((value) => ({
+    label: filterLabels[value],
+    meta: value === 'error' && errorCount > 0 ? String(errorCount) : undefined,
+    checked: filterType === value,
+    onselect: () => (filterType = value)
+  }))
+);
+
+function shortTime(timestamp: string): string {
+  return timestamp.match(/\d{2}:\d{2}:\d{2}/)?.[0] ?? timestamp;
+}
 
 function getSuggestions(input: string): typeof COMMANDS {
   if (!input || input.length < 1) return [];
@@ -194,8 +232,9 @@ function handleScroll(): void {
   }
 }
 
-function handleClear(): void {
-  clearLogs();
+function jumpToLatest(): void {
+  if (consoleEl) consoleEl.scrollTop = consoleEl.scrollHeight;
+  autoScroll.set(true);
 }
 
 function sendCommand(): void {
@@ -228,6 +267,8 @@ function handleKeydown(e: KeyboardEvent): void {
         selectSuggestion(suggestions[0]);
       }
     } else if (e.key === 'Escape') {
+      // Autocomplete closes first; the key goes no further
+      e.stopPropagation();
       showSuggestions = false;
       selectedIndex = -1;
     } else if (e.key === 'Enter' && selectedIndex < 0) {
@@ -263,105 +304,229 @@ $effect(() => {
 });
 </script>
 
-<div class="mc-panel h-full flex flex-col">
-  <div class="mc-panel-header">
-    <span>{$_('console')}</span>
-    <div class="flex items-center gap-1 ml-auto" role="group" aria-label="Log filters">
-      {#each [['all', 'All', 'All logs'], ['info', 'Info', 'Info logs'], ['warn', 'Warn', 'Warning logs'], ['error', 'Error', 'Error logs'], ['cmd', 'Cmd', 'Command logs']] as [type, label, title]}
-        <button
-          type="button"
-          class="px-2 py-1 text-xs font-medium rounded-md border transition-colors"
-          class:bg-transparent={filterType !== type}
-          class:border-transparent={filterType !== type}
-          class:text-text-dim={filterType !== type}
-          class:bg-panel-lighter={filterType === type}
-          class:border-panel-border-light={filterType === type}
-          class:text-hytale-gold={filterType === type}
-          aria-pressed={filterType === type}
-          onclick={() => (filterType = type as typeof filterType)}
-          {title}
+<div class="flex h-full min-h-0 flex-col">
+  <div class="flex h-11 shrink-0 items-center gap-3 border-b border-line px-3">
+    <h2 class="text-sm font-semibold text-fg-1">{$_('console')}</h2>
+    <Segmented
+      class="max-sm:hidden"
+      size="sm"
+      label={$_('logFilter')}
+      value={filterType}
+      options={filterOptions}
+      onchange={(v) => (filterType = v)}
+    />
+    <Menu items={filterMenu} label={$_('logFilter')} class="sm:hidden" minWidth="160px">
+      {#snippet trigger(props)}
+        <Button variant="ghost" size="sm" icon="list-filter" trailingIcon="chevron-down" {...props}>
+          {filterLabels[filterType]}
+        </Button>
+      {/snippet}
+    </Menu>
+    <div class="ml-auto flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        iconOnly
+        icon="eraser"
+        animateIcon
+        aria-label={$_('clearConsole')}
+        title={$_('clearConsole')}
+        onclick={clearLogs}
+      />
+      {#if toolsButton}
+        <Button
+          variant="ghost"
+          size="sm"
+          iconOnly
+          icon="panel-left"
+          aria-label={$_('layoutSplit')}
+          title={$_('layoutSplit')}
+          onclick={() => {
+            toolsDrawerOpen.set(false);
+            sidebarHidden.set(false);
+          }}
+        />
+        <Button
+          variant="secondary"
+          size="sm"
+          icon="wrench"
+          id="tools-drawer-trigger"
+          aria-expanded={$toolsDrawerOpen}
+          onclick={() => toolsDrawerOpen.update((v) => !v)}
         >
-          {label}
-        </button>
+          {$_('tools')}
+        </Button>
+      {/if}
+    </div>
+  </div>
+
+  <div class="relative min-h-0 flex-1 bg-sunken">
+    <!-- Focusable so the log can be scrolled with the keyboard -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+    <div
+      class="hp-log h-full overflow-y-auto overflow-x-hidden px-4 py-3 font-mono text-[13px] leading-5"
+      bind:this={consoleEl}
+      onscroll={handleScroll}
+      role="log"
+      aria-live="off"
+      aria-label={$_('consoleOutput')}
+      tabindex="0"
+    >
+      {#if $isLoadingMore}
+        <div class="flex h-7 items-center gap-2 font-sans text-[13px] text-fg-3">
+          <BlockLoader />
+          {$_('loadingEarlierOutput')}
+        </div>
+      {/if}
+
+      {#if $logs.length === 0}
+        <div class="flex h-full flex-col items-center justify-center gap-3 px-4 text-center font-sans">
+          {#if status === 'online' || status === 'starting'}
+            <p class="flex items-center gap-2 text-sm text-fg-3"><BlockLoader /> {$_('waitingForOutput')}</p>
+          {:else}
+            <p class="text-sm text-fg-2">{$_('consoleOffline')}</p>
+            {#if status === 'offline'}
+              <Button variant="secondary" icon="play" onclick={startServer}>{$_('start')}</Button>
+            {/if}
+          {/if}
+        </div>
+      {:else if filteredLogs.length === 0}
+        <p class="py-2 font-sans text-[13px] text-fg-3">{$_('noLinesForFilter', { values: { filter: filterLabels[filterType] } })}</p>
+      {/if}
+
+      {#each filteredLogs as log}
+        <div
+          class="hp-line"
+          class:text-fg-1={log.type === '' || log.type === 'auth'}
+          class:text-fg-2={log.type === 'info'}
+          class:text-warning={log.type === 'warn'}
+          class:hp-error={log.type === 'error'}
+          class:text-accent={log.type === 'cmd'}
+        >
+          <span class="text-fg-3 select-none" title={log.timestamp}>{shortTime(log.timestamp)}</span>
+          <span class="min-w-0">
+            {#if log.type === 'warn'}<Icon name="triangle-alert" size={12} class="mr-1.5 -mt-0.5 align-middle" />{/if}
+            {#if log.parts && log.parts.length > 0}
+              {#each log.parts as part}
+                {#if part.type === 'url'}
+                  <a href={part.url} target="_blank" rel="noopener noreferrer" class="hp-log-url">{part.value}</a>
+                {:else if part.type === 'code'}
+                  <span class="ml-[1ch] font-medium text-accent">{part.value}</span>
+                {:else}
+                  {part.value}
+                {/if}
+              {/each}
+            {:else}
+              {log.text}
+            {/if}
+          </span>
+        </div>
       {/each}
     </div>
-    <Button size="small" variant="danger" class="!px-2 !py-1 ml-2" title={$_('clearConsole')} aria-label={$_('clearConsole')} onclick={handleClear}>
-      ✕
-    </Button>
+
+    {#if !$autoScroll && $logs.length > 0}
+      <div class="absolute right-3 bottom-3">
+        <Button variant="secondary" size="sm" icon="arrow-down-to-line" onclick={jumpToLatest}>{$_('jumpToLatest')}</Button>
+      </div>
+    {/if}
+
+    {#if errorCount > 0}
+      <span class="hp-sr-only" aria-live="polite">{$_('errorCount', { values: { count: errorCount } })}</span>
+    {/if}
   </div>
-  
-  <!-- Console output -->
-  <div 
-    class="flex-1 overflow-y-auto overflow-x-hidden p-4 font-code text-sm leading-relaxed bg-[#0a0805]"
-    bind:this={consoleEl} 
-    onscroll={handleScroll}
-  >
-    {#each filteredLogs() as log}
-      <div 
-        class="py-0.5 border-b border-panel-bg/30 break-all"
-        class:text-text-muted={log.type === 'info'}
-        class:text-warning={log.type === 'warn'}
-        class:text-error={log.type === 'error'}
-        class:text-grass-light={log.type === 'cmd'}
+
+  <div class="flex shrink-0 items-center gap-2 border-t border-line px-3 py-2.5">
+    <div class="relative min-w-0 flex-1">
+      <Input
+        type="text"
+        mono
+        class="w-full"
+        placeholder={$serverStatus.running ? $_('enterCommand') : $_('serverOfflinePlaceholder')}
+        autocomplete="off"
+        spellcheck={false}
+        aria-label={$_('command')}
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={showSuggestions && suggestions.length > 0}
+        aria-controls="cmd-suggestions"
+        aria-activedescendant={selectedIndex >= 0 ? `cmd-opt-${selectedIndex}` : undefined}
+        bind:value={cmdInput}
+        oninput={handleInput}
+        onkeydown={handleKeydown}
+        onblur={handleBlur}
+        onfocus={handleFocus}
+        disabled={!$serverStatus.running}
       >
-        <span class="text-text-dim mr-2">{log.timestamp}</span>
-        {#if log.parts && log.parts.length > 0}
-          {#each log.parts as part}
-            {#if part.type === 'url'}
-              <a 
-                href={part.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="text-yellow-400 hover:text-yellow-300 underline cursor-pointer"
-              >{part.value}</a>
-            {:else if part.type === 'code'}
-              <span class="text-yellow-400 font-bold">{part.value}</span>
-            {:else}
-              {part.value}
-            {/if}
-          {/each}
-        {:else}
-          {log.text}
-        {/if}
-      </div>
-    {/each}
-  </div>
-  
-  <!-- Command input -->
-  <div class="p-3 border-t-2 border-panel-border bg-panel-light">
-    <div class="flex gap-3">
-      <div class="flex-1 relative">
-        <Input
-          type="text"
-          class="!py-2"
-          placeholder={$serverStatus.running ? $_('enterCommand') : $_('offline')}
-          autocomplete="off"
-          aria-label={$_('enterCommand')}
-          bind:value={cmdInput}
-          oninput={handleInput}
-          onkeydown={handleKeydown}
-          onblur={handleBlur}
-          onfocus={handleFocus}
-          disabled={!$serverStatus.running}
-        />
-        {#if showSuggestions && suggestions.length > 0}
-          <div class="absolute bottom-full left-0 right-0 mc-panel !border-b-0 max-h-72 overflow-y-auto z-50">
-            {#each suggestions as suggestion, i}
-              <button
-                class="w-full flex justify-between items-center px-3 py-2 font-mono text-sm border-b border-panel-bg hover:bg-panel-lighter transition-colors"
-                class:bg-panel-lighter={i === selectedIndex}
-                onmousedown={() => selectSuggestion(suggestion)}
+        {#snippet leading()}<span class="font-mono text-[13px] text-accent">›</span>{/snippet}
+      </Input>
+      {#if showSuggestions && suggestions.length > 0}
+        <ul
+          id="cmd-suggestions"
+          role="listbox"
+          aria-label={$_('commandSuggestions')}
+          class="absolute right-0 bottom-full left-0 z-30 mb-1 flex flex-col rounded-md border border-line-2 bg-overlay p-1 shadow-menu"
+        >
+          {#each suggestions as suggestion, i}
+            <li
+              id="cmd-opt-{i}"
+              role="option"
+              aria-selected={i === selectedIndex}
+              class="flex h-8 cursor-pointer items-center justify-between gap-4 rounded-sm px-2"
+              class:bg-raised={i === selectedIndex}
+              onmousedown={() => selectSuggestion(suggestion)}
+            >
+              <span class="truncate font-mono text-[13px] text-fg-1"
+                ><span class="text-accent">{suggestion.cmd.slice(0, cmdInput.length)}</span>{suggestion.cmd.slice(cmdInput.length)}</span
               >
-                <span class="text-grass-light font-bold">{suggestion.cmd}</span>
-                <span class="text-text-dim text-xs ml-4">{suggestion.desc}</span>
-              </button>
-            {/each}
-          </div>
-        {/if}
-      </div>
-      <Button variant="primary" onclick={sendCommand} disabled={!$serverStatus.running}>
-        {$_('send')}
-      </Button>
+              <span class="truncate text-xs text-fg-3 max-sm:hidden">{suggestion.desc}</span>
+            </li>
+          {/each}
+        </ul>
+      {/if}
     </div>
+    <Button variant="secondary" onclick={sendCommand} disabled={!$serverStatus.running} class="max-sm:hidden">
+      {$_('send')}
+    </Button>
+    <Button
+      variant="secondary"
+      iconOnly
+      icon="send-horizontal"
+      aria-label={$_('send')}
+      onclick={sendCommand}
+      disabled={!$serverStatus.running}
+      class="sm:hidden"
+    />
   </div>
 </div>
+
+<style>
+  .hp-log ::selection {
+    background: var(--hp-accent-soft);
+  }
+
+  .hp-log:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--hp-accent);
+  }
+
+  .hp-line {
+    display: grid;
+    grid-template-columns: 8ch minmax(0, 1fr);
+    column-gap: 12px;
+    overflow-wrap: anywhere;
+  }
+
+  .hp-error {
+    color: var(--hp-negative);
+    background: var(--hp-negative-bg);
+    margin-inline: -16px;
+    padding-inline: 16px;
+  }
+
+  .hp-log-url {
+    color: var(--hp-fg-1);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+</style>

@@ -1,201 +1,138 @@
 @import "tailwindcss";
 
-/* ===== DESIGN TOKENS ===== */
-@theme {
-  /* Fonts */
-  --font-display: "Unbounded", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Sofia Sans", ui-sans-serif, system-ui, sans-serif;
-  /* Legacy alias: pixel-era markup uses `font-mono` for UI text. Kept as the UI face until usages are migrated. */
-  --font-mono: "Sofia Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-code: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+/* HytalePanel shared tokens v2. Change only in both files at once. */
+:root {
+  /* Surfaces: elevation by lightness, warm-neutral (hue ~70, very low chroma) */
+  --hp-bg-sunken: #0b0a09;  /* console well, code blocks, input fill */
+  --hp-bg-0:      #100f0d;  /* app ground */
+  --hp-bg-1:      #181614;  /* surface: panes, sections, table body */
+  --hp-bg-2:      #211f1c;  /* raised: hover rows, secondary buttons, inline code */
+  --hp-bg-3:      #2a2724;  /* overlay: menus, popovers, toasts, selected row */
 
-  /* Brand */
-  --color-hytale-orange: #f0a13c;
-  --color-hytale-gold: #dfae3f;
-  --color-hytale-cream: #f4ecdd;
-
-  /* Surfaces */
-  --color-panel-bg: #171410;
-  --color-panel-light: #1f1b15;
-  --color-panel-lighter: #292319;
-  --color-panel-border: #2e2820;
-  --color-panel-border-light: #40382b;
+  /* Lines */
+  --hp-line-1:       #2b2825; /* structural: pane edges, row rules, tab rail */
+  --hp-line-2:       #3b3732; /* secondary button border, menu edge */
+  --hp-line-control: #6b645b; /* form-field / checkbox / switch outline: 3.09:1 on bg-1 (WCAG 1.4.11) */
 
   /* Text */
-  --color-text: #f0e9db;
-  --color-text-muted: #b3a78f;
-  --color-text-dim: #8a7f6b;
+  --hp-fg-1: #f2eee8; /* primary   15.6:1 on bg-1 */
+  --hp-fg-2: #b8b0a5; /* secondary  8.4:1 on bg-1 */
+  --hp-fg-3: #958d82; /* meta / placeholder  5.5:1 on bg-1, 4.5:1 on bg-3 */
 
-  /* Semantic */
-  --color-success: #5cb356;
-  --color-warning: #dfae3f;
-  --color-error: #e35d5d;
-  --color-info: #5da5d8;
+  /* Accent: Hytale orange (the only brand hue) */
+  --hp-accent:        #f0a13c; /* fill + accent text (8.5:1 on bg-1) */
+  --hp-accent-hover:  #f5b25c;
+  --hp-accent-press:  #d98b2b;
+  --hp-accent-ink:    #1c1206; /* text on accent: 8.7:1 */
+  --hp-accent-soft:   rgb(240 161 60 / 0.12); /* selection, matched-prefix bg */
 
-  /* Legacy palette names (pixel era) mapped to the modern ramp.
-     grass = green / stone = neutral / dirt & wood = warm neutrals. */
-  --color-grass-light: #82d47c;
-  --color-grass: #5cb356;
-  --color-grass-dark: #3f8a3c;
-  --color-stone-light: #8d857a;
-  --color-stone: #6b645a;
-  --color-stone-dark: #4a453e;
-  --color-dirt-light: #a08865;
-  --color-dirt: #7d6a4e;
-  --color-dirt-dark: #57493a;
-  --color-wood-light: #c09a68;
-  --color-wood: #97794f;
-  --color-wood-dark: #6d5638;
+  /* Status (text colour / tinted background) */
+  --hp-positive:    #5cc27a;  --hp-positive-bg: #14241a;  /* online, success, enabled */
+  --hp-negative:    #f2736a;  --hp-negative-bg: #2a1715;  /* error, crashed, destructive */
+  --hp-negative-fill: #c9443b;                             /* destructive confirm button, white text 4.8:1 */
+  --hp-warning:     #e6c34f;  --hp-warning-bg:  #29230f;  /* starting/stopping, caution, update available */
+  --hp-info:        #74aee3;  --hp-info-bg:     #14202b;  /* neutral notices only, never decoration */
 
-  /* Angular, blocky corners — Hytale is a voxel game, keep edges near-square */
-  --radius-xs: 1px;
-  --radius-sm: 2px;
-  --radius-md: 2px;
-  --radius-lg: 3px;
-  --radius-xl: 4px;
-  --radius-2xl: 6px;
+  /* Radius: blocky */
+  --hp-radius-0: 0;    /* status squares, progress cells, loader blocks */
+  --hp-radius-1: 2px;  /* tags, checkbox, kbd, inline code, switch */
+  --hp-radius-2: 3px;  /* buttons, inputs, selects, segmented controls */
+  --hp-radius-3: 4px;  /* sections, menus, toasts, code blocks, callouts */
+  --hp-radius-4: 6px;  /* modals: the largest radius in the system */
 
-  /* Shadows (legacy names, modern values) */
-  --shadow-mc-btn: 0 1px 2px rgb(0 0 0 / 0.35);
-  --shadow-mc-btn-pressed: inset 0 1px 3px rgb(0 0 0 / 0.35);
-  --shadow-mc-panel: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 8px 24px rgb(0 0 0 / 0.35);
-  --shadow-pixel: 0 8px 24px rgb(0 0 0 / 0.4);
-  --shadow-pixel-sm: 0 2px 8px rgb(0 0 0 / 0.35);
+  /* Type */
+  --hp-font-display: "Unbounded", ui-sans-serif, system-ui, sans-serif;
+  --hp-font-ui:      "Sofia Sans", ui-sans-serif, system-ui, sans-serif;
+  --hp-font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
   /* Motion */
-  --animate-spin: spin 0.8s linear infinite;
-  --animate-fade-in: fade-in 0.2s ease-out;
-  --animate-slide-up: slide-up 0.3s ease-out;
-  --animate-slide-down: slide-down 0.3s ease-out;
-  --animate-bounce-in: bounce-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  --animate-pulse: pulse 2s ease-in-out infinite;
+  --hp-ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --hp-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --hp-dur-press: 120ms;
+  --hp-dur-hover: 150ms;
+  --hp-dur-ui:    180ms;  /* menus, popovers, tab indicator, switch, disclosure */
+  --hp-dur-modal: 220ms;
+  --hp-dur-exit:  140ms;
+  --hp-dur-toast: 260ms;
 
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-  @keyframes slide-up {
-    from {
-      transform: translateY(8px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-  @keyframes slide-down {
-    from {
-      transform: translateY(-8px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-  @keyframes bounce-in {
-    0% {
-      transform: scale(0.96);
-      opacity: 0;
-    }
-    50% {
-      transform: scale(1.01);
-    }
-    100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-  }
-  @keyframes pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.6;
-    }
-  }
+  /* Shadow: only on things that float */
+  --hp-shadow-menu:    0 6px 16px rgb(0 0 0 / 0.45);
+  --hp-shadow-overlay: 0 16px 40px rgb(0 0 0 / 0.55);
+
+  /* Focus */
+  --hp-focus: 0 0 0 2px var(--hp-bg-0), 0 0 0 4px var(--hp-accent); /* used where outline is clipped */
 }
 
-/* ===== BASE LAYER ===== */
-@layer base {
-  /* Aliases for component <style> blocks (legacy var names, previously undefined) */
-  :root {
-    --accent: var(--color-hytale-orange);
-    --accent-dark: #c87f22;
-    --hytale-orange: var(--color-hytale-orange);
-    --warning: var(--color-warning);
-    --success: var(--color-success);
-    --error: var(--color-error);
-    --text: var(--color-text);
-    --text-dim: var(--color-text-dim);
-    --bg: var(--color-panel-bg);
-    --bg-dark: #100e0b;
-    --border: var(--color-panel-border);
-    --mc-bg: var(--color-panel-light);
-    --mc-bg-dark: var(--color-panel-bg);
-    --mc-darker: #100e0b;
-    --mc-border: var(--color-panel-border);
-    --mc-border-light: var(--color-panel-border-light);
-    --mc-text: var(--color-text);
-    --mc-text-secondary: var(--color-text-muted);
-    --mc-text-muted: var(--color-text-dim);
-    --mc-red: var(--color-error);
-    --mc-red-dark: #a33c3c;
-    --mc-green: var(--color-success);
-    --mc-green-dark: #3f8a3c;
-  }
+/* Panel-only token: text on the filled destructive button (4.8:1 on negative-fill) */
+:root {
+  --hp-fg-on-fill: #fff;
+}
 
+/* Only the tokens below exist as Tailwind utilities: no default palette, radii, shadows or animations */
+@theme {
+  --color-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --animate-*: initial;
+  --font-*: initial;
+  --breakpoint-ws: 68.75rem; /* 1100px: two-column server workspace */
+}
+
+@theme inline {
+  --font-display: var(--hp-font-display);
+  --font-sans: var(--hp-font-ui);
+  --font-mono: var(--hp-font-mono);
+  --color-sunken: var(--hp-bg-sunken);
+  --color-ground: var(--hp-bg-0);
+  --color-surface: var(--hp-bg-1);
+  --color-raised: var(--hp-bg-2);
+  --color-overlay: var(--hp-bg-3);
+  --color-line: var(--hp-line-1);
+  --color-line-2: var(--hp-line-2);
+  --color-line-control: var(--hp-line-control);
+  --color-fg-1: var(--hp-fg-1);
+  --color-fg-2: var(--hp-fg-2);
+  --color-fg-3: var(--hp-fg-3);
+  --color-accent: var(--hp-accent);
+  --color-accent-hover: var(--hp-accent-hover);
+  --color-accent-press: var(--hp-accent-press);
+  --color-accent-ink: var(--hp-accent-ink);
+  --color-accent-soft: var(--hp-accent-soft);
+  --color-positive: var(--hp-positive);   --color-positive-bg: var(--hp-positive-bg);
+  --color-negative: var(--hp-negative);   --color-negative-bg: var(--hp-negative-bg);
+  --color-negative-fill: var(--hp-negative-fill);
+  --color-warning: var(--hp-warning);     --color-warning-bg: var(--hp-warning-bg);
+  --color-info: var(--hp-info);           --color-info-bg: var(--hp-info-bg);
+  --radius-xs: var(--hp-radius-1);  --radius-sm: var(--hp-radius-2);  --radius-md: var(--hp-radius-3);  --radius-lg: var(--hp-radius-4);
+  --shadow-menu: var(--hp-shadow-menu);
+  --shadow-overlay: var(--hp-shadow-overlay);
+}
+
+@layer base {
   html {
-    font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    background-color: #0e0c09;
-    /* Subtle 24px voxel grid under a warm glow */
-    background-image:
-      radial-gradient(ellipse 80% 50% at 50% -10%, rgb(240 161 60 / 0.06), transparent),
-      repeating-linear-gradient(0deg, transparent 0 23px, rgb(240 233 219 / 0.015) 23px 24px),
-      repeating-linear-gradient(90deg, transparent 0 23px, rgb(240 233 219 / 0.015) 23px 24px),
-      linear-gradient(180deg, #121009 0%, #0e0c09 100%);
-    background-attachment: fixed;
-    color: var(--color-text);
-    min-height: 100vh;
+    background: var(--hp-bg-0);
+    color: var(--hp-fg-1);
+    font: 400 14px/20px var(--hp-font-ui);
+    color-scheme: dark;
+    font-feature-settings: "kern";
+    min-height: 100dvh;
   }
 
-  /* Focus states */
-  *:focus-visible {
-    outline: 2px solid var(--color-hytale-orange);
+  :focus-visible {
+    outline: 2px solid var(--hp-accent);
     outline-offset: 2px;
   }
 
-  /* Reduced motion */
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
+  ::selection {
+    background: var(--hp-accent-soft);
+    color: var(--hp-fg-1);
   }
 
-  /* Scrollbar styling */
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -206,309 +143,175 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: var(--color-panel-border-light);
+    background: var(--hp-line-2);
     border: 2px solid transparent;
     background-clip: padding-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-stone);
+    background: var(--hp-line-control);
     background-clip: padding-box;
   }
-
-  /* Selection */
-  ::selection {
-    background: var(--color-hytale-orange);
-    color: #1d1508;
-  }
 }
 
-/* ===== COMPONENT LAYER ===== */
 @layer components {
-  /* ===== BUTTON ===== */
-  .mc-btn {
-    @apply relative inline-flex items-center justify-center gap-2;
-    @apply px-4 py-2.5 text-sm font-semibold;
-    @apply rounded-lg border cursor-pointer select-none;
-    @apply transition-colors duration-150;
-    background: var(--color-panel-light);
-    border-color: var(--color-panel-border-light);
-    color: var(--color-text);
-    box-shadow: var(--shadow-mc-btn);
+  /* Status blink: starting / stopping square. The only infinite loop besides the block loader */
+  .hp-status-blink {
+    animation: hp-blink 1.2s steps(2, jump-none) infinite;
   }
 
-  .mc-btn:hover:not(:disabled) {
-    background: var(--color-panel-lighter);
-    border-color: var(--color-stone);
+  /* Block loader: shown after 150ms so fast responses never flash it */
+  .hp-block-loader {
+    animation: hp-appear 1ms 150ms both;
   }
 
-  .mc-btn:active:not(:disabled) {
-    box-shadow: var(--shadow-mc-btn-pressed);
-    transform: translateY(1px);
+  .hp-block-loader > span {
+    background: var(--hp-fg-3);
+    animation: hp-block 900ms step-end infinite;
   }
 
-  .mc-btn:disabled {
-    @apply opacity-50 cursor-not-allowed;
+  .hp-block-loader > span:nth-child(2) {
+    animation-delay: 300ms;
   }
 
-  /* Primary - accent */
-  .mc-btn-primary {
-    background: linear-gradient(180deg, #f5ad4e 0%, #ec9c30 100%);
-    border-color: #c87f22;
-    color: #241708;
+  .hp-block-loader > span:nth-child(3) {
+    animation-delay: 600ms;
   }
 
-  .mc-btn-primary:hover:not(:disabled) {
-    background: linear-gradient(180deg, #f8b75f 0%, #f0a13c 100%);
-    border-color: #dd9330;
+  /* Delayed text, e.g. "Loading…" under a full-screen loader */
+  .hp-appear-late {
+    animation: hp-appear 1ms 400ms both;
   }
 
-  /* Danger */
-  .mc-btn-danger {
-    background: color-mix(in srgb, var(--color-error) 16%, var(--color-panel-light));
-    border-color: color-mix(in srgb, var(--color-error) 45%, transparent);
-    color: #f4b8b8;
+  /* Disclosure: chevron rotates, content opens by grid rows (inner element needs overflow: hidden) */
+  .hp-chevron {
+    transition: transform var(--hp-dur-ui) var(--hp-ease-in-out);
   }
 
-  .mc-btn-danger:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--color-error) 28%, var(--color-panel-light));
-    border-color: var(--color-error);
-    color: #ffd0d0;
+  .hp-chevron.open {
+    transform: rotate(90deg);
   }
 
-  /* Warning */
-  .mc-btn-warning {
-    background: color-mix(in srgb, var(--color-warning) 16%, var(--color-panel-light));
-    border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
-    color: #ecd9a3;
+  .hp-disclosure {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition:
+      grid-template-rows var(--hp-dur-ui) var(--hp-ease-in-out),
+      visibility 0s linear var(--hp-dur-ui);
   }
 
-  .mc-btn-warning:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--color-warning) 28%, var(--color-panel-light));
-    border-color: var(--color-warning);
-    color: #f7e7b8;
+  .hp-disclosure.open {
+    grid-template-rows: 1fr;
+    visibility: visible;
+    transition:
+      grid-template-rows var(--hp-dur-ui) var(--hp-ease-in-out),
+      visibility 0s;
   }
 
-  /* Wood: legacy secondary variant */
-  .mc-btn-wood {
-    background: color-mix(in srgb, var(--color-wood) 22%, var(--color-panel-light));
-    border-color: color-mix(in srgb, var(--color-wood-light) 40%, transparent);
-    color: #e7d3b4;
+  /* Lists and tables: 1px rules between rows, none after the last */
+  .hp-list > li + li {
+    border-top: 1px solid var(--hp-line-1);
   }
 
-  .mc-btn-wood:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--color-wood) 34%, var(--color-panel-light));
-    border-color: var(--color-wood-light);
+  /* Label above a field, 6px gap */
+  .hp-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
-  /* Small button */
-  .mc-btn-sm {
-    @apply px-3 py-1.5 text-xs rounded-md;
-  }
-
-  /* ===== PANEL/CARD ===== */
-  .mc-panel {
-    @apply relative overflow-hidden rounded-xl border;
-    background: var(--color-panel-bg);
-    border-color: var(--color-panel-border);
-    box-shadow: var(--shadow-mc-panel);
-  }
-
-  .mc-panel-header {
-    @apply px-5 py-3.5;
-    @apply flex items-center justify-between gap-4;
-    font-family: var(--font-display);
-    font-size: 0.75rem;
+  .hp-field-group > label {
+    font-size: 13px;
+    line-height: 18px;
     font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    background: var(--color-panel-light);
-    border-bottom: 1px solid var(--color-panel-border);
-    color: var(--color-hytale-gold);
+    color: var(--hp-fg-2);
   }
 
-  .mc-panel-body {
-    @apply p-5;
+  /* Key-value list: 36px rows, label left, value right */
+  .hp-kv > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 36px;
+    border-bottom: 1px solid var(--hp-line-1);
   }
 
-  /* ===== INPUT ===== */
-  .mc-input {
-    @apply w-full px-3.5 py-2.5 text-sm;
-    @apply rounded-lg border;
-    background: #100e0b;
-    border-color: var(--color-panel-border-light);
-    color: var(--color-text);
-    transition:
-      border-color 0.15s,
-      box-shadow 0.15s;
+  .hp-kv > div:last-child {
+    border-bottom: 0;
   }
 
-  .mc-input::placeholder {
-    color: var(--color-text-dim);
+  .hp-kv dt {
+    flex-shrink: 0;
+    font-size: 13px;
+    color: var(--hp-fg-2);
   }
 
-  .mc-input:focus {
-    @apply outline-none;
-    border-color: var(--color-hytale-orange);
-    box-shadow: 0 0 0 3px rgb(240 161 60 / 0.15);
+  .hp-kv dd {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    min-width: 0;
+    text-align: right;
+    color: var(--hp-fg-1);
   }
 
-  /* ===== STATUS INDICATORS ===== */
-  .status-online {
-    @apply flex items-center gap-2;
-  }
-
-  .status-online::before {
-    content: "";
-    @apply w-2 h-2;
-    background: var(--color-success);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--color-success) 70%, transparent);
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  .status-offline::before {
-    background: var(--color-error);
-    box-shadow: none;
-    animation: none;
-  }
-
-  /* ===== TAB BUTTON ===== */
-  .mc-tab {
-    @apply relative px-3.5 py-2 text-sm font-medium;
-    @apply rounded-lg border border-transparent cursor-pointer;
-    background: transparent;
-    color: var(--color-text-muted);
-    transition:
-      color 0.15s,
-      background-color 0.15s,
-      border-color 0.15s;
-  }
-
-  .mc-tab:hover {
-    color: var(--color-text);
-    background: var(--color-panel-light);
-  }
-
-  .mc-tab.active {
-    background: color-mix(in srgb, var(--color-hytale-orange) 12%, transparent);
-    border-color: color-mix(in srgb, var(--color-hytale-orange) 35%, transparent);
-    color: var(--color-hytale-gold);
-  }
-
-  /* ===== TOOLTIP ===== */
-  .mc-tooltip {
-    @apply absolute z-50 px-3 py-2 text-xs;
-    @apply rounded-md border pointer-events-none;
-    background: #26211a;
-    border-color: var(--color-panel-border-light);
-    color: var(--color-text);
-    box-shadow: var(--shadow-pixel-sm);
-  }
-
-  /* ===== BADGE ===== */
-  .mc-badge {
-    @apply inline-flex items-center gap-1.5;
-    @apply px-2.5 py-0.5 text-xs font-medium;
-    @apply rounded-sm border;
-    background: var(--color-panel-light);
-    border-color: var(--color-panel-border-light);
-    color: var(--color-text-muted);
-  }
-
-  .mc-badge-success {
-    background: color-mix(in srgb, var(--color-success) 15%, transparent);
-    border-color: color-mix(in srgb, var(--color-success) 40%, transparent);
-    color: var(--color-grass-light);
-  }
-
-  .mc-badge-warning {
-    background: color-mix(in srgb, var(--color-warning) 15%, transparent);
-    border-color: color-mix(in srgb, var(--color-warning) 40%, transparent);
-    color: var(--color-hytale-gold);
-  }
-
-  .mc-badge-error {
-    background: color-mix(in srgb, var(--color-error) 15%, transparent);
-    border-color: color-mix(in srgb, var(--color-error) 40%, transparent);
-    color: #f4a3a3;
-  }
-
-  /* ===== PROGRESS BAR ===== */
-  .mc-progress {
-    @apply relative h-2.5 overflow-hidden rounded-sm;
-    background: #100e0b;
-    border: 1px solid var(--color-panel-border);
-  }
-
-  .mc-progress-bar {
-    @apply h-full transition-all duration-300;
-    background: linear-gradient(90deg, var(--color-hytale-gold) 0%, var(--color-hytale-orange) 100%);
-  }
-
-  /* ===== DIVIDER ===== */
-  .mc-divider {
-    @apply my-4;
+  .hp-sr-only {
+    position: absolute;
+    width: 1px;
     height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      var(--color-panel-border-light) 20%,
-      var(--color-panel-border-light) 80%,
-      transparent 100%
-    );
-  }
-
-  /* ===== LOADING SPINNER ===== */
-  /* Spinning block instead of a circle — voxel wink */
-  .mc-spinner {
-    @apply w-8 h-8 rounded-sm;
-    border: 3px solid var(--color-panel-border-light);
-    border-top-color: var(--color-hytale-orange);
-    animation: spin 1.1s steps(8) infinite;
-  }
-
-  /* ===== DROPDOWN/SELECT ===== */
-  .mc-select {
-    @apply w-full px-3.5 py-2.5 text-sm;
-    @apply rounded-lg border cursor-pointer appearance-none;
-    background-color: #100e0b;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23b3a78f' d='M4 6l4 4 4-4z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    border-color: var(--color-panel-border-light);
-    color: var(--color-text);
-    padding-right: 40px;
-    transition:
-      border-color 0.15s,
-      box-shadow 0.15s;
-  }
-
-  .mc-select:focus {
-    @apply outline-none;
-    border-color: var(--color-hytale-orange);
-    box-shadow: 0 0 0 3px rgb(240 161 60 / 0.15);
-  }
-
-  .mc-select option {
-    background: var(--color-panel-bg);
-    color: var(--color-text);
-    padding: 8px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
   }
 }
 
-/* ===== CUSTOM UTILITIES ===== */
-@utility text-shadow-pixel {
-  text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+@keyframes hp-blink {
+  to {
+    opacity: 0.35;
+  }
 }
 
-@utility text-shadow-glow {
-  text-shadow: 0 0 8px currentColor;
+@keyframes hp-block {
+  0% {
+    background: var(--hp-accent);
+  }
+  33.333% {
+    background: var(--hp-fg-3);
+  }
 }
 
-@utility glow-grass {
-  box-shadow: 0 0 12px color-mix(in srgb, var(--color-success) 60%, transparent);
+@keyframes hp-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-@utility glow-gold {
-  box-shadow: 0 0 12px color-mix(in srgb, var(--color-hytale-gold) 60%, transparent);
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --hp-dur-ui: 0ms;
+    --hp-dur-modal: 120ms;
+    --hp-dur-toast: 120ms;
+  }
+  .hp-motion-scale {
+    transform: none !important; /* press scale, menu/modal scale, toast/drawer travel */
+  }
+  .hp-status-blink {
+    animation: none; /* static warning square + "Starting…" text */
+  }
+  .hp-block-loader,
+  .hp-block-loader > span {
+    animation: none; /* middle block lit, others fg-3; text label always present */
+  }
+  .hp-block-loader > span:nth-child(2) {
+    background: var(--hp-accent);
+  }
 }

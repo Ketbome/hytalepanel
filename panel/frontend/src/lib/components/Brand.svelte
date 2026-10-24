@@ -1,20 +1,12 @@
 <script lang="ts">
-import { _ } from 'svelte-i18n';
 import { assetUrl } from '$lib/stores/config';
 
-const { size = 'md' }: { size?: 'md' | 'lg' } = $props();
+const { wordmark = true, size = 20 }: { wordmark?: boolean; size?: number } = $props();
 </script>
 
-<div class="flex items-center {size === 'lg' ? 'gap-4' : 'gap-3'}">
-  <img
-    src={assetUrl('/images/hytale.png')}
-    alt="HytalePanel"
-    class="object-contain {size === 'lg' ? 'w-16 h-16' : 'w-11 h-11'}"
-  />
-  <div class="text-left">
-    <h1 class="font-display text-hytale-gold tracking-wider {size === 'lg' ? 'text-xl' : 'text-sm'}">
-      HYTALEPANEL
-    </h1>
-    <p class="text-text-muted {size === 'lg' ? 'text-sm mt-1' : 'text-xs'}">{$_('serverPanel')}</p>
-  </div>
-</div>
+<span class="inline-flex items-center gap-2">
+  <img src={assetUrl('/images/hytale.png')} alt={wordmark ? '' : 'HytalePanel'} width={size} height={size} class="shrink-0 object-contain" />
+  {#if wordmark}
+    <span class="font-display text-[15px] leading-5 font-semibold tracking-[-0.01em] text-fg-1">HytalePanel</span>
+  {/if}
+</span>

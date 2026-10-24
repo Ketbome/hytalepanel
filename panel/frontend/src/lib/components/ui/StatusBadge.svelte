@@ -1,19 +1,28 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
+import type { UiStatus } from '$lib/utils/status';
+import StatusSquare from './StatusSquare.svelte';
 
-interface Props {
-  running: boolean;
-}
+const { status, live = false }: { status: UiStatus; live?: boolean } = $props();
 
-const { running }: Props = $props();
+const labelKey: Record<UiStatus, string> = {
+  online: 'online',
+  offline: 'offline',
+  starting: 'statusStarting',
+  stopping: 'statusStopping',
+  unknown: 'unknown'
+};
 </script>
 
-<div class="mc-badge inline-flex items-center gap-2 px-3 py-2" class:mc-badge-success={running} class:mc-badge-error={!running}>
-  <span 
-    class="w-2.5 h-2.5 rounded-sm" 
-    class:bg-grass-light={running}
-    class:animate-pulse={running}
-    class:bg-error={!running}
-  ></span>
-  <span class="font-mono text-sm uppercase tracking-wide">{running ? $_('online') : $_('offline')}</span>
-</div>
+<span class="inline-flex items-center gap-2 whitespace-nowrap" aria-live={live ? 'polite' : undefined}>
+  <StatusSquare {status} />
+  <span
+    class="text-[13px] leading-[18px] font-medium"
+    class:text-positive={status === 'online'}
+    class:text-fg-2={status === 'offline'}
+    class:text-warning={status === 'starting' || status === 'stopping'}
+    class:text-fg-3={status === 'unknown'}
+  >
+    {$_(labelKey[status])}
+  </span>
+</span>

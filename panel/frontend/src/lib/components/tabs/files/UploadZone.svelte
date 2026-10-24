@@ -1,11 +1,12 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
+import SegmentedProgress from '$lib/components/ui/SegmentedProgress.svelte';
 import { type UploadFileItem, uploadFiles } from '$lib/services/api';
 import { emit } from '$lib/services/socketClient';
 import { currentPath, isFilesLoading, uploadState } from '$lib/stores/files';
 import { activeServer } from '$lib/stores/servers';
 import { showToast } from '$lib/stores/ui';
-import { collectDroppedItems, toUploadItems } from '$lib/utils/uploads';
+import { toUploadItems } from '$lib/utils/uploads';
 
 export const supportsDirectoryUpload = typeof window !== 'undefined' && 'webkitdirectory' in HTMLInputElement.prototype;
 
@@ -20,29 +21,15 @@ export function openFolderPicker(): void {
   folderInput?.click();
 }
 
-function handleDragOver(e: DragEvent): void {
-  e.preventDefault();
-}
-
-async function handleDrop(e: DragEvent): Promise<void> {
-  e.preventDefault();
-  if (!e.dataTransfer) return;
-
-  const uploadItems = await collectDroppedItems(e.dataTransfer);
-  if (uploadItems.length > 0) {
-    await handleUploadItems(uploadItems);
-  }
-}
-
 function handleSelect(e: Event): void {
   const target = e.target as HTMLInputElement;
   if (target.files) {
-    handleUploadItems(toUploadItems(target.files));
+    upload(toUploadItems(target.files));
     target.value = '';
   }
 }
 
-async function handleUploadItems(uploadItems: UploadFileItem[]): Promise<void> {
+export async function upload(uploadItems: UploadFileItem[]): Promise<void> {
   if (uploadItems.length === 0) {
     showToast($_('uploadError'), 'error');
     return;
@@ -99,31 +86,9 @@ async function handleUploadItems(uploadItems: UploadFileItem[]): Promise<void> {
 <input type="file" bind:this={fileInput} class="hidden" multiple onchange={handleSelect} />
 <input type="file" bind:this={folderInput} class="hidden" webkitdirectory multiple onchange={handleSelect} />
 
-{#if $uploadState.isVisible}
-  <div
-    class="p-6 rounded-xl bg-panel-light border-2 border-dashed border-hytale-orange/40 text-center cursor-pointer
-           hover:bg-panel-lighter hover:border-hytale-orange transition-colors"
-    role="button"
-    tabindex="0"
-    ondragover={handleDragOver}
-    ondrop={handleDrop}
-    onclick={() => fileInput?.click()}
-    onkeydown={(e: KeyboardEvent) => (e.key === 'Enter' || e.key === ' ') && fileInput?.click()}
-  >
-    <div class="text-4xl mb-2">📤</div>
-    <div class="text-hytale-gold mb-1">{$_('dropFilesFoldersHere')}</div>
-    <div class="text-text-dim text-sm">{$_('uploadHintExtended')}</div>
-    {#if !supportsDirectoryUpload}
-      <div class="mt-2 text-warning text-xs">{$_('folderUploadBrowserLimited')}</div>
-    {/if}
-
-    {#if $uploadState.isUploading}
-      <div class="mt-4 space-y-2">
-        <div class="mc-progress">
-          <div class="mc-progress-bar" style="width: {$uploadState.progress}%"></div>
-        </div>
-        <div class="text-text-muted text-sm" aria-live="polite">{$uploadState.text}</div>
-      </div>
-    {/if}
+{#if $uploadState.isUploading}
+  <div class="flex h-10 items-center gap-4" aria-live="polite">
+    <span class="shrink-0 text-[13px] text-fg-1">{$uploadState.text}</span>
+    <SegmentedProgress class="min-w-0 flex-1" value={$uploadState.progress} label={$_('uploading')} />
   </div>
 {/if}

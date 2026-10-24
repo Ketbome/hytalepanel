@@ -13,6 +13,7 @@
     "lint:fix": "pnpm exec biome check --write src/"
   },
   "dependencies": {
+    "@animateicons/vanilla": "^0.1.0",
     "socket.io-client": "^4.8.4",
     "svelte-i18n": "^4.0.1"
   },

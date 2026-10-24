@@ -2,9 +2,11 @@
 import { _ } from 'svelte-i18n';
 import { type Channel, fetchChannels } from '$lib/services/api';
 import { confirmDialog } from '$lib/stores/confirm';
-import { showToast } from '$lib/stores/ui';
+import BlockLoader from './ui/BlockLoader.svelte';
+import Button from './ui/Button.svelte';
+import InlineNotice from './ui/InlineNotice.svelte';
+import Tag from './ui/Tag.svelte';
 
-// Props using $props()
 const {
   serverId,
   selectedChannel: initialChannel,
@@ -17,18 +19,20 @@ const {
   onChannelChange: (channel: 'stable' | 'pre-release') => void;
 } = $props();
 
-// Reactive state using $state() rune
 let channels = $state<Channel[]>([]);
 // svelte-ignore state_referenced_locally
 let selectedChannel = $state<'stable' | 'pre-release'>(initialChannel);
 let loadingChannels = $state(false);
 let error = $state<string | null>(null);
+let groupEl = $state<HTMLDivElement | null>(null);
 
-// Derived state using $derived()
-const hasPreRelease = $derived(channels.some((c) => c.id === 'pre-release' && c.available));
 const isPreReleaseSelected = $derived(selectedChannel === 'pre-release');
 
-// Load channels on mount using $effect()
+const names: Record<Channel['id'], { name: string; desc: string }> = {
+  stable: { name: 'stableChannel', desc: 'stableDesc' },
+  'pre-release': { name: 'preReleaseChannel', desc: 'preReleaseDesc' }
+};
+
 $effect(() => {
   if (serverId) {
     loadChannels(serverId);
@@ -40,16 +44,7 @@ $effect(() => {
   selectedChannel = initialChannel;
 });
 
-// Feature disabled: downloader doesn't support --channel yet
-const featureDisabled = true;
-
-// Functions
 async function loadChannels(serverId: string): Promise<void> {
-  if (featureDisabled) {
-    loadingChannels = false;
-    return;
-  }
-
   loadingChannels = true;
   error = null;
 
@@ -59,320 +54,131 @@ async function loadChannels(serverId: string): Promise<void> {
     channels = response.channels;
     selectedChannel = response.current || 'stable';
   } else {
-    error = response.error || 'Failed to load channels';
-    showToast(error, 'error');
+    error = response.error || $_('channelLoadError');
   }
 
   loadingChannels = false;
 }
 
 async function handleChannelChange(channelId: 'stable' | 'pre-release'): Promise<void> {
-  if (disabled || featureDisabled || channelId === selectedChannel) return;
+  if (disabled || channelId === selectedChannel) return;
 
   // World data upgrades are one-way: a world opened on pre-release may not load on stable again
   const confirmed =
     channelId === 'stable'
-      ? await confirmDialog($_('channelDowngradeWarning'), { title: $_('channelDowngradeTitle'), danger: true })
-      : await confirmDialog($_('channelUpgradeNote'));
+      ? await confirmDialog($_('channelDowngradeWarning'), {
+          title: $_('channelDowngradeTitle'),
+          confirmLabel: $_('switchChannel'),
+          danger: true
+        })
+      : await confirmDialog($_('channelUpgradeNote'), {
+          title: $_('channelUpgradeTitle'),
+          confirmLabel: $_('switchChannel')
+        });
   if (!confirmed) return;
 
   selectedChannel = channelId;
   onChannelChange(channelId);
 }
+
+// Arrow keys move focus between options; choosing still goes through the confirm dialog
+function handleKeydown(e: KeyboardEvent): void {
+  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+  const radios = Array.from(groupEl?.querySelectorAll<HTMLElement>('[role="radio"]') ?? []);
+  const index = radios.indexOf(document.activeElement as HTMLElement);
+  if (index < 0) return;
+  e.preventDefault();
+  const step = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : -1;
+  radios[(index + step + radios.length) % radios.length]?.focus();
+}
 </script>
 
-<div class="channel-selector">
-  <div class="section-header">
-    <h3>{$_('releaseChannel')}</h3>
-  </div>
+<div class="flex flex-col gap-2">
+  <span id="channel-label" class="text-[13px] leading-[18px] font-medium text-fg-2">{$_('releaseChannel')}</span>
 
-  {#if featureDisabled}
-    <div class="coming-soon-banner">
-      <span class="icon">🚧</span>
-      <div class="message">
-        <strong>{$_('comingSoon')}</strong>
-        <p>{$_('channelFeatureDisabled')}</p>
-      </div>
-    </div>
-  {:else if loadingChannels}
-    <div class="loading-state">
-      <span class="spinner"></span>
-      <span>{$_('loading')}...</span>
-    </div>
+  {#if loadingChannels}
+    <div class="flex h-10 items-center gap-2 text-[13px] text-fg-3"><BlockLoader />{$_('loadingChannels')}</div>
   {:else if error}
-    <div class="error-state">
-      <span class="icon">⚠</span>
-      <span>{error}</span>
-    </div>
+    <InlineNotice kind="negative" title={$_('channelLoadError')}>
+      <span class="text-fg-3">{error}</span>
+      {#snippet action()}
+        <Button variant="ghost" size="sm" onclick={() => loadChannels(serverId)}>{$_('retry')}</Button>
+      {/snippet}
+    </InlineNotice>
   {:else if channels.length > 0}
-    <div class="channel-options">
+    <div
+      bind:this={groupEl}
+      class="flex flex-col gap-2"
+      role="radiogroup"
+      aria-labelledby="channel-label"
+      tabindex="-1"
+      onkeydown={handleKeydown}
+    >
       {#each channels as channel (channel.id)}
+        {@const selected = selectedChannel === channel.id}
         <button
-          class="channel-btn"
-          class:active={selectedChannel === channel.id}
-          class:recommended={channel.recommended}
-          class:disabled={!channel.available || disabled || featureDisabled}
-          onclick={() => handleChannelChange(channel.id)}
-          disabled={!channel.available || disabled || featureDisabled}
           type="button"
+          role="radio"
+          aria-checked={selected}
+          tabindex={selected ? 0 : -1}
+          class="hp-channel flex min-h-10 items-start gap-3 rounded-md px-3 py-2.5 text-left"
+          class:selected
+          onclick={() => handleChannelChange(channel.id)}
+          disabled={!channel.available || disabled}
+          title={disabled ? $_('stopServerToEdit') : undefined}
         >
-          <div class="channel-icon" class:warning={channel.id === 'pre-release'}>
-            {#if channel.recommended}
-              ✓
-            {:else}
-              ⚠
-            {/if}
-          </div>
-
-          <div class="channel-info">
-            <div class="channel-name">
-              {channel.name}
-              {#if channel.recommended}
-                <span class="badge recommended">{$_('recommended')}</span>
-              {/if}
-            </div>
-            <div class="channel-desc">{channel.description}</div>
-          </div>
-
-          {#if selectedChannel === channel.id}
-            <div class="selected-indicator">●</div>
-          {/if}
+          <span class="hp-radio mt-0.5 grid h-3.5 w-3.5 shrink-0 place-content-center" aria-hidden="true">
+            {#if selected}<span class="h-1.5 w-1.5 bg-accent"></span>{/if}
+          </span>
+          <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span class="flex flex-wrap items-center gap-2 text-sm font-medium text-fg-1">
+              {names[channel.id] ? $_(names[channel.id].name) : channel.name}
+              {#if channel.recommended}<Tag>{$_('recommended')}</Tag>{/if}
+            </span>
+            <span class="text-xs text-fg-2">{names[channel.id] ? $_(names[channel.id].desc) : channel.description}</span>
+          </span>
         </button>
       {/each}
     </div>
 
     {#if isPreReleaseSelected}
-      <div class="warning-box">
-        <div class="warning-icon">⚠</div>
-        <div class="warning-content">
-          <strong>{$_('warning')}</strong>
-          <p>{$_('preReleaseWarning')}</p>
-          <p class="warning-note">{$_('channelChangedNote')}</p>
-        </div>
-      </div>
+      <InlineNotice kind="warning">
+        <p>{$_('preReleaseWarning')}</p>
+        <p class="mt-1 text-fg-2">{$_('channelChangedNote')}</p>
+      </InlineNotice>
     {/if}
   {:else}
-    <div class="empty-state">
-      <p>{$_('noChannelsAvailable')}</p>
-    </div>
+    <p class="text-[13px] text-fg-3">{$_('noChannelsAvailable')}</p>
   {/if}
 </div>
 
 <style>
-  .channel-selector {
-    margin-bottom: 24px;
-  }
-  .coming-soon-banner {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    background: rgba(255, 165, 0, 0.1);
-    border: 2px solid var(--hytale-orange);
-    border-radius: 2px;
-    margin-bottom: 12px;
-  }
-
-  .coming-soon-banner .icon {
-    font-size: 24px;
-  }
-
-  .coming-soon-banner .message {
-    flex: 1;
-  }
-
-  .coming-soon-banner strong {
-    display: block;
-    color: var(--hytale-orange);
-    font-size: 13px;
-    margin-bottom: 4px;
-    text-transform: uppercase;
-  }
-
-  .coming-soon-banner p {
-    margin: 0;
-    font-size: 12px;
-    color: var(--text-dim);
-    line-height: 1.4;
-  }
-  .section-header h3 {
-    margin: 0 0 8px 0;
-    font-size: 14px;
-    text-transform: uppercase;
-    color: var(--text);
-  }
-
-  .loading-state,
-  .error-state,
-  .empty-state {
-    padding: 16px;
-    text-align: center;
-    background: var(--bg-dark);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-  }
-
-  .loading-state {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .spinner {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  .error-state {
-    color: var(--error);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .channel-options {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .channel-btn {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    background: var(--bg-dark);
-    border: 2px solid var(--border);
+  .hp-channel {
+    box-shadow: inset 0 0 0 1px var(--hp-line-control);
     cursor: pointer;
-    transition: all 0.2s;
-    text-align: left;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
-    position: relative;
+    transition: background-color var(--hp-dur-hover) ease;
   }
 
-  .channel-btn:hover:not(:disabled):not(.disabled) {
-    border-color: var(--accent);
-    background: var(--bg);
-    transform: translateY(-1px);
+  .hp-channel:hover:not(:disabled) {
+    background: var(--hp-bg-2);
   }
 
-  .channel-btn.active {
-    border-color: var(--accent);
-    background: var(--accent-dark);
+  .hp-channel.selected {
+    background: var(--hp-bg-3);
+    box-shadow: inset 0 0 0 2px var(--hp-accent);
   }
 
-  .channel-btn:disabled,
-  .channel-btn.disabled {
-    opacity: 0.5;
+  .hp-channel:disabled {
     cursor: not-allowed;
+    box-shadow: inset 0 0 0 1px var(--hp-line-1);
   }
 
-  .channel-icon {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    flex-shrink: 0;
+  .hp-channel.selected:disabled {
+    box-shadow: inset 0 0 0 2px var(--hp-line-2);
   }
 
-  .channel-icon.warning {
-    color: var(--warning);
-  }
-
-  .channel-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .channel-name {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 4px;
-    font-weight: bold;
-    flex-wrap: wrap;
-  }
-
-  .channel-desc {
-    font-size: 9px;
-    color: var(--text-dim);
-    line-height: 1.4;
-  }
-
-  .badge {
-    padding: 2px 6px;
-    font-size: 8px;
-    font-weight: bold;
-    border: 1px solid;
-  }
-
-  .badge.recommended {
-    background: var(--success);
-    color: var(--bg-dark);
-    border-color: var(--success);
-  }
-
-  .selected-indicator {
-    color: var(--accent);
-    font-size: 16px;
-    margin-left: auto;
-  }
-
-  .warning-box {
-    margin-top: 12px;
-    padding: 12px;
-    background: rgba(255, 165, 0, 0.1);
-    border: 2px solid var(--warning);
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-  }
-
-  .warning-icon {
-    font-size: 24px;
-    color: var(--warning);
-    flex-shrink: 0;
-  }
-
-  .warning-content {
-    flex: 1;
-  }
-
-  .warning-content strong {
-    display: block;
-    margin-bottom: 4px;
-    color: var(--warning);
-  }
-
-  .warning-content p {
-    margin: 4px 0;
-    font-size: 10px;
-    line-height: 1.5;
-    color: var(--text-dim);
-  }
-
-  .warning-note {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid rgba(255, 165, 0, 0.3);
-    font-style: italic;
+  .hp-radio {
+    border: 1px solid var(--hp-line-control);
+    background: var(--hp-bg-sunken);
   }
 </style>

@@ -1,6 +1,7 @@
 // Auth types
 export interface AuthStatus {
   authenticated: boolean;
+  username?: string;
   authDisabled?: boolean;
 }
 

@@ -1,6 +1,9 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
+import BlockLoader from '$lib/components/ui/BlockLoader.svelte';
 import Button from '$lib/components/ui/Button.svelte';
+import Checkbox from '$lib/components/ui/Checkbox.svelte';
+import Modal from '$lib/components/ui/Modal.svelte';
 import { emit } from '$lib/services/socketClient';
 import { closeEditor, editorState, setEditorStatus } from '$lib/stores/files';
 
@@ -11,8 +14,11 @@ $effect(() => {
   editorContent = $editorState.content;
 });
 
+const loading = $derived($editorState.status === 'loading');
+const saving = $derived($editorState.statusClass === 'saving');
+
 function handleSaveFile(): void {
-  if (!$editorState.filePath) return;
+  if (!$editorState.filePath || loading) return;
   setEditorStatus($_('saving'), 'saving');
   emit('files:save', {
     path: $editorState.filePath,
@@ -26,59 +32,59 @@ function handleEditorKeydown(e: KeyboardEvent): void {
     e.preventDefault();
     handleSaveFile();
   }
-  if (e.key === 'Escape') {
-    closeEditor();
-  }
 }
 </script>
 
-{#if $editorState.isOpen}
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-    <div
-      class="w-full max-w-4xl max-h-[90vh] flex flex-col mc-panel animate-bounce-in"
-      role="dialog"
-      aria-modal="true"
-      aria-label={$editorState.filePath}
-    >
-      <!-- Editor Header -->
-      <div class="flex items-center justify-between px-4 py-3 bg-panel-light border-b border-panel-border">
-        <span class="font-code text-sm text-hytale-gold truncate">{$editorState.filePath}</span>
-        <div class="flex items-center gap-3">
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" bind:checked={createBackup} class="w-4 h-4 accent-hytale-orange" />
-            <span class="text-sm text-text-muted">{$_('backup')}</span>
-          </label>
-          <Button size="small" variant="primary" onclick={handleSaveFile}>
-            💾 {$_('save')}
-          </Button>
-          <Button size="small" onclick={() => closeEditor()}>
-            ✕ {$_('close')}
-          </Button>
-        </div>
+<Modal
+  open={$editorState.isOpen}
+  title={$editorState.filePath ?? ''}
+  monoTitle
+  size="lg"
+  initialFocus="textarea"
+  onclose={closeEditor}
+>
+  <div class="relative">
+    <textarea
+      bind:value={editorContent}
+      spellcheck="false"
+      onkeydown={handleEditorKeydown}
+      aria-label={$editorState.filePath ?? $_('edit')}
+      readonly={loading}
+      class="hp-editor block h-[min(60dvh,560px)] w-full resize-none rounded-md bg-sunken p-4 font-mono text-[13px] leading-5 text-fg-1"
+    ></textarea>
+    {#if loading}
+      <div class="absolute inset-0 flex items-center justify-center gap-2 text-[13px] text-fg-3">
+        <BlockLoader />{$_('loading')}
       </div>
-
-      <!-- Editor Body -->
-      <div class="flex-1 min-h-0 p-2 bg-[#100e0b]">
-        <textarea
-          bind:value={editorContent}
-          spellcheck="false"
-          onkeydown={handleEditorKeydown}
-          class="w-full h-full min-h-[400px] p-4 font-code text-sm leading-relaxed resize-none
-                 bg-transparent text-text border-none outline-none"
-        ></textarea>
-      </div>
-
-      <!-- Editor Status -->
-      <div
-        class="px-4 py-2 bg-panel-light border-t border-panel-border text-sm"
-        class:text-text-muted={$editorState.statusClass === 'ready'}
-        class:text-warning={$editorState.statusClass === 'saving'}
-        class:text-grass-light={$editorState.statusClass === 'saved'}
-        class:text-error={$editorState.statusClass === 'error'}
-        aria-live="polite"
-      >
-        {$editorState.status}
-      </div>
-    </div>
+    {/if}
   </div>
-{/if}
+
+  {#snippet footerStart()}
+    <span
+      class="text-[13px]"
+      class:text-fg-3={$editorState.statusClass === '' || $editorState.statusClass === 'ready'}
+      class:text-fg-2={saving}
+      class:text-positive={$editorState.statusClass === 'saved'}
+      class:text-negative={$editorState.statusClass === 'error'}
+      aria-live="polite"
+    >
+      {loading ? '' : $editorState.status === 'ready' ? $_('saveShortcut') : $editorState.status}
+    </span>
+  {/snippet}
+  {#snippet footer()}
+    <Checkbox bind:checked={createBackup}>{$_('backupBeforeSave')}</Checkbox>
+    <Button variant="primary" loading={saving} disabled={loading} onclick={handleSaveFile}>{$_('save')}</Button>
+  {/snippet}
+</Modal>
+
+<style>
+  .hp-editor {
+    border: 1px solid var(--hp-line-1);
+  }
+
+  .hp-editor:focus-visible {
+    outline: none;
+    border-color: var(--hp-accent);
+    box-shadow: 0 0 0 1px var(--hp-accent);
+  }
+</style>

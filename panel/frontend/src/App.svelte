@@ -1,18 +1,16 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
-import Console from '$lib/components/Console.svelte';
+import AppBar from '$lib/components/AppBar.svelte';
 import Dashboard from '$lib/components/Dashboard.svelte';
-import Header from '$lib/components/Header.svelte';
 import LoginScreen from '$lib/components/LoginScreen.svelte';
-import Sidebar from '$lib/components/Sidebar.svelte';
-import Button from '$lib/components/ui/Button.svelte';
+import BlockLoader from '$lib/components/ui/BlockLoader.svelte';
 import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 import Toast from '$lib/components/ui/Toast.svelte';
+import Workspace from '$lib/components/Workspace.svelte';
 import { connectSocket, disconnectSocket } from '$lib/services/socketClient';
 import { checkStatus, isAuthenticated, isLoading } from '$lib/stores/auth';
 import { loadPanelConfig, panelConfig } from '$lib/stores/config';
 import { currentRoute, initRouter, isOnDashboard } from '$lib/stores/router';
-import { panelExpanded, sidebarHidden } from '$lib/stores/ui';
 
 // Initialize on mount
 $effect(() => {
@@ -42,88 +40,28 @@ $effect(() => {
   }
   prevAuth = authenticated;
 });
-
-function showSidebar(): void {
-  sidebarHidden.set(false);
-}
-
-function handleKeydown(e: KeyboardEvent): void {
-  if (e.key === 'Escape') {
-    if ($panelExpanded) {
-      panelExpanded.set(false);
-    }
-    if ($sidebarHidden) {
-      sidebarHidden.set(false);
-    }
-  }
-}
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+{#snippet loadingScreen()}
+  <div class="fixed inset-0 flex flex-col items-center justify-center gap-4 bg-ground">
+    <BlockLoader size="md" />
+    <span class="hp-appear-late text-sm text-fg-3">{$_('loading')}</span>
+  </div>
+{/snippet}
 
-{#if !$panelConfig.loaded}
-  <div class="fixed inset-0 flex items-center justify-center bg-panel-bg">
-    <div class="flex flex-col items-center gap-4 animate-fade-in">
-      <div class="mc-spinner"></div>
-      <span class="text-text-muted">{$_('loading')}...</span>
-    </div>
-  </div>
-{:else if $isLoading}
-  <div class="fixed inset-0 flex items-center justify-center bg-panel-bg">
-    <div class="flex flex-col items-center gap-4 animate-fade-in">
-      <div class="mc-spinner"></div>
-      <span class="text-text-muted">{$_('loading')}...</span>
-    </div>
-  </div>
+{#if !$panelConfig.loaded || $isLoading}
+  {@render loadingScreen()}
 {:else if !$isAuthenticated}
   <LoginScreen />
 {:else if $isOnDashboard}
   <Dashboard />
 {:else if $currentRoute.serverId}
-  <div
-    class="max-w-[1600px] mx-auto p-3 sm:p-5 h-screen flex flex-col animate-fade-in"
-    class:sidebar-collapsed={$sidebarHidden}
-  >
-    <Header />
-    <div
-      class="flex-1 grid gap-3 sm:gap-5 min-h-0 grid-rows-[minmax(200px,40vh)_1fr] lg:grid-rows-1"
-      class:grid-cols-1={$panelExpanded}
-      class:lg:grid-cols-[1fr_550px]={!$panelExpanded && !$sidebarHidden}
-      class:!grid-rows-1={$panelExpanded || $sidebarHidden}
-    >
-      <main class="min-h-0 flex flex-col relative" class:hidden={$panelExpanded}>
-        <Console />
-        {#if $sidebarHidden}
-          <Button size="small" variant="wood" class="absolute top-4 right-4" title="Show Panel" aria-label="Show panel" onclick={showSidebar}>
-            ☰
-          </Button>
-        {/if}
-      </main>
-      {#if !$sidebarHidden || $panelExpanded}
-        <div 
-          class="min-h-0"
-          class:fixed={$sidebarHidden && !$panelExpanded}
-          class:inset-y-0={$sidebarHidden && !$panelExpanded}
-          class:right-0={$sidebarHidden && !$panelExpanded}
-          class:w-full={$sidebarHidden && !$panelExpanded}
-          class:max-w-md={$sidebarHidden && !$panelExpanded}
-          class:z-40={$sidebarHidden && !$panelExpanded}
-          class:p-5={$sidebarHidden && !$panelExpanded}
-          class:bg-opacity-95={$sidebarHidden && !$panelExpanded}
-          class:bg-panel-bg={$sidebarHidden && !$panelExpanded}
-        >
-          <Sidebar />
-        </div>
-      {/if}
-    </div>
+  <div class="flex min-h-dvh flex-col max-sm:h-dvh ws:h-dvh">
+    <AppBar />
+    <Workspace />
   </div>
 {:else}
-  <div class="fixed inset-0 flex items-center justify-center bg-panel-bg">
-    <div class="flex flex-col items-center gap-4 animate-fade-in">
-      <div class="mc-spinner"></div>
-      <span class="text-text-muted">{$_('loading')}...</span>
-    </div>
-  </div>
+  {@render loadingScreen()}
 {/if}
 
 <Toast />

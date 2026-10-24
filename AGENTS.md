@@ -83,7 +83,7 @@ hytale-server/
 
 | Path                       | Purpose                                               |
 | -------------------------- | ----------------------------------------------------- |
-| `components/`              | Svelte 5 UI components                                |
+| `components/`              | Svelte 5 UI components (`ui/` holds the primitives)   |
 | `stores/`                  | Application state (auth, server, files, mods, router) |
 | `services/socketClient.ts` | Socket.IO wrapper                                     |
 | `services/api.ts`          | REST API calls                                        |
@@ -203,7 +203,14 @@ import * as docker from "./services/docker.js";
 - ✅ Keep functions small and focused
 - ✅ Return consistent response objects
 - ✅ Use existing patterns in the codebase
-- ✅ Follow the design system: dark hosting-panel aesthetic with a blocky/voxel character — near-square corners (2-6px radii via `--radius-*` tokens, no pills or circles; status dots and toggles are square), design tokens in `src/app.css` (`@theme`), Hytale orange/gold as the only accent, Unbounded for display text, Sofia Sans for UI, JetBrains Mono for console/code
+- ✅ Follow the design system ("Hytale refined", dark-only):
+  - Tokens: the shared `--hp-*` block at the top of `panel/frontend/src/app.css` (identical copy in `docs/.vitepress/theme/custom.css`; change both together), exposed to Tailwind via `@theme inline` (`bg-surface`, `text-fg-2`, `border-line`, `bg-accent`, `text-negative`...). The default Tailwind palette, radii, shadows and animations are disabled; no hex colours in components
+  - One accent (Hytale orange): the one primary action per view, the active-tab underline, focus, typed commands and progress cells. Never on headings, borders or decoration. Red only for errors and destructive actions; offline is grey
+  - Status vocabulary everywhere: Online / Offline / Starting… / Stopping… / Unknown, shown as an 8px square (`StatusSquare`/`StatusBadge`), never colour alone
+  - Voxel rules: radii 0-6px only (`rounded-xs/sm/md/lg`), square status pixels, `BlockLoader` as the only loader, `SegmentedProgress` for progress, square-capped icons. No emoji, gradients, glows, glass, uppercase/tracked labels, pills, bounce or hover lift
+  - Type: Unbounded for display/page titles only (≥15px, never on controls), Sofia Sans for UI (14px base, sentence case), JetBrains Mono for console and machine values (ports, versions, sizes, paths)
+  - Icons: only through `lib/components/ui/Icon.svelte`, which wraps `@animateicons/vanilla` (Lucide set). Add new icons to its registry; never import the package elsewhere. Static by default; animate only as feedback (`hover`/`play` props)
+  - Primitives live in `lib/components/ui/` (Button, Input, Select, Checkbox, Switch, Modal, ConfirmDialog, Menu, Tabs, Segmented, Section, Tag, InlineNotice, Toast, Skeleton). Every block renders its own loading / empty / error state; toasts only for results the user can't otherwise see
 - ✅ Update translations when adding UI text
 - ✅ Run `pnpm check` before committing
 
@@ -267,6 +274,7 @@ docker build -t hytale-panel ./panel
 | `MODTALE_API_KEY`    | -               | Modtale API key                                        |
 | `CURSEFORGE_API_KEY` | -               | CurseForge API key                                     |
 | `HOST_DATA_PATH`     | -               | Host path for data (enables direct file access)        |
+| `PANEL_DATA_PATH`    | `/opt/hytale-panel/data` | Panel data dir (set for local dev outside Docker) |
 | `DISABLE_AUTH`       | `false`         | Disable panel auth (for SSO at proxy level)            |
 | `BASE_PATH`          | -               | URL path prefix (e.g., `/panel` for domain.com/panel/) |
 

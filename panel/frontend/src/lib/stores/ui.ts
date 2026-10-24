@@ -4,6 +4,7 @@ import type { TabId, Toast, ToastType } from '$lib/types';
 export const activeTab = writable<TabId>('control');
 export const sidebarHidden = writable<boolean>(false);
 export const panelExpanded = writable<boolean>(false);
+export const toolsDrawerOpen = writable<boolean>(false);
 export const toasts = writable<Toast[]>([]);
 
 let toastId = 0;

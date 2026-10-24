@@ -2,7 +2,14 @@ import type { Socket } from 'socket.io-client';
 import { get } from 'svelte/store';
 import { _ } from 'svelte-i18n';
 import { addLog } from '$lib/stores/console';
-import { downloaderAuth, filesReady, isCheckingFiles, serverStatus } from '$lib/stores/server';
+import {
+  downloaderAuth,
+  filesReady,
+  isCheckingFiles,
+  pendingAction,
+  serverStatus,
+  setPendingAction
+} from '$lib/stores/server';
 import type { Server } from '$lib/stores/servers';
 import { activeServerId, servers, updateServerStatus } from '$lib/stores/servers';
 import { showToast } from '$lib/stores/ui';
@@ -12,6 +19,7 @@ import { joinedServerId } from '../socketClient';
 export function registerServerEvents(socket: Socket): void {
   socket.on('server:joined', ({ serverId, server }: { serverId: string; server?: Server }) => {
     joinedServerId.set(serverId);
+    setPendingAction(null);
     // Update servers store with fresh data from backend
     if (server) {
       servers.update((list) => {
@@ -40,6 +48,12 @@ export function registerServerEvents(socket: Socket): void {
       status: s.status || 'unknown',
       startedAt: s.startedAt
     });
+
+    // Docker caught up with the action the user started
+    const pending = get(pendingAction);
+    if ((pending === 'starting' && isNowRunning) || (pending === 'stopping' && !isNowRunning)) {
+      setPendingAction(null);
+    }
 
     const serverId = get(activeServerId);
     if (serverId) {
@@ -70,6 +84,7 @@ export function registerServerEvents(socket: Socket): void {
 
   socket.on('command-result', (r: CommandResult) => {
     if (r.error) {
+      if (get(pendingAction) === 'stopping') setPendingAction(null);
       addLog(`Error: ${r.error}`, 'error');
       showToast(get(_)('failed'), 'error');
     }
@@ -84,16 +99,12 @@ export function registerServerEvents(socket: Socket): void {
       wipe: t('wipeData'),
       kill: t('forceStop')
     };
+    // The server header already shows Starting / Stopping / Online: only the wipe result needs a toast
     if (s.success) {
-      const msgs: Record<string, string> = {
-        restart: t('restarted'),
-        stop: t('stopped'),
-        start: t('started'),
-        wipe: t('dataWiped'),
-        kill: t('killed')
-      };
-      showToast(msgs[s.action] || t('done'));
+      if (s.action === 'restart') setPendingAction(null);
+      if (s.action === 'wipe') showToast(t('dataWiped'));
     } else if (s.error) {
+      setPendingAction(null);
       showToast(`${actionLabels[s.action] || s.action}: ${t('failed')}`, 'error');
     }
   });

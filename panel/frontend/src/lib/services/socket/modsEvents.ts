@@ -8,9 +8,11 @@ import {
   currentPage,
   curseforgeStatus,
   hasMore,
+  installedError,
   installedMods,
   isModsLoading,
   modtaleStatus,
+  searchError,
   searchResults,
   total
 } from '$lib/stores/mods';
@@ -24,12 +26,14 @@ type ProjectResult = { success: boolean; project?: ModProject; error?: string };
 function handleSearchResult(result: ModSearchResult): void {
   isModsLoading.set(false);
   if (result.success) {
+    searchError.set(null);
     searchResults.set(result.projects || []);
     total.set(result.total || 0);
     hasMore.set(result.hasMore || false);
     currentPage.set(result.page || 1);
   } else {
-    showToast(`Error: ${result.error}`, 'error');
+    // Shown inside the browse list
+    searchError.set(result.error || get(_)('error'));
     searchResults.set([]);
   }
 }
@@ -68,28 +72,24 @@ function makeGetHandler(socket: Socket, installEvent: string, idKey: 'projectId'
 }
 
 export function registerModsEvents(socket: Socket): void {
+  // Invalid keys are shown in the Mods tab (provider status and browse notice), not as toasts
   socket.on('mods:config-status', (result: ConfigStatus) => {
     modtaleStatus.set(result);
     apiConfigured.set(result.configured && result.valid);
-    if (result.configured && !result.valid && result.error) {
-      showToast(`Modtale: ${result.error}`, 'error');
-    }
   });
 
   socket.on('cf:config-status', (result: ConfigStatus) => {
     curseforgeStatus.set(result);
     cfApiConfigured.set(result.configured && result.valid);
-    if (result.configured && !result.valid && result.error) {
-      showToast(`CurseForge: ${result.error}`, 'error');
-    }
   });
 
   socket.on('mods:list-result', (result: { success: boolean; mods?: InstalledMod[]; error?: string }) => {
     isModsLoading.set(false);
     if (result.success && result.mods) {
+      installedError.set(null);
       installedMods.set(result.mods);
     } else {
-      showToast(`${get(_)('error')}: ${result.error}`, 'error');
+      installedError.set(result.error || get(_)('error'));
     }
   });
 
@@ -99,20 +99,20 @@ export function registerModsEvents(socket: Socket): void {
   socket.on('mods:get-result', makeGetHandler(socket, 'mods:install', 'projectId'));
   socket.on('cf:get-result', makeGetHandler(socket, 'cf:install', 'modId'));
 
-  // Simple operation results: toast + refresh installed list
-  const ops: Array<[string, string, string]> = [
+  // Simple operation results: toast + refresh installed list. Enable/disable show in the switch, so no toast
+  const ops: Array<[string, string | null, string]> = [
     ['mods:install-result', 'modInstalled', 'installFailed'],
     ['cf:install-result', 'modInstalled', 'installFailed'],
     ['mods:uninstall-result', 'modUninstalled', 'error'],
-    ['mods:enable-result', 'modEnabled', 'error'],
-    ['mods:disable-result', 'modDisabled', 'error']
+    ['mods:enable-result', null, 'error'],
+    ['mods:disable-result', null, 'error']
   ];
 
   for (const [event, okKey, failKey] of ops) {
     socket.on(event, (result: ModOperationResult) => {
       const t = get(_);
       if (result.success) {
-        showToast(t(okKey));
+        if (okKey) showToast(t(okKey));
         socket.emit('mods:list');
       } else {
         showToast(`${t(failKey)}: ${result.error}`, 'error');
