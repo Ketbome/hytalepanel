@@ -151,6 +151,9 @@ export default defineConfig({
   ignoreDeadLinks: [/^https?:\/\/localhost/],
 
   head: [
+    // Lets the theme hold back content that JS is about to animate in (see HomeConsole.vue)
+    ["script", {}, "document.documentElement.classList.add('hp-js')"],
+
     // Analytics: Umami
     [
       "script",

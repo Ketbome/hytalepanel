@@ -107,8 +107,8 @@
   --vp-code-copy-code-hover-border-color: var(--hp-line-control);
   --vp-code-copy-code-active-text: var(--hp-fg-2);
   --vp-code-tab-active-bar-color: var(--hp-accent);
-  --vp-custom-block-font-size: 14px;
-  --vp-custom-block-code-font-size: 12px;
+  --vp-custom-block-font-size: 15px;
+  --vp-custom-block-code-font-size: 13px;
   --vp-custom-block-info-border: var(--hp-line-1);
   --vp-custom-block-tip-border: var(--hp-line-1);
   --vp-custom-block-warning-border: var(--hp-line-1);
@@ -125,6 +125,21 @@
 
 html {
   color-scheme: dark;
+}
+
+/* Square-capped icons (1.75 stroke, as in the panel), used as masks so they take token colours */
+:root {
+  --hp-icon-copy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='square' stroke-linejoin='miter'%3E%3Cpath d='M5.5 5.5h8v8h-8z'/%3E%3Cpath d='M10.5 2.5h-8v8'/%3E%3C/svg%3E");
+  --hp-icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='square' stroke-linejoin='miter'%3E%3Cpath d='M3 8.5l3.2 3.2L13 4.8'/%3E%3C/svg%3E");
+  --vp-code-copy-copied-text-content: "Copied";
+}
+
+html:lang(es) {
+  --vp-code-copy-copied-text-content: "Copiado";
+}
+
+html:lang(uk) {
+  --vp-code-copy-copied-text-content: "Скопійовано";
 }
 
 body {
@@ -301,20 +316,70 @@ body {
 }
 
 .VPSidebar .VPSidebarItem.level-1 > .item {
-  margin: 0 -8px;
-  padding: 0 8px;
-  width: calc(100% + 16px);
-  border-radius: var(--hp-radius-1);
-  transition: background-color var(--hp-dur-hover) ease;
+  position: relative;
 }
 
 .VPSidebar .VPSidebarItem.level-1 .link .text {
   font-weight: 400;
+  color: var(--hp-fg-2);
   transition: color var(--hp-dur-hover) ease;
 }
 
-.VPSidebar .VPSidebarItem.level-1.is-active > .item {
-  background-color: var(--hp-bg-2);
+.VPSidebar .VPSidebarItem.level-1 .link:hover .text,
+.VPSidebar .VPSidebarItem.level-1.is-active .link .text {
+  color: var(--hp-fg-1);
+}
+
+.VPSidebar .VPSidebarItem.level-1.is-active .link .text {
+  font-weight: 500;
+}
+
+/* Active page: the panel's status pixel, hung in the gutter */
+.VPSidebar .VPSidebarItem.level-1 > .item > .indicator {
+  top: 50%;
+  bottom: auto;
+  left: -16px;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 0;
+  background-color: transparent;
+  transition: background-color var(--hp-dur-hover) ease;
+}
+
+.VPSidebar .VPSidebarItem.level-1.is-active > .item > .indicator {
+  background-color: var(--hp-accent);
+}
+
+/* Outline: the same square marker travels down the list */
+.VPDocAsideOutline .outline-marker {
+  left: -4px;
+  width: 6px;
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 0;
+  background-color: var(--hp-accent);
+}
+
+.VPDocAsideOutline .content {
+  border-left-color: var(--hp-line-1);
+}
+
+.VPDocAsideOutline .outline-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hp-fg-1);
+}
+
+.VPDocAsideOutline .outline-link {
+  font-size: 13px;
+  color: var(--hp-fg-3);
+  transition: color var(--hp-dur-hover) ease;
+}
+
+.VPDocAsideOutline .outline-link:hover,
+.VPDocAsideOutline .outline-link.active {
+  color: var(--hp-fg-1);
 }
 
 /* ---------------------------------------------------------------------------
@@ -331,31 +396,46 @@ body {
   line-height: 26px;
 }
 
+/* Page titles: the display face, set tight, with the first paragraph as a lead */
 .vp-doc h1 {
+  margin-bottom: 20px;
   font-family: var(--hp-font-display);
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 500;
-  line-height: 40px;
-  letter-spacing: -0.02em;
+  line-height: 38px;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+@media (min-width: 768px) {
+  .vp-doc h1 {
+    font-size: 40px;
+    line-height: 48px;
+  }
+}
+
+.vp-doc h1 + p {
+  max-width: 60ch;
+  font-size: 19px;
+  line-height: 30px;
+  color: var(--hp-fg-2);
 }
 
 .vp-doc h2 {
-  margin: 48px 0 16px;
+  position: relative;
+  margin: 56px 0 16px;
   border-top: 0;
   padding-top: 0;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 600;
-  line-height: 30px;
-  letter-spacing: 0;
-}
-
-.vp-doc h2 .header-anchor {
-  top: 0;
+  line-height: 32px;
+  letter-spacing: -0.005em;
 }
 
 .vp-doc h3 {
-  margin-top: 32px;
-  font-size: 17px;
+  position: relative;
+  margin-top: 36px;
+  font-size: 18px;
   font-weight: 600;
   line-height: 26px;
   letter-spacing: 0;
@@ -367,8 +447,58 @@ body {
   letter-spacing: 0;
 }
 
+/* Heading anchors: a status pixel in the gutter instead of "#".
+   Always shown on h2 (a quiet section marker), on hover for h3. */
 .vp-doc .header-anchor {
-  color: var(--hp-fg-3);
+  top: 50%;
+  left: -22px;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0;
+  overflow: hidden;
+  font-size: 0;
+  background-color: var(--hp-line-2);
+  transition:
+    opacity var(--hp-dur-hover) ease,
+    background-color var(--hp-dur-hover) ease;
+}
+
+.vp-doc .header-anchor::before {
+  content: none;
+}
+
+.vp-doc h2 .header-anchor {
+  top: 16px;
+  opacity: 1;
+}
+
+.vp-doc h3 .header-anchor {
+  top: 13px;
+  left: -20px;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+}
+
+.vp-doc h2:hover .header-anchor,
+.vp-doc h3:hover .header-anchor,
+.vp-doc .header-anchor:focus-visible {
+  opacity: 1;
+  background-color: var(--hp-accent);
+}
+
+.vp-doc h1 .header-anchor {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .vp-doc .header-anchor {
+    left: -16px;
+  }
+
+  .vp-doc h3 .header-anchor {
+    left: -14px;
+  }
 }
 
 .vp-doc a {
@@ -382,6 +512,21 @@ body {
   color: var(--hp-fg-1);
 }
 
+/* Square list markers: the blocky character, at the smallest scale */
+.vp-doc ul {
+  list-style-type: square;
+}
+
+.vp-doc ul > li::marker {
+  color: var(--hp-fg-3);
+}
+
+.vp-doc ol > li::marker {
+  font-family: var(--hp-font-mono);
+  font-size: 0.85em;
+  color: var(--hp-fg-3);
+}
+
 .vp-doc blockquote {
   border-left-color: var(--hp-line-2);
 }
@@ -390,7 +535,14 @@ body {
   border-top-color: var(--hp-line-1);
 }
 
-/* Tables: row rules only, no zebra, no header band */
+/* Tables: row rules only, no zebra, no header band; full measure on wider screens */
+@media (min-width: 768px) {
+  .vp-doc table {
+    display: table;
+    width: 100%;
+  }
+}
+
 .vp-doc tr,
 .vp-doc tr:nth-child(2n) {
   border-top: 0;
@@ -427,9 +579,22 @@ body {
   font-size: 0.85em;
 }
 
-/* Code blocks: the panel console well */
+/* Code blocks: the panel console well, with a title bar holding the language and the copy button */
 .vp-doc div[class*="language-"] {
   border: 1px solid var(--hp-line-1);
+  padding-top: 36px;
+}
+
+.vp-doc div[class*="language-"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  height: 36px;
+  border-bottom: 1px solid var(--hp-line-1);
+  background-color: var(--hp-bg-1);
 }
 
 .vp-doc [class*="language-"] pre {
@@ -439,7 +604,7 @@ body {
 .vp-doc [class*="language-"] code {
   padding: 0 20px;
   font-size: 13px;
-  line-height: 20px;
+  line-height: 22px;
 }
 
 .vp-doc [class*="language-"] code .highlighted,
@@ -450,30 +615,83 @@ body {
 }
 
 .vp-doc [class*="language-"] > span.lang {
-  top: 6px;
-  right: 12px;
+  top: 0;
+  left: 16px;
+  right: auto;
+  z-index: 2;
+  height: 36px;
+  font-family: var(--hp-font-mono);
   font-size: 12px;
   font-weight: 400;
+  line-height: 36px;
+  color: var(--hp-fg-3);
+}
+
+/* The language label stays put; VitePress would hide it on hover */
+.vp-doc [class*="language-"]:hover > button.copy + span.lang,
+.vp-doc [class*="language-"] > button.copy:focus + span.lang {
+  opacity: 1;
 }
 
 .vp-doc [class*="language-"] > button.copy {
-  top: 8px;
-  right: 8px;
-  width: 32px;
-  height: 32px;
+  top: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  border: 0;
   border-radius: var(--hp-radius-2);
-  background-size: 16px;
+  background: transparent;
+  opacity: 1;
+  transition:
+    background-color var(--hp-dur-hover) ease,
+    transform var(--hp-dur-press) var(--hp-ease-out);
+}
+
+.vp-doc [class*="language-"] > button.copy::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--hp-fg-3);
+  -webkit-mask: var(--hp-icon-copy) center / 16px no-repeat;
+  mask: var(--hp-icon-copy) center / 16px no-repeat;
+  transition: background-color var(--hp-dur-hover) ease;
+}
+
+.vp-doc [class*="language-"] > button.copy:hover {
+  background-color: var(--hp-bg-2);
+}
+
+.vp-doc [class*="language-"] > button.copy:hover::after {
+  background-color: var(--hp-fg-1);
+}
+
+.vp-doc [class*="language-"] > button.copy:active {
+  transform: scale(0.94);
 }
 
 .vp-doc [class*="language-"] > button.copy.copied,
 .vp-doc [class*="language-"] > button.copy:hover.copied {
-  border-radius: 0 var(--hp-radius-2) var(--hp-radius-2) 0;
+  border-radius: var(--hp-radius-2);
+  background: transparent;
+}
+
+.vp-doc [class*="language-"] > button.copy.copied::after {
+  background-color: var(--hp-positive);
+  -webkit-mask-image: var(--hp-icon-check);
+  mask-image: var(--hp-icon-check);
 }
 
 .vp-doc [class*="language-"] > button.copy.copied::before,
 .vp-doc [class*="language-"] > button.copy:hover.copied::before {
-  height: 32px;
-  border-radius: var(--hp-radius-2) 0 0 var(--hp-radius-2);
+  top: 0;
+  height: 28px;
+  border: 0;
+  padding: 0 4px 0 0;
+  background: transparent;
+  font-family: var(--hp-font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--hp-positive);
 }
 
 @media (max-width: 639px) {
@@ -487,12 +705,13 @@ body {
 /* Custom containers */
 .vp-doc .custom-block {
   padding: 14px 16px;
-  line-height: 22px;
+  font-size: 15px;
+  line-height: 24px;
   color: var(--hp-fg-1);
 }
 
 .vp-doc .custom-block p {
-  line-height: 22px;
+  line-height: 24px;
 }
 
 .vp-doc .custom-block > :last-child {
@@ -500,9 +719,25 @@ body {
 }
 
 .vp-doc .custom-block .custom-block-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 4px;
   font-size: 14px;
   font-weight: 600;
+}
+
+/* Each kind carries a status pixel in its own colour, as status does in the panel */
+.vp-doc .custom-block .custom-block-title::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  background-color: currentColor;
+}
+
+.vp-doc .custom-block.details .custom-block-title::before {
+  content: none;
 }
 
 .vp-doc .custom-block.tip .custom-block-title {
@@ -536,6 +771,26 @@ body {
 
 .vp-doc .custom-block.danger :not(pre) > code {
   background-color: var(--hp-bg-sunken);
+}
+
+/* Site footer (shown on pages without a sidebar, e.g. 404) */
+.VPFooter {
+  border-top: 1px solid var(--hp-line-1);
+}
+
+.VPFooter .container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 24px;
+  text-align: left;
+}
+
+.VPFooter .message,
+.VPFooter .copyright {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--hp-fg-3);
 }
 
 /* Prev / next pager and outline */
@@ -608,13 +863,44 @@ body {
   background-color: var(--hp-bg-3);
 }
 
+/* The "#" before each result becomes the same square marker the sidebar and headings use */
 .VPLocalSearchBox .result .title-icon {
-  color: var(--hp-fg-3);
+  flex: none;
+  align-self: center;
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
+  overflow: hidden;
+  font-size: 0;
+  background-color: var(--hp-line-2);
 }
 
-.VPLocalSearchBox .results .result.selected .titles,
-.VPLocalSearchBox .results .result.selected .title-icon {
+.VPLocalSearchBox .results .result.selected .titles {
   color: var(--hp-fg-1) !important;
+}
+
+.VPLocalSearchBox .results .result.selected .title-icon {
+  background-color: var(--hp-accent);
+}
+
+.VPLocalSearchBox .result .title.main {
+  font-weight: 600;
+}
+
+.VPLocalSearchBox .excerpt-wrapper .excerpt {
+  font-size: 13px;
+  color: var(--hp-fg-2);
+}
+
+.VPLocalSearchBox .excerpt mark,
+.VPLocalSearchBox .titles mark {
+  border-radius: var(--hp-radius-1);
+  background-color: var(--hp-accent-soft);
+  color: var(--hp-fg-1);
+}
+
+.VPLocalSearchBox .search-keyboard-shortcuts {
+  color: var(--hp-fg-3);
 }
 
 .VPLocalSearchBox kbd {
