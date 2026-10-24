@@ -2,7 +2,7 @@ import config from '../config/index.js';
 import { getAvailableFilesSorted, pickLatestByStability } from './curseforgeUtils.js';
 
 const CURSEFORGE_API_BASE = 'https://api.curseforge.com';
-let HYTALE_GAME_ID = 6399; // Default, will be verified on init
+let HYTALE_GAME_ID = 70216; // Default, will be verified on init
 
 const apiKey = config.curseforge?.apiKey || null;
 

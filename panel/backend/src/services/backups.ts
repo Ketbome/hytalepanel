@@ -1,8 +1,9 @@
 import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { pipeline } from 'node:stream/promises';
 import { ZipArchive } from 'archiver';
-import Extract from 'extract-zip';
+import yauzl, { type Entry } from 'yauzl';
 import config from '../config/index.js';
 
 // Dynamic path functions for testability
@@ -216,6 +217,39 @@ async function listTopLevelEntries(dir: string): Promise<string[]> {
   return entries.map((entry) => normalizePathForZipEntry(String(entry)));
 }
 
+async function extractZip(zipPath: string, dest: string): Promise<void> {
+  const root = path.resolve(dest);
+  const zip = await yauzl.openPromise(zipPath, { lazyEntries: true });
+
+  const writeEntry = async (entry: Entry): Promise<void> => {
+    const target = path.resolve(root, entry.fileName);
+    if (path.isAbsolute(entry.fileName) || !target.startsWith(root + path.sep)) {
+      throw new Error(`Unsafe path in backup archive: ${entry.fileName}`);
+    }
+    // Never create symlinks from archive entries
+    if (((entry.externalFileAttributes >>> 16) & 0o170000) === 0o120000) return;
+    if (entry.fileName.endsWith('/')) {
+      await fs.mkdir(target, { recursive: true });
+      return;
+    }
+    await fs.mkdir(path.dirname(target), { recursive: true });
+    await pipeline(await zip.openReadStreamPromise(entry), createWriteStream(target));
+  };
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      zip.on('error', reject);
+      zip.on('end', () => resolve());
+      zip.on('entry', (entry: Entry) => {
+        writeEntry(entry).then(() => zip.readEntry(), reject);
+      });
+      zip.readEntry();
+    });
+  } finally {
+    zip.close();
+  }
+}
+
 async function replaceDirectory(targetDir: string, sourceDir: string, rollbackRoot: string): Promise<void> {
   const rollbackTarget = path.join(rollbackRoot, path.basename(targetDir));
   const targetExists = await fs
@@ -418,7 +452,7 @@ export async function restoreBackup(serverId: string, backupId: string): Promise
     try {
       await fs.rm(restoreTmpDir, { recursive: true, force: true });
       await fs.mkdir(restoreTmpDir, { recursive: true });
-      await Extract(backupPath, { dir: restoreTmpDir });
+      await extractZip(backupPath, restoreTmpDir);
 
       const extractedEntries = await listTopLevelEntries(restoreTmpDir);
       if (!hasAllowedBackupContent(extractedEntries)) {
