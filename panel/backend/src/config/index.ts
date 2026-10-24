@@ -146,7 +146,7 @@ const config: Config = {
     apiKey: process.env.CURSEFORGE_API_KEY || null
   },
   data: {
-    path: '/opt/hytale-panel/data', // Fixed internal path
+    path: process.env.PANEL_DATA_PATH || '/opt/hytale-panel/data', // Internal path (override for local dev outside Docker)
     hostPath: process.env.HOST_DATA_PATH || './data' // Host path for server volumes
   }
 };

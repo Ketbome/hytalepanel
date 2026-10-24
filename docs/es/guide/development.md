@@ -63,6 +63,12 @@ cd frontend && pnpm install && cd ..
 pnpm dev
 ```
 
+Fuera de Docker el panel no puede escribir en `/opt/hytale-panel/data`. Apunta ambas rutas de datos a una carpeta local antes de `pnpm dev`:
+
+```bash
+export PANEL_DATA_PATH="$PWD/data" HOST_DATA_PATH="$PWD/data"
+```
+
 ## Stack Tecnológico
 
 ### Backend
