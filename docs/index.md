@@ -11,41 +11,23 @@ head:
 
 hero:
   name: HytalePanel
-  text: Docker + Web Panel
-  tagline: Run your Hytale dedicated server with auto-download, JWT auth, and a beautiful admin panel.
+  text: A web panel for your Hytale server
+  tagline: One Docker image with a live console, files, mods and backups.
   image:
-    src: /images/hytale.png
-    alt: HytalePanel Logo
+    src: /images/panel.png
+    alt: HytalePanel server view with the live console next to the Mods tab
   actions:
     - theme: brand
-      text: Get Started
+      text: Get started
       link: /guide/getting-started
     - theme: alt
-      text: View on GitHub
+      text: GitHub
       link: https://github.com/ketbome/hytalepanel
-
-features:
-  - icon: 🐳
-    title: Docker Ready
-    details: One command to run. No manual setup required.
-  - icon: 📜
-    title: Real-time Console
-    details: View logs and send commands directly from the web panel.
-  - icon: 🔐
-    title: JWT Authentication
-    details: Secure access with username/password authentication.
-  - icon: 📁
-    title: File Manager
-    details: Upload, edit, and delete server files from your browser.
-  - icon: 🔧
-    title: Mod Manager
-    details: Install and manage mods with Modtale integration.
-  - icon: 🌍
-    title: Multi-language
-    details: Available in English, Spanish, and Ukrainian.
 ---
 
-## Quick Start
+## Quick start
+
+You need Docker with Compose and about 4 GB of free RAM per server.
 
 ```bash
 # 1. Create folder
@@ -64,3 +46,38 @@ docker compose up -d
 
 # 5. Open panel at http://localhost:3000
 ```
+
+## What's included
+
+<div class="hp-features">
+<dl>
+  <div>
+    <dt>Live console</dt>
+    <dd>Follow the server log as it happens, filter it by level and send commands.</dd>
+  </div>
+  <div>
+    <dt>File manager</dt>
+    <dd>Browse, upload, edit and download server files, even while the server is stopped.</dd>
+  </div>
+  <div>
+    <dt>Mods (Modtale, CurseForge)</dt>
+    <dd>Search both catalogues, install with one click and check installed mods for updates.</dd>
+  </div>
+  <div>
+    <dt>Backups</dt>
+    <dd>Create and restore backups by hand or on a schedule, with limits on how many to keep.</dd>
+  </div>
+  <div>
+    <dt>Multi-server</dt>
+    <dd>Run several Hytale servers from one panel, each in its own container and port.</dd>
+  </div>
+  <div>
+    <dt>Four languages</dt>
+    <dd>The panel speaks English, Spanish, Ukrainian and Brazilian Portuguese.</dd>
+  </div>
+</dl>
+</div>
+
+## Documentation
+
+The [guide](/guide/getting-started) covers installation, configuration, the panel and mods. The [reference](/reference/environment) lists every environment variable, REST endpoint and socket event.

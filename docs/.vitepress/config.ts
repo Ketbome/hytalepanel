@@ -1,4 +1,5 @@
 import { defineConfig } from "vitepress";
+import hytaleShiki from "./theme/shiki-hytale.json";
 
 const siteUrl = "https://hytalepanel.ketbome.com";
 const title = "HytalePanel";
@@ -129,7 +130,19 @@ export default defineConfig({
   description: description.en,
   cleanUrls: true,
   lastUpdated: true,
-  appearance: "dark",
+  appearance: "force-dark",
+
+  markdown: {
+    theme: hytaleShiki,
+    languageAlias: { env: "ini" },
+    container: {
+      tipLabel: "Tip",
+      infoLabel: "Info",
+      warningLabel: "Warning",
+      dangerLabel: "Danger",
+      detailsLabel: "Details",
+    },
+  },
 
   sitemap: {
     hostname: siteUrl,
@@ -151,11 +164,18 @@ export default defineConfig({
     // Performance: Preload critical fonts (adjust if using custom fonts)
     // ['link', { rel: 'preload', href: '/fonts/font.woff2', as: 'font', type: 'font/woff2', crossorigin: '' }],
 
-    // Performance: preconnect for theme fonts (loaded from theme/custom.css)
+    // Performance: preconnect for theme fonts
     ["link", { rel: "preconnect", href: "https://fonts.googleapis.com" }],
     [
       "link",
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossorigin: "" },
+    ],
+    [
+      "link",
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Sofia+Sans:wght@400;500;600&family=Unbounded:wght@500;600&display=swap",
+      },
     ],
 
     // Performance: Preload LCP image (hero logo)
@@ -199,7 +219,7 @@ export default defineConfig({
           "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
       },
     ],
-    ["meta", { name: "theme-color", content: "#f0a13c" }],
+    ["meta", { name: "theme-color", content: "#100f0d" }],
     [
       "meta",
       { name: "viewport", content: "width=device-width, initial-scale=1.0" },
@@ -362,8 +382,16 @@ export default defineConfig({
       lang: "en-US",
       themeConfig: {
         nav: [
-          { text: "Guide", link: "/guide/getting-started" },
-          { text: "Reference", link: "/reference/environment" },
+          {
+            text: "Guide",
+            link: "/guide/getting-started",
+            activeMatch: "^/guide/",
+          },
+          {
+            text: "Reference",
+            link: "/reference/environment",
+            activeMatch: "^/reference/",
+          },
           { text: "Minepanel", link: "https://minepanel.ketbome.com/" },
         ],
         sidebar: {
@@ -389,8 +417,16 @@ export default defineConfig({
       link: "/es/",
       themeConfig: {
         nav: [
-          { text: "Guía", link: "/es/guide/getting-started" },
-          { text: "Referencia", link: "/es/reference/environment" },
+          {
+            text: "Guía",
+            link: "/es/guide/getting-started",
+            activeMatch: "^/es/guide/",
+          },
+          {
+            text: "Referencia",
+            link: "/es/reference/environment",
+            activeMatch: "^/es/reference/",
+          },
           { text: "Minepanel", link: "https://minepanel.ketbome.com/" },
         ],
         sidebar: {
@@ -416,8 +452,16 @@ export default defineConfig({
       link: "/uk/",
       themeConfig: {
         nav: [
-          { text: "Посібник", link: "/uk/guide/getting-started" },
-          { text: "Довідник", link: "/uk/reference/environment" },
+          {
+            text: "Посібник",
+            link: "/uk/guide/getting-started",
+            activeMatch: "^/uk/guide/",
+          },
+          {
+            text: "Довідник",
+            link: "/uk/reference/environment",
+            activeMatch: "^/uk/reference/",
+          },
           { text: "Minepanel", link: "https://minepanel.ketbome.com/" },
         ],
         sidebar: {
