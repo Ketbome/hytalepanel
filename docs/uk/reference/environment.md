@@ -79,6 +79,8 @@ SERVER_EXTRA_ARGS=--mods mods
 SERVER_EXTRA_ARGS=--mods mods --debug
 ```
 
+Починаючи з Update 8 тут також можна передати `--transport`, щоб вибрати мережевий транспорт (див. [Аргументи сервера](../guide/configuration#server-arguments)).
+
 ### TZ (Часовий пояс)
 
 Встановлює часовий пояс контейнера для timestamps логів.

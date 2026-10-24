@@ -58,6 +58,7 @@ Gestiona la descarga de archivos del juego, actualizaciones y autenticación:
 - **Botón de Descarga** - Descarga HytaleServer.jar y Assets.zip (~2GB)
 - **Seguimiento de Actualizaciones** - Muestra días desde la última actualización
 - **Verificar Actualizaciones** - Re-descarga archivos del servidor para obtener la última versión
+- **Aplicar Actualización** - Hace un backup del servidor primero (ver [Seguridad de las Actualizaciones](./configuration#update-safety)), descarga la última build del canal y reinicia el servidor si estaba en marcha
 - **Autenticación** - Flujo OAuth de dispositivo para autenticación de Hytale
 
 ### Pestaña Files
@@ -119,16 +120,18 @@ Gestión del ciclo de vida del servidor:
 
 Edita la configuración del servidor sin tocar archivos YAML:
 
-| Configuración           | Descripción                                |
-| ----------------------- | ------------------------------------------ |
-| **Puerto**              | Puerto UDP del juego (1024-65535)          |
-| **RAM Mín**             | Heap mínimo de Java (ej: 2G, 4G)           |
-| **RAM Máx**             | Heap máximo de Java (ej: 4G, 8G)           |
-| **Dirección de Enlace** | Interfaz de red (por defecto: 0.0.0.0)     |
-| **Argumentos Extra**    | Args adicionales (ej: --world-seed 123)    |
-| **Auto-descarga**       | Habilitar descarga automática de archivos  |
-| **G1GC**                | Usar recolector de basura G1 (recomendado) |
-| **Linux Nativo**        | Montar volúmenes machine-id (solo Linux)   |
+| Configuración                  | Descripción                                                                         |
+| ------------------------------ | ----------------------------------------------------------------------------------- |
+| **Puerto**                     | Puerto UDP del juego (1024-65535)                                                   |
+| **RAM Mín**                    | Heap mínimo de Java (ej: 2G, 4G)                                                    |
+| **RAM Máx**                    | Heap máximo de Java (ej: 4G, 8G)                                                    |
+| **Dirección de Enlace**        | Interfaz de red (por defecto: 0.0.0.0)                                              |
+| **Argumentos Extra**           | Args adicionales (ej: --world-seed 123)                                             |
+| **Auto-descarga**              | Habilitar descarga automática de archivos                                           |
+| **Canal de Release**           | Patchline `stable` o `pre-release`                                                  |
+| **Backup antes de actualizar** | Hacer backup de los mundos antes de aplicar actualizaciones (por defecto: activado) |
+| **G1GC**                       | Usar recolector de basura G1 (recomendado)                                          |
+| **Linux Nativo**               | Montar volúmenes machine-id (solo Linux)                                            |
 
 ::: warning
 La configuración solo puede editarse cuando el servidor está detenido. Reinicia el servidor para aplicar cambios.

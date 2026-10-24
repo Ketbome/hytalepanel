@@ -10,6 +10,10 @@ El binario `hytale-downloader` es **solo x64**. En sistemas ARM64, la descarga a
 El servidor de Hytale (Java) funciona nativamente en ARM64 sin problemas.
 :::
 
+## Transporte de Red (Update 8+) {#network-transport}
+
+Desde Update 8 el servidor usa por defecto el transporte **quiche**. No existe librería nativa de quiche para Linux ARM64, así que en ARM64 el servidor recurre a **netty** y muestra un aviso al arrancar. Es esperado e inofensivo: el servidor funciona con normalidad sobre netty. El transporte se puede fijar explícitamente con el argumento `--transport` (consulta [Argumentos del Servidor](./configuration#server-arguments)).
+
 ## Instalación en ARM64
 
 ### Opción 1: Descarga Manual de Archivos

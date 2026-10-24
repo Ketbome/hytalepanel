@@ -79,6 +79,8 @@ SERVER_EXTRA_ARGS=--mods mods
 SERVER_EXTRA_ARGS=--mods mods --debug
 ```
 
+Desde Update 8 también puedes pasar `--transport` aquí para seleccionar el transporte de red (consulta [Argumentos del Servidor](../guide/configuration#server-arguments)).
+
 ### TZ (Zona Horaria)
 
 Configura la zona horaria del contenedor para timestamps de logs.

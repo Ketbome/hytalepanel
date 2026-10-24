@@ -426,7 +426,7 @@ socket.on("update:check-result", (result) => {
 
 ### update:apply
 
-Download the latest build for the server's release channel and restart the server if it was running.
+Back up the server (unless `backupBeforeUpdate` is `false` in the server config), download the latest build for the server's release channel and restart the server if it was running. If the backup fails, the update is aborted with an `error` status and nothing is downloaded.
 
 **Emit:**
 
@@ -434,7 +434,7 @@ Download the latest build for the server's release channel and restart the serve
 socket.emit("update:apply");
 ```
 
-**Response:** `update:status` events (`downloading`, `restarting`, `complete`, `error`)
+**Response:** `update:status` events (`backing-up`, `downloading`, `restarting`, `complete`, `error`)
 
 ## Backup Events (v1.4.0+)
 

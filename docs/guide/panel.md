@@ -58,6 +58,7 @@ Manage game file downloads, updates, and authentication:
 - **Download Button** - Downloads HytaleServer.jar and Assets.zip (~2GB)
 - **Update Tracking** - Shows days since last update
 - **Check Updates** - Re-download server files to get latest version
+- **Apply Update** - Backs up the server first (see [Update Safety](./configuration#update-safety)), then downloads the latest build for the release channel and restarts the server if it was running
 - **Authentication** - Device OAuth flow for Hytale authentication
 
 ### Files Tab
@@ -117,16 +118,18 @@ Server lifecycle management:
 
 Edit server configuration without touching YAML files:
 
-| Setting             | Description                                     |
-| ------------------- | ----------------------------------------------- |
-| **Port**            | UDP game port (1024-65535)                      |
-| **Min RAM**         | Minimum Java heap (e.g., 2G, 4G)                |
-| **Max RAM**         | Maximum Java heap (e.g., 4G, 8G)                |
-| **Bind Address**    | Network interface (default: 0.0.0.0)            |
-| **Extra Arguments** | Additional server args (e.g., --world-seed 123) |
-| **Auto-download**   | Enable automatic game file download             |
-| **G1GC**            | Use G1 garbage collector (recommended)          |
-| **Linux Native**    | Mount machine-id volumes (Linux only)           |
+| Setting                  | Description                                          |
+| ------------------------ | ---------------------------------------------------- |
+| **Port**                 | UDP game port (1024-65535)                           |
+| **Min RAM**              | Minimum Java heap (e.g., 2G, 4G)                     |
+| **Max RAM**              | Maximum Java heap (e.g., 4G, 8G)                     |
+| **Bind Address**         | Network interface (default: 0.0.0.0)                 |
+| **Extra Arguments**      | Additional server args (e.g., --world-seed 123)      |
+| **Auto-download**        | Enable automatic game file download                  |
+| **Release Channel**      | `stable` or `pre-release` patchline                  |
+| **Backup before update** | Back up worlds before applying updates (default: on) |
+| **G1GC**                 | Use G1 garbage collector (recommended)               |
+| **Linux Native**         | Mount machine-id volumes (Linux only)                |
 
 ::: warning
 Configuration can only be edited when the server is stopped. Restart the server to apply changes.
