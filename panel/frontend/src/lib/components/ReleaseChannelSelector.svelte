@@ -1,6 +1,7 @@
 <script lang="ts">
 import { _ } from 'svelte-i18n';
 import { type Channel, fetchChannels } from '$lib/services/api';
+import { confirmDialog } from '$lib/stores/confirm';
 import { showToast } from '$lib/stores/ui';
 
 // Props using $props()
@@ -65,8 +66,15 @@ async function loadChannels(serverId: string): Promise<void> {
   loadingChannels = false;
 }
 
-function handleChannelChange(channelId: 'stable' | 'pre-release'): void {
-  if (disabled || featureDisabled) return;
+async function handleChannelChange(channelId: 'stable' | 'pre-release'): Promise<void> {
+  if (disabled || featureDisabled || channelId === selectedChannel) return;
+
+  // World data upgrades are one-way: a world opened on pre-release may not load on stable again
+  const confirmed =
+    channelId === 'stable'
+      ? await confirmDialog($_('channelDowngradeWarning'), { title: $_('channelDowngradeTitle'), danger: true })
+      : await confirmDialog($_('channelUpgradeNote'));
+  if (!confirmed) return;
 
   selectedChannel = channelId;
   onChannelChange(channelId);
