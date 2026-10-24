@@ -25,6 +25,17 @@ setup_machine_id() {
         tr -d '\n\r\t ' < "$1" 2>/dev/null | head -c 32 | tr '[:upper:]' '[:lower:]'
     }
     
+    # 0. Host machine-id mounted read-only: use it as-is
+    if [ -s /etc/machine-id ] && [ ! -w /etc/machine-id ]; then
+        HOST_ID=$(read_and_clean /etc/machine-id)
+        if validate_machine_id "$HOST_ID"; then
+            echo "[HYTALE] ✓ Using read-only host machine-id"
+            echo -n "$HOST_ID" > "$PERSISTENT_ID"
+            echo -n "$HOST_ID" | md5sum | cut -d' ' -f1 > "$PERSISTENT_HASH"
+            return 0
+        fi
+    fi
+
     # 1. Try to restore from persistent copy first
     if [ -f "$PERSISTENT_ID" ]; then
         RESTORED_ID=$(read_and_clean "$PERSISTENT_ID")
